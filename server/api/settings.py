@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     "apps.users",
+    "apps.academics",
 ]
 
 MIDDLEWARE = [
@@ -80,6 +81,9 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Authentication model
+AUTH_USER_MODEL = "users.User"
 
 
 # Password validation

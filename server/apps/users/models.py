@@ -1,15 +1,22 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 # Create your models here.
-class Faculty(models.Model):
-    name = models.CharField(max_length=200)
+class User(AbstractUser):
 
-class CostCenter(models.Model):
-    name = models.CharField(max_length=200)
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
+    ROLE_CHOICES = [
+        ("admin", "SysAdmin"),
+        ("coordinator", "Coordinator"),
+    ]
 
-class Course(models.Model):
-    code = models.CharField(max_length=20)
-    name = models.CharField(max_length=200)
-    cost_center = models.ForeignKey(CostCenter, on_delete=models.CASCADE)
-    
+    faculty_id = models.ForeignKey("academics.Faculty", on_delete=models.SET_NULL, null=True, blank=True)
+
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES
+    )
+
+    evaluation_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.username
