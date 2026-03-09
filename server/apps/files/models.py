@@ -10,7 +10,7 @@ class File(models.Model):
         ("evaluation", "Evaluacion docente"),
     ]
 
-    url = models.CharField(max_length=500)
+    url = models.URLField(max_length=500, null=False)
 
     size = models.IntegerField()
 

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.academics",
     "apps.files",
+    "apps.reports",
 ]
 
 MIDDLEWARE = [
