@@ -1,8 +1,12 @@
 from django.contrib.auth import authenticate
+from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.exceptions import AuthenticationFailed
 
-class LoginUseCase:
+class LoginUseCase(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
     @staticmethod
     def execute(email, password):
         user = authenticate(email=email, password=password)

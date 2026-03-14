@@ -1,42 +1,39 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework_simplejwt.tokens import AccessToken
 
 from django.conf import settings
 from .authentication import CookieJWTAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from ..models import User
-from ..serializers.user_serializer import UserSerializer
-from ..serializers.login_serializer import LoginSerializer
+from ..domain.models import User
+from ..domain.serializers.user_serializer import UserSerializer
 from .permissions import IsSysAdmin, IsSysAdminOrCoordinator
+from ..application.login_use_case import LoginUseCase
 
 # Create your views here.
 
 class AuthViewSet(viewsets.ViewSet):
-
+    permission_classes = [AllowAny]
     authentication_classes = [CookieJWTAuthentication]
 
     def login(self, request):
 
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data["user"]
-
-        token = AccessToken.for_user(user)
+        result = LoginUseCase.execute(
+            email=request.data.get("email"),
+            password=request.data.get("password")
+        )
 
         response = Response(
-            {'message': 'Login successful'},
+            {'message': 'Login successful', "user_id": result["user"].id},
             status=status.HTTP_200_OK
             )
         
         response.set_cookie(
             key=settings.SIMPLE_JWT['AUTH_COOKIE'],
-            value=str(token),
+            value=result['access'],
             httponly=True,
-            secure=True,
+            secure=settings.SESSION_COOKIE_SECURE,
             samesite='Lax',
             max_age=3600,  # 1 hour
         )
