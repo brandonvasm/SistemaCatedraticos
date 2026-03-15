@@ -1,4 +1,4 @@
-from .domain.models import User
+from .models import User
 from django.contrib import admin
 
 

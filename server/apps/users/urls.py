@@ -6,7 +6,7 @@ router = DefaultRouter()
 router.register("management", UserViewSet, basename="user-management")
 
 urlpatterns = [
-    path("auth/login/", AuthViewSet.as_view({"post": "login"}), name="auth-login"),
+    path("login/", AuthViewSet.as_view({"post": "login"}), name="auth-login"),
 ]
 
 urlpatterns += router.urls

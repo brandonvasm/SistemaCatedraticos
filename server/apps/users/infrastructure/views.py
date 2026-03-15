@@ -6,10 +6,14 @@ from django.conf import settings
 from .authentication import CookieJWTAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from ..domain.models import User
+from ..models import User
 from ..domain.serializers.user_serializer import UserSerializer
 from .permissions import IsSysAdmin, IsSysAdminOrCoordinator
+
+# Use cases
 from ..application.login_use_case import LoginUseCase
+from ..application.update_user_use_case import UpdateUserUseCase
+from ..application.create_user_use_case import CreateUserUseCase
 
 # Create your views here.
 
@@ -46,54 +50,22 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
 
-        if self.action in ["create", "destroy"]:
+        if self.action in ["create", "destroy", "list"]:
             permission_classes = [IsSysAdmin]
         else:
             permission_classes = [IsSysAdminOrCoordinator]
 
         return [permission() for permission in permission_classes]
-""" 
-    @action(detail=False, methods=["post"])
-    def login(self, request):
 
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data["user"]
-
-        token = AccessToken.for_user(user)
-
-        response = JsonResponse({'message': 'Login successful'})
-        response.set_cookie(
-            key='jwt',
-            value=str(token),
-            httponly=True,
-            secure=True,
-            samesite='Lax',
-            max_age=3600,  # 1 hour
+    def perform_create(self, serializer):
+        user = CreateUserUseCase.execute(serializer.validated_data)
+        return user
+    
+    def perform_update(self, serializer):
+        user = UpdateUserUseCase.execute(
+            request_user=self.request.user,
+            target_user=serializer.instance,
+            data=serializer.validated_data
         )
-
-        return response
-
-    @action(detail=False, methods=["get", "patch"])
-    def me(self, request):
-
-        user = request.user
-
-        if request.method == "GET":
-
-            serializer = self.get_serializer(user)
-            return Response(serializer.data)
-
-        if request.method == "PATCH":
-
-            serializer = self.get_serializer(
-                user,
-                data=request.data,
-                partial=True
-            )
-
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-
-            return Response(serializer.data) """
+        return user
+    

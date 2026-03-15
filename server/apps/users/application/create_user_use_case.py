@@ -10,7 +10,7 @@ class CreateUserUseCase:
             username=user_data['username'],
             password=user_data['password'],
             role=user_data.get('role', 'coordinator'),
-            faculty_id=user_data.get('faculty_id')
+            faculty_id=user_data.get('faculty_id', None)
         )
             
         return user
