@@ -17,6 +17,7 @@ class SemesterSerializer(serializers.ModelSerializer):
             "control_loaded",
             "evaluation_loaded",
             "status",
+            "faculty",
         ]
         read_only_field = [
             "ceat_loaded",

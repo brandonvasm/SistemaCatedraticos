@@ -9,6 +9,11 @@ from .serializers import SemesterSerializer
 class SemesterListCreateView(APIView):
     def get(self, request):
         semesters = Semester.objects.all().order_by("-year", "-number")
+
+        faculty_id = request.query_params.get("faculty")
+        if faculty_id:
+            semesters = semesters.filter(faculty_id=faculty_id)
+
         serializer = SemesterSerializer(semesters, many=True)
         return Response(serializer.data)
 
