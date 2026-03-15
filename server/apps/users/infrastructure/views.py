@@ -1,6 +1,5 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
 
 from django.conf import settings
 from .authentication import CookieJWTAuthentication
@@ -42,6 +41,15 @@ class AuthViewSet(viewsets.ViewSet):
             max_age=3600,  # 1 hour
         )
     
+        return response
+
+class LogoutViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def logout(self, request):
+        response = Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
+        response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE'])
         return response
 
 class UserViewSet(viewsets.ModelViewSet):
