@@ -11,6 +11,11 @@ from .serializers import FacultySerializer
 
 
 class FacultyCreateView(APIView):
+    def get(self, request):
+        faculties = Faculty.objects.all()
+        serializer = FacultySerializer(faculties, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
     def post(self, request):
         serializer = FacultySerializer(data=request.data)
         if serializer.is_valid():
@@ -26,6 +31,17 @@ class FacultyDetailView(APIView):
         except Faculty.DoesNotExist:
             return None
 
+    def get(self, request, pk):
+        faculty = self.get_object(pk)
+        if faculty is None:
+            return Response(
+                {"detail": "Faculty not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = FacultySerializer(faculty)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def put(self, request, pk):
         faculty = self.get_object(pk)
         if faculty is None:
@@ -35,6 +51,20 @@ class FacultyDetailView(APIView):
             )
 
         serializer = FacultySerializer(faculty, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def patch(self, request, pk):
+        faculty = self.get_object(pk)
+        if faculty is None:
+            return Response(
+                {"detail": "Faculty not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = FacultySerializer(faculty, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
