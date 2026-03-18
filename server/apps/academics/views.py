@@ -1,14 +1,11 @@
-from django.shortcuts import render
-
-# Create your views here.
-
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Faculty
-from .serializers import FacultySerializer
+from .models import Faculty, Semester
+from .serializers import FacultySerializer, SemesterSerializer
 
+# Create your views here.
 
 class FacultyCreateView(APIView):
     def get(self, request):
@@ -80,3 +77,22 @@ class FacultyDetailView(APIView):
 
         faculty.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SemesterListCreateView(APIView):
+    def get(self, request):
+        semesters = Semester.objects.all().order_by("-year", "-number")
+
+        faculty_id = request.query_params.get("faculty")
+        if faculty_id:
+            semesters = semesters.filter(faculty_id=faculty_id)
+
+        serializer = SemesterSerializer(semesters, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = SemesterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
