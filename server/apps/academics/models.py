@@ -6,7 +6,6 @@ class Faculty(models.Model):
     name = models.CharField(max_length=200)
     pensum_loaded = models.BooleanField(default=False)
 
-
 class CostCenter(models.Model):
     name = models.CharField(max_length=200)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)

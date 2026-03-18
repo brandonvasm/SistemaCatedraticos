@@ -1,9 +1,16 @@
+from rest_framework import serializers
 from dataclasses import fields
 
-from rest_framework import serializers
+from .models import Faculty, Semester
 
-from ..academics.models import Semester
-
+class FacultySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Faculty
+        fields = [
+            "id", 
+            "name", 
+            "pensum_loaded"
+        ]
 
 class SemesterSerializer(serializers.ModelSerializer):
     class Meta:
