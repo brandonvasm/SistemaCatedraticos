@@ -10,6 +10,9 @@ from datetime import datetime
 from django_filters.rest_framework import DjangoFilterBackend
 import json
 
+from .application.upload_file_use_case import UploadFileUseCase
+from .application.save_file_use_case import SaveFileUseCase
+from .application.process_file_use_case import ProcessFileUseCase
 
 import pandas as pd
 
@@ -30,60 +33,36 @@ class FileView(viewsets.ModelViewSet):
         if not file_obj:
             return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not self.is_valid_excel(file_obj):
-            return Response({"error": "File too large or invalid file format (only .xlsx or .xls)"}, status=status.HTTP_400_BAD_REQUEST)
+        if not str_data or str_data.strip() == "":
+            return Response({"error": "No metadata provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        file_processed = False
+        processor = ProcessFileUseCase(file_obj, str_data)
+        uploader = UploadFileUseCase()
+        saver = SaveFileUseCase()
+
+        # procesar archivo excel y validarlo
 
         try:
-            # logica de procesamiento del archivo
-            dt = pd.read_excel(file_obj)
-
-            file_processed = True
+            processor.execute()
         except Exception as e:
-            return Response({"error": "Error processing Excel file"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # subir archivo a la nube
 
-        # se sube el archivo y se obtiene la url en la nube
+        upload_result = None
+        try:
+            upload_result = uploader.execute()
+        except Exception as e:
+            return Response({"error": "Error uploading file: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        file_url = "https://example.com/path/to/uploaded/file.xlsx"
+        # guardar registro en la base de datos
 
-        json_data = json.loads(str_data)
-
-        final_data = {
-            "url": file_url,
-            "size": file_obj.size,
-            "format": json_data.get("format"),
-            "user": request.user.id,
-            "semester": json_data.get("semester") or None,
-            "processed": file_processed,
-            "processed_at": datetime.now() if file_processed else None,
-        }
-
-        serializer = self.serializer_class(data=final_data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            file_record = saver.execute(upload_result["file_url"], file_obj, str_data, request.user.id)
+            return Response(file_record, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": "Error saving file record: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     
-    def is_valid_excel(self, file_obj):
-        extension = file_obj.name.split('.')[-1].lower()
-        valid_extensions = ['xlsx', 'xls']
-        
-        valid_mimetypes = [
-            'application/vnd.ms-excel', 
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        ]
 
-        if extension not in valid_extensions:
-            return False
-        
-        if file_obj.content_type not in valid_mimetypes:
-            return False
-        
-        if file_obj.size > 5 * 1024 * 1024:
-            return False
-            
-        return True
     
