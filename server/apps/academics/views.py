@@ -96,3 +96,22 @@ class SemesterListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SemesterDetailView(APIView):
+
+    def get_object(self, pk):
+        try:
+            return Semester.objects.get(pk=pk)
+        except Semester.DoesNotExist:
+            return None
+
+    def patch(self, request, pk):
+        semester = self.get_object(pk)
+        if semester is None:
+            return Response({'error': 'Semester not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = SemesterSerializer(semester, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
