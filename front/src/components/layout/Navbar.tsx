@@ -4,23 +4,25 @@ export default function Navbar(){
 
 return(
 
-<div className="h-16 flex items-center justify-between px-8 border-b border-white/10">
+<div className="fixed top-0 right-0 left-64 h-16 flex items-center justify-between px-8 border-b border-white/10 mx-8">
 
 
-
-<input
-type="text"
-placeholder="Buscar docente, curso, o sección..."
-className="
-w-96
-bg-white/5
-border border-white/10
-rounded-xl
-px-4 py-2
-text-sm
-outline-none
-"
-/>
+<div className="flex-1 flex justify-center">
+        <input
+          type="text"
+          placeholder="Buscar docente, curso, o sección..."
+          className="
+            w-96
+            bg-white/5
+            border border-white/10
+            rounded-xl
+            px-4 py-2
+            text-sm
+            outline-none
+            text-white
+          "
+        />
+</div>
 
 
 

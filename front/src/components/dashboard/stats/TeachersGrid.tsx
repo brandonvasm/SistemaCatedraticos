@@ -1,4 +1,5 @@
-import teachers from "../../data/teachers"
+
+import teachers from "../../../data/teachers"
 import TeacherCard from "./TeacherCard"
 
 export default function TeachersGrid() {

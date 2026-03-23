@@ -1,5 +1,5 @@
 import { Users, Trophy, AlertTriangle, TrendingUp } from "lucide-react"
-import StatCard from "../ui/StatCard"
+import StatCard from "../../ui/StatCard"
 
 export default function StatsSection() {
   return (
