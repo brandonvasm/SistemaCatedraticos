@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "apps.files",
     "apps.reports",
     "apps.analytics",
+    "apps.evaluations",
 ]
 
 MIDDLEWARE = [

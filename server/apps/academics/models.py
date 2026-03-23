@@ -55,7 +55,6 @@ class CourseSection(models.Model):
     section_number = models.CharField(max_length=20)
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)
-    assigned_students = models.IntegerField(default=0)
     shift = models.CharField(max_length=20, choices=SHIFT_CHOICES)
 
 class Contract(models.Model):
@@ -63,4 +62,3 @@ class Contract(models.Model):
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
     created_at = models.DateField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
-    
