@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_filters',
     'rest_framework',
+    'drf_spectacular',
 
     "apps.users",
     "apps.academics",
@@ -143,6 +144,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Internationalization
