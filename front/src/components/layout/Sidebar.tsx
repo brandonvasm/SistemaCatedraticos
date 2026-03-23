@@ -15,48 +15,48 @@ import {
 
 const menu = [
   {
-    name:"Dashboard",
+    name: "Dashboard",
     icon: LayoutDashboard,
-    active:true
+    active: true
   },
   {
-    name:"Usuarios",
+    name: "Usuarios",
     icon: Users
   },
   {
-    name:"Docentes",
+    name: "Docentes",
     icon: Users
   },
   {
-    name:"Cursos",
+    name: "Cursos",
     icon: BookOpen
   },
   {
-    name:"Salud de la carrera",
+    name: "Salud de la carrera",
     icon: Activity
   },
   {
-    name:"Recomendaciones",
+    name: "Recomendaciones",
     icon: Lightbulb
   },
   {
-    name:"Acciones Globales",
+    name: "Acciones Globales",
     icon: Zap
   },
   {
-    name:"Reportes",
+    name: "Reportes",
     icon: FileText
   },
   {
-    name:"Notificaciones",
+    name: "Notificaciones",
     icon: Bell,
-    badge:5
+    badge: 5
   }
 ]
 
-export default function Sidebar(){
+export default function Sidebar() {
 
-  return(
+  return (
 
     <div className="sidebar">
 
@@ -92,11 +92,11 @@ export default function Sidebar(){
 
       <div className="flex-1 px-3 py-4">
 
-        {menu.map((item,index)=>{
+        {menu.map((item, index) => {
 
           const Icon = item.icon
 
-          return(
+          return (
 
             <div
               key={index}
@@ -110,7 +110,7 @@ export default function Sidebar(){
 
               <div className="flex items-center gap-3">
 
-                <Icon size={18}/>
+                <Icon size={18} />
 
                 <span className="text-sm">
                   {item.name}
@@ -142,7 +142,7 @@ export default function Sidebar(){
 
         <div className="sidebar-item">
 
-          <Settings size={18}/>
+          <Settings size={18} />
 
           Configuración
 
@@ -150,7 +150,7 @@ export default function Sidebar(){
 
         <div className="sidebar-item mt-1">
 
-          <LogOut size={18}/>
+          <LogOut size={18} />
 
           Cerrar sesión
 

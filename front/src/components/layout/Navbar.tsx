@@ -1,65 +1,65 @@
 import { Bell, Download } from "lucide-react"
 
-export default function Navbar(){
+export default function Navbar() {
 
-return(
+	return (
 
-<div className="h-16 flex items-center justify-between px-8 border-b border-white/10">
-
-
-
-<input
-type="text"
-placeholder="Buscar docente, curso, o sección..."
-className="
-w-96
-bg-white/5
-border border-white/10
-rounded-xl
-px-4 py-2
-text-sm
-outline-none
-"
-/>
+		<div className="h-16 flex items-center justify-between px-8 border-b border-white/10">
 
 
 
-<div className="flex items-center gap-4">
+			<input
+				type="text"
+				placeholder="Buscar docente, curso, o sección..."
+				className="
+				w-96
+				bg-white/5
+				border border-white/10
+				rounded-xl
+				px-4 py-2
+				text-sm
+				outline-none
+				"
+			/>
 
-<div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
-Facultad de Ingenieria
-</div>
 
-<div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
-Semestre I - 2026
-</div>
 
-<button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
+			<div className="flex items-center gap-4">
 
-<Download size={16}/>
+				<div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
+					Facultad de Ingenieria
+				</div>
 
-Exportar
+				<div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
+					Semestre I - 2026
+				</div>
 
-</button>
+				<button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
 
-<div className="relative">
+					<Download size={16} />
 
-<Bell/>
+					Exportar
 
-<span className="absolute -top-2 -right-2 bg-red-500 w-2 h-2 rounded-full"/>
+				</button>
 
-</div>
+				<div className="relative">
 
-<div className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center font-semibold">
+					<Bell />
 
-AS
+					<span className="absolute -top-2 -right-2 bg-red-500 w-2 h-2 rounded-full" />
 
-</div>
+				</div>
 
-</div>
+				<div className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center font-semibold">
 
-</div>
+					AS
 
-)
+				</div>
+
+			</div>
+
+		</div>
+
+	)
 
 }
