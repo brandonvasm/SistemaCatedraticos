@@ -14,6 +14,7 @@ class CostCenter(models.Model):
 class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=200)
+    credits = models.IntegerField(default=0)
     cost_center = models.ForeignKey(CostCenter, on_delete=models.CASCADE)
 
 class Teacher(models.Model):
