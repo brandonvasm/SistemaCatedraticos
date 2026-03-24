@@ -20,16 +20,25 @@ export default function TeacherDetail() {
 
   const teacher = teachers.find((t) => t.id === id);
 
-  if (!teacher) return <p>No encontrado</p>;
+  if (!teacher) return <p className="text-white">No encontrado</p>;
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#0b1324] text-white w-full">
+      <div className="min-h-screen text-white w-full">
 
+        {/* Botón volver */}
         <div className="px-6 pt-4">
           <button
             onClick={() => navigate(-1)}
-            className="bg-slate-700 px-4 py-2 rounded-lg text-sm"
+            className="
+              bg-white/5
+              border border-white/10
+              px-4 py-2
+              rounded-lg text-sm
+              text-gray-300
+              hover:bg-white/10 hover:text-white
+              transition
+            "
           >
             ← Volver al listado
           </button>
@@ -54,10 +63,9 @@ export default function TeacherDetail() {
           )}
 
           {tab === "semestres" && <SemesterRatings />}
-
           {tab === "comentarios" && <ComentariosTab />}
-
           {tab === "acciones" && <Recommendations />}
+
         </div>
       </div>
     </DashboardLayout>

@@ -3,6 +3,8 @@ import Login from "../pages/Login"
 import Dashboard from "../pages/Dashboard"
 import DocentesViews from "../pages/DocentesView"
 import TeacherDetail from "../pages/TeacherDetail"
+import CoursesView from "../pages/CoursesView"
+import CourseDetailView from "../pages/CourseDetailView"
 
 export default function AppRouter() {
 
@@ -17,7 +19,8 @@ export default function AppRouter() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/docentesView" element={<DocentesViews />} />
         <Route path="/teacher/:id" element={<TeacherDetail />} />
-
+        <Route path="/coursesView" element={<CoursesView />} />
+        <Route path="/courses/:id" element={<CourseDetailView />} />
       </Routes>
 
     </BrowserRouter>

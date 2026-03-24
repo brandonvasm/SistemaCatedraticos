@@ -19,14 +19,23 @@ export const TeachersTable = ({ filter }: Props) => {
       : teachers.filter((t) => getStatus(t.score) === filter);
 
   return (
-    <div className="bg-[#1e293b] p-5 rounded-2xl shadow-lg">
-      <h2 className="text-lg mb-4 font-semibold">
+    <div className="
+      bg-white/5
+      border border-white/10
+      p-5
+      rounded-2xl
+      backdrop-blur-xl
+      shadow-lg
+    ">
+
+      <h2 className="text-lg mb-4 font-semibold text-gray-200">
         Listado de Docentes
       </h2>
 
       <div className="overflow-x-auto">
         <table className="min-w-[900px] w-full text-sm">
-          <thead className="text-gray-400 border-b border-slate-700">
+
+          <thead className="text-gray-400 border-b border-white/10">
             <tr className="text-left">
               <th className="p-4">Docente</th>
               <th className="p-4">Cursos</th>
@@ -44,8 +53,10 @@ export const TeachersTable = ({ filter }: Props) => {
               <TeacherRow key={t.id} teacher={t} />
             ))}
           </tbody>
+
         </table>
       </div>
+
     </div>
   );
 };

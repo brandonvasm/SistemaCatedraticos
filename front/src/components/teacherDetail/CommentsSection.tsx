@@ -30,7 +30,6 @@ const comments = [
 export default function CommentsSection() {
 
   const total = comments.length;
-
   const good = comments.filter(c => c.sentiment === "good").length;
   const bad = comments.filter(c => c.sentiment === "bad").length;
 
@@ -38,11 +37,17 @@ export default function CommentsSection() {
   const badPercent = Math.round((bad / total) * 100);
 
   return (
-    <div className="bg-[#1c2746] p-6 rounded-xl">
+    <div className="
+      bg-white/5
+      border border-white/10
+      p-6
+      rounded-2xl
+      backdrop-blur-xl
+    ">
 
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="font-semibold">
+          <h2 className="font-semibold text-gray-200">
             Comentarios Anónimos de Estudiantes
           </h2>
           <p className="text-sm text-gray-400">
@@ -50,14 +55,21 @@ export default function CommentsSection() {
           </p>
         </div>
 
-        <button className="bg-slate-700 px-3 py-1 rounded-lg text-sm">
+        <button className="
+          bg-white/5
+          border border-white/10
+          px-3 py-1 rounded-lg text-sm
+          text-gray-300
+          hover:bg-white/10 hover:text-white
+          transition
+        ">
           Filtrar por Curso
         </button>
       </div>
 
       <div className="mb-6">
         <div className="flex justify-between text-sm mb-2">
-          <span className="flex items-center gap-1 text-green-400">
+          <span className="flex items-center gap-1 text-emerald-400">
             <ThumbsUp size={14} /> {goodPercent}% Positivo
           </span>
 
@@ -66,9 +78,9 @@ export default function CommentsSection() {
           </span>
         </div>
 
-        <div className="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
           <div
-            className="h-full bg-green-400"
+            className="h-full bg-emerald-400"
             style={{ width: `${goodPercent}%` }}
           />
         </div>
@@ -78,13 +90,27 @@ export default function CommentsSection() {
         {comments.map((c, i) => (
           <div
             key={i}
-            className="bg-[#243056] p-4 rounded-xl border border-slate-700"
+            className="
+              bg-white/5
+              border border-white/10
+              p-4 rounded-xl
+              hover:bg-white/10
+              transition
+            "
           >
 
             <div className="flex justify-between items-center mb-2">
 
               <div className="flex items-center gap-2">
-                <span className="bg-blue-500/20 text-blue-300 px-2 py-1 text-xs rounded">
+
+                <span className="
+                  bg-blue-500/10
+                  text-blue-300
+                  px-2 py-1
+                  text-xs
+                  rounded
+                  border border-blue-500/20
+                ">
                   {c.course}
                 </span>
 
@@ -93,6 +119,7 @@ export default function CommentsSection() {
                     <Star key={i} size={14} fill="currentColor" />
                   ))}
                 </div>
+
               </div>
 
               <span className="text-xs text-gray-400">
