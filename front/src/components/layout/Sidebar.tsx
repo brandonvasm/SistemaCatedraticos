@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { logoutUser } from "../../services/authService"; 
 
 import {
@@ -18,7 +18,6 @@ const menu = [
   {
     name: "Dashboard",
     icon: LayoutDashboard,
-    active: true,
     path: "/dashboard"
   },
   {
@@ -66,6 +65,10 @@ const menu = [
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+
+  const userRole = localStorage.getItem("user_role")?.toLowerCase().trim();
 
   const handleLogout = async () => {
     try {
@@ -73,10 +76,17 @@ export default function Sidebar() {
       navigate("/"); 
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
-      localStorage.removeItem("user_id");
+      localStorage.clear();
       navigate("/");
     }
   };
+
+  const filteredMenu = menu.filter(item => {
+    if (item.name === "Usuarios") {
+      return userRole === "admin";
+    }
+    return true;
+  });
 
   return (
     <div className="sidebar fixed top-0 left-0 h-screen w-64 z-50 flex flex-col">
@@ -95,15 +105,16 @@ export default function Sidebar() {
       </div>
 
       <div className="flex-1 px-3 py-4">
-        {menu.map((item, index) => {
+        {filteredMenu.map((item, index) => {
           const Icon = item.icon;
+          const isActive = location.pathname === item.path;
           return (
             <div
               key={index}
               onClick={() => navigate(item.path)} 
               className={`
                 sidebar-item
-                ${item.active ? "sidebar-active" : ""}
+                ${isActive ? "sidebar-active" : ""}
                 flex items-center justify-between
                 mb-1 cursor-pointer
               `}
@@ -125,11 +136,11 @@ export default function Sidebar() {
 
       <div className="p-4 border-t border-white/10">
         <div 
-          className="sidebar-item cursor-pointer" 
+          className={`sidebar-item cursor-pointer ${location.pathname === "/configuracion" ? "sidebar-active" : ""}`} 
           onClick={() => navigate("/configuracion")} 
         >
           <Settings size={18} />
-          Configuración
+          <span className="text-sm">Configuración</span>
         </div>
 
         <div 
@@ -137,7 +148,7 @@ export default function Sidebar() {
           onClick={handleLogout}
         >
           <LogOut size={18} />
-          Cerrar sesión
+          <span className="text-sm">Cerrar sesión</span>
         </div>
       </div>
     </div>

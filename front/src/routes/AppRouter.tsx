@@ -10,11 +10,15 @@ export default function AppRouter() {
       <Routes>
         {/*rutas publicas*/}
         <Route path="/" element={<Login />} />
+       
+       
 
         {/* ruta protediga solo con Login */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/usuarios" element={<Users />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/usuarios" element={<Users />} />
+        
+          
         
         </Route>
       </Routes>

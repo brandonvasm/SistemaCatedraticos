@@ -42,7 +42,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-200 tracking-tight">Tablero de Docentes</h2>
               <div className="text-xs text-gray-500 font-bold uppercase tracking-widest bg-black/20 px-3 py-1 rounded-full">
-                👤 12 Docentes
+                12 Docentes
               </div>
             </div>
             <TeachersGrid />

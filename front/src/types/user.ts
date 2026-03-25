@@ -1,11 +1,12 @@
-export type UserRole = 'admin' | 'coordinator';
+export type UserRole = "admin" | "coordinator";
 
 export interface UserData {
   id: number;
-  username: string;
+  username: string; 
   email: string;
   role: UserRole;
-  faculty: string;
+  faculty: string;  
   evaluation_count: number;
   is_active: boolean;
+  password?: string; 
 }
