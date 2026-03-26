@@ -21,50 +21,65 @@ const recommendations = [
 
 export default function Recommendations() {
   return (
-    <div className="bg-[#1c2746] p-6 rounded-xl border border-green-500/30">
+    <div className="
+      bg-white/5
+      border border-white/10
+      p-6
+      rounded-2xl
+      backdrop-blur-xl
+    ">
 
+      {/* Header */}
       <div className="flex items-start gap-4 mb-6">
 
-        <div className="bg-green-500/20 p-3 rounded-xl">
-          <CheckCircle className="text-green-400" size={24} />
+        <div className="
+          bg-emerald-500/10
+          p-3 rounded-xl
+          border border-emerald-500/20
+        ">
+          <CheckCircle className="text-emerald-400" size={24} />
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-lg font-semibold text-gray-200">
             Recomendación del Sistema
           </h2>
 
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-400">
             Basado en el análisis de 245 evaluaciones, tendencia histórica positiva y feedback estudiantil, el sistema recomienda:
           </p>
         </div>
 
       </div>
 
+      {/* Grid */}
       <div className="grid md:grid-cols-2 gap-4">
 
         {recommendations.map((rec, i) => (
           <div
             key={i}
-            className="bg-[#243056] p-4 rounded-xl border border-slate-600 hover:border-green-400 transition"
+            className="
+              bg-white/5
+              border border-white/10
+              p-4 rounded-xl
+              hover:bg-white/10 hover:border-emerald-500/30
+              transition-all duration-200
+            "
           >
 
-            <div className="flex justify-between items-start">
+            <div className="flex items-start gap-3">
 
-              <div className="flex items-start gap-2">
-                <CheckCircle size={16} className="text-green-400 mt-1" />
+              <CheckCircle size={16} className="text-emerald-400 mt-1" />
 
-                <div>
-                  <p className="font-medium">
-                    {rec.title}
-                  </p>
+              <div>
+                <p className="font-medium text-gray-200">
+                  {rec.title}
+                </p>
 
-                  <p className="text-sm text-gray-400">
-                    {rec.description}
-                  </p>
-                </div>
+                <p className="text-sm text-gray-400">
+                  {rec.description}
+                </p>
               </div>
-
 
             </div>
 

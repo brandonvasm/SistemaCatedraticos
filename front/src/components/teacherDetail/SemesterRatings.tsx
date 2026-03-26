@@ -7,20 +7,48 @@ const data = [
 
 export default function SemesterRatings() {
   return (
-    <div className="bg-[#1c2746] p-6 rounded-xl">
+    <div className="
+      bg-white/5
+      border border-white/10
+      p-6
+      rounded-2xl
+      backdrop-blur-xl
+    ">
 
-      <h2 className="mb-4">Calificación por Semestre</h2>
+      <h2 className="mb-4 text-gray-200 font-semibold">
+        Calificación por Semestre
+      </h2>
 
       <div className="space-y-3">
         {data.map((d) => (
           <div
             key={d.semester}
-            className="flex justify-between bg-slate-700 p-3 rounded-lg"
+            className="
+              bg-white/5
+              border border-white/10
+              p-3 rounded-lg
+              hover:bg-white/10
+              transition
+            "
           >
-            <span>{d.semester}</span>
-            <span className="text-yellow-400 font-bold">
-              {d.score}
-            </span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-300">
+                {d.semester}
+              </span>
+
+              <span className="text-blue-400 font-bold">
+                {d.score}
+              </span>
+            </div>
+
+            {/* Barra PRO */}
+            <div className="w-full bg-white/5 h-1 mt-2 rounded-full overflow-hidden">
+              <div
+                className="bg-blue-400 h-1 rounded-full"
+                style={{ width: `${d.score * 20}%` }}
+              />
+            </div>
+
           </div>
         ))}
       </div>
