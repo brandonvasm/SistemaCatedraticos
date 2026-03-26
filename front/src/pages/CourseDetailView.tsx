@@ -2,11 +2,10 @@ import CourseHeader from "../components/CourseDetailView/CourseHeader";
 import CourseStats from "../components/CourseDetailView/CourseStats";
 import CourseCharts from "../components/CourseDetailView/CourseCharts";
 import TeachersList from "../components/CourseDetailView/TeachersList";
-import DashboardLayout from "../components/layout/DashboardLayout"
+
 
 export default function CourseDetailView() {
   return (
-    <DashboardLayout>
       <div className="min-h-screen w-full px-6 py-6 text-white">
         <div className="max-w-7xl mx-auto space-y-6">
 
@@ -20,6 +19,6 @@ export default function CourseDetailView() {
 
         </div>
       </div>
-    </DashboardLayout>
+
   );
 }

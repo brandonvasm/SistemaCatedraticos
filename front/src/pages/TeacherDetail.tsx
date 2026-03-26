@@ -1,5 +1,4 @@
 import { useParams, useNavigate } from "react-router-dom";
-import DashboardLayout from "../components/layout/DashboardLayout"
 import teachers from "../data/teachers";
 import Header from "../components/teacherDetail/Header";
 import StatsCards from "../components/teacherDetail/StatsCards";
@@ -23,10 +22,9 @@ export default function TeacherDetail() {
   if (!teacher) return <p className="text-white">No encontrado</p>;
 
   return (
-    <DashboardLayout>
       <div className="min-h-screen text-white w-full">
 
-        {/* Botón volver */}
+
         <div className="px-6 pt-4">
           <button
             onClick={() => navigate(-1)}
@@ -68,6 +66,5 @@ export default function TeacherDetail() {
 
         </div>
       </div>
-    </DashboardLayout>
   );
 }

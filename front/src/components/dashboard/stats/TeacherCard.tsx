@@ -1,7 +1,7 @@
 import Card from "../../ui/Card";
 import type { Teacher } from "../../../types/teacher";
 import { TrendingUp, TrendingDown } from "lucide-react"
-import { renderStars } from "./renderStars";
+import { renderStars } from "../renderStars";
 
 
 export default function TeacherCard({ teacher }: { teacher: Teacher }) {

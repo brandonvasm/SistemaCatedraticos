@@ -31,7 +31,7 @@ export default function BarChartTeachers() {
           <YAxis domain={[0, 5]} stroke="#aaa" />
 
           <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-            {data.map((entry, index) => (
+            {data.map((_, index) => (
               <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
             ))}
           </Bar>

@@ -104,7 +104,7 @@ export const TeacherRow = ({ teacher }: { teacher: Teacher }) => {
 
       <td>
         <button
-          onClick={() => navigate(`/teacher/${teacher.id}`)}
+          onClick={() => navigate(`/docentes/${teacher.id}`)}
           className="
             bg-white/5
             border border-white/10

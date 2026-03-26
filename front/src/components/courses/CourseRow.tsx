@@ -94,7 +94,7 @@ export default function CourseRow({ course }: Props) {
 
       <td className="p-4">
         <button
-          onClick={() => navigate(`/courses/${course.code}`)}
+          onClick={() => navigate(`/cursos/${course.code}`)}
           className="
             bg-blue-500/10
             border border-blue-500/20

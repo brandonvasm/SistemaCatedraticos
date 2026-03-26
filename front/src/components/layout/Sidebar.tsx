@@ -107,7 +107,9 @@ export default function Sidebar() {
       <div className="flex-1 px-3 py-4">
         {filteredMenu.map((item, index) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = item.path === location.pathname
+          ? location.pathname === item.path
+          : location.pathname.startsWith(item.path);
           return (
             <div
               key={index}
