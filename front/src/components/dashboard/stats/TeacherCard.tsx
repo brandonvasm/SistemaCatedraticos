@@ -1,6 +1,8 @@
 import Card from "../../ui/Card";
 import type { Teacher } from "../../../types/teacher";
 import { TrendingUp, TrendingDown } from "lucide-react"
+import { renderStars } from "./renderStars";
+
 
 export default function TeacherCard({ teacher }: { teacher: Teacher }) {
   const isLow = teacher.score < 3.5;
@@ -13,14 +15,13 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
           <p className="text-[11px] text-gray-500">{teacher.students} estudiantes</p>
         </div>
         <div className={teacher.isTrendUp ? "text-success" : "text-danger"}>
-          {teacher.isTrendUp ? <TrendingUp size={16}/> : <TrendingDown size={16}/>}
+          {teacher.isTrendUp ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
         </div>
       </div>
 
-      <div className="flex gap-0.5 mt-3">
-        {[...Array(5)].map((_, i) => (
-          <span key={i} className={`text-xs ${i < 4 ? "text-accent" : "text-gray-700"}`}>★</span>
-        ))}
+
+      <div className="flex gap-1 mt-3">
+        {renderStars(teacher.score)}
       </div>
 
       <div className="mt-6 flex justify-between items-end">
