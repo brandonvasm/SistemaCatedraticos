@@ -1,65 +1,67 @@
 import { Bell, Download } from "lucide-react"
 
-export default function Navbar() {
+export default function Navbar(){
 
-	return (
+return(
 
-		<div className="h-16 flex items-center justify-between px-8 border-b border-white/10">
-
-
-
-			<input
-				type="text"
-				placeholder="Buscar docente, curso, o sección..."
-				className="
-				w-96
-				bg-white/5
-				border border-white/10
-				rounded-xl
-				px-4 py-2
-				text-sm
-				outline-none
-				"
-			/>
+<div className="fixed top-0 right-0 left-64 h-16 flex items-center justify-between px-8 border-b border-white/10 mx-8">
 
 
+<div className="flex-1 flex justify-center">
+        <input
+          type="text"
+          placeholder="Buscar docente, curso, o sección..."
+          className="
+            w-96
+            bg-white/5
+            border border-white/10
+            rounded-xl
+            px-4 py-2
+            text-sm
+            outline-none
+            text-white
+          "
+        />
+</div>
 
-			<div className="flex items-center gap-4">
 
-				<div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
-					Facultad de Ingenieria
-				</div>
 
-				<div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
-					Semestre I - 2026
-				</div>
+<div className="flex items-center gap-4">
 
-				<button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
+<div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
+Facultad de Ingenieria
+</div>
 
-					<Download size={16} />
+<div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
+Semestre I - 2026
+</div>
 
-					Exportar
+<button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm">
 
-				</button>
+<Download size={16}/>
 
-				<div className="relative">
+Exportar
 
-					<Bell />
+</button>
 
-					<span className="absolute -top-2 -right-2 bg-red-500 w-2 h-2 rounded-full" />
+<div className="relative">
 
-				</div>
+<Bell/>
 
-				<div className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center font-semibold">
+<span className="absolute -top-2 -right-2 bg-red-500 w-2 h-2 rounded-full"/>
 
-					AS
+</div>
 
-				</div>
+<div className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center font-semibold">
 
-			</div>
+AS
 
-		</div>
+</div>
 
-	)
+</div>
+
+</div>
+
+)
 
 }

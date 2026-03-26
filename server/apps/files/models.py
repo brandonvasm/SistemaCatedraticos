@@ -8,6 +8,7 @@ class File(models.Model):
         ("comments", "Comentarios"),
         ("control", "Control docente"),
         ("evaluation", "Evaluacion docente"),
+        ("pensum", "Pensum"),
     ]
 
     url = models.URLField(max_length=500, null=False)
@@ -28,7 +29,8 @@ class File(models.Model):
 
     semester = models.ForeignKey(
         "academics.Semester",
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        null=True,
     )
 
     processed = models.BooleanField(default=False)

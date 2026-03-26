@@ -43,3 +43,9 @@ class Semester(models.Model):
     faculty = models.ForeignKey(
         Faculty, on_delete=models.SET_NULL, null=True, blank=True
     )
+
+class Contract(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
+    created_at = models.DateField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
