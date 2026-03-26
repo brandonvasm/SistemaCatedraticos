@@ -1,13 +1,20 @@
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  faculty: string; 
+  evaluation_count: number;
+}
+
 export interface LoginRequest {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
 export interface LoginResponse {
-  token: string
-  user: {
-    id: number
-    name: string
-    email: string
-  }
+  message: string;
+  user_id: number;
+  user: User;
+  role: string
 }

@@ -28,7 +28,7 @@ class AuthViewSet(viewsets.ViewSet):
         )
 
         response = Response(
-            {'message': 'Login successful', "user_id": result["user"].id},
+            {'message': 'Login successful', "user_id": result["user"].id, "role": result["user"].role},
             status=status.HTTP_200_OK
             )
         
