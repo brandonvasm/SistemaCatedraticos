@@ -27,8 +27,10 @@ class AuthViewSet(viewsets.ViewSet):
             password=request.data.get("password")
         )
 
+        user_data = UserSerializer(result["user"]).data
+
         response = Response(
-            {'message': 'Login successful', "user_id": result["user"].id, "role": result["user"].role},
+            {'message': 'Login successful', "user_id": result["user"].id, "role": result["user"].role, "user": user_data},
             status=status.HTTP_200_OK
             )
         

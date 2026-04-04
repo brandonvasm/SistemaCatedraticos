@@ -1,3 +1,4 @@
+import { useState } from "react"; 
 import StatsSection from "../components/dashboard/stats/StatsSection"
 import TeachersGrid from "../components/dashboard/stats/TeachersGrid"
 import RankingCard from "../components/dashboard/stats/RankingCard";
@@ -6,10 +7,14 @@ import PerformanceScatter from "../components/dashboard/charts/PerformanceScatte
 import EfficiencyPanel from "../components/dashboard/insights/EfficiencyPanel";
 import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
 import PerformancePie from "../components/dashboard/charts/PerformancePie";
-import CourseBarChart from "../components/dashboard/courses/CourseBarChart";
-import { Award, AlertCircle } from "lucide-react";
+import CourseHealthBarChart from "../components/dashboard/courses/CourseBarChart";
+import ImportModal from "../components/common/ImportModal";
+
+import { Award, AlertCircle, FileUp } from "lucide-react"; 
 
 export default function Dashboard() {
+  const [isImportOpen, setIsImportOpen] = useState(false); 
+
   const topTeachers = [
     { name: "Dr. Juan Pérez", score: "4.9", students: "168" },
     { name: "Dr. Carlos Méndez", score: "4.8", students: "187" }
@@ -21,29 +26,54 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
+    <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
       
-      <header>
-       <h1 className="text-5xl font-black text-white tracking-tighter ">Dashboard General</h1>
-        <p className="text-gray-500 font-medium mt-1">
-          Vista completa de evaluación docente — Facultad de Ingeniería
-        </p>
+      <header className="flex justify-between items-start">
+        <div>
+          <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Dashboard General</h1>
+          <p className="text-gray-500 font-medium mt-1">
+            Vista completa de evaluación docente — Facultad de Ingeniería
+          </p>
+        </div>
+
+   
+        <button 
+          onClick={() => setIsImportOpen(true)}
+          className="btn-url bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-500 transition-all active:scale-[0.97]"
+        >
+          <FileUp size={20} className="text-black"/> Importar
+        </button>
+        
       </header>
 
       <section>
         <StatsSection />
       </section>
 
-      <section className="bg-[#11141d]/50 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-xl shadow-2xl">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl font-bold text-gray-200 tracking-tight uppercase">
-            Tablero de Docentes
-          </h2>
-          <div className="text-[10px] text-yellow-400 font-black uppercase tracking-[0.2em] bg-yellow-400/10 px-4 py-1.5 rounded-full border border-yellow-400/20">
+      <section className="bg-[#11141d]/50 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-xl shadow-2xl relative overflow-hidden group">
+        
+        <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 blur-[100px] rounded-full -ml-32 -mt-32 opacity-30 pointer-events-none" />
+
+        <div className="relative z-10 flex justify-between items-center mb-10">
+          <div className="flex items-center gap-4">
+          
+            <div className="w-1.5 h-8 bg-yellow-500 rounded-full shadow-[0_0_15px_rgba(250,204,21,0.3)]" />
+            
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight uppercase">Tablero de Docentes</h2>
+              <p className="text-xs text-gray-500 font-medium tracking-tight mt-0.5">
+                Gestión y monitoreo de personal académico
+              </p>
+            </div>
+          </div>
+          <div className="text-[10px] text-yellow-400 font-black uppercase tracking-[0.2em] bg-yellow-400/10 px-5 py-2 rounded-full border border-yellow-400/20 shadow-inner">
             12 Docentes Activos
           </div>
         </div>
-        <TeachersGrid />
+
+        <div className="relative z-10">
+          <TeachersGrid />
+        </div>
       </section>
       
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -74,10 +104,11 @@ export default function Dashboard() {
           <PerformancePie />
         </div>
 
-        <div className="bg-[#11141d]/50 border border-white/5 p-8 rounded-[2.5rem]">
-          <CourseBarChart />
-        </div>
+        <CourseHealthBarChart />
       </section>
+
+  
+      <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
     </div>
   );
 }
