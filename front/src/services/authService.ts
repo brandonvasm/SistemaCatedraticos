@@ -1,7 +1,7 @@
 import api from "../api/axios";
 import type { LoginRequest, LoginResponse, User } from "../types/auth";
 
-export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
+export const loginUser = async (data: LoginRequest): Promise<User> => {
   try {
     const response = await api.post<LoginResponse>("/users/login/", data);
     const resData = response.data;
@@ -17,7 +17,6 @@ export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
       evaluation_count: resData.user?.evaluation_count || 0
     };
 
-
     localStorage.setItem("user_id", String(resData.user_id));
     localStorage.setItem("user_data", JSON.stringify(userObject));
     
@@ -25,7 +24,7 @@ export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
       localStorage.setItem("user_role", resData.role.trim());
     }
 
-    return resData;
+    return userObject;
   } catch (error: any) {
     throw error.response?.data || new Error("ERROR EN EL LOGIN");
   }
