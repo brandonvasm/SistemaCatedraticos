@@ -10,7 +10,7 @@ export default function DocentesViews() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-5xl font-black text-white tracking-tighter">
+          <h1 className="text-5xl font-black text-white tracking-tighter uppercase">
             Gestion de Docentes
           </h1>
           <p className="text-gray-400 text-sm">

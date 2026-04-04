@@ -66,61 +66,57 @@ export default function Users() {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-white tracking-tighter uppercase">
-            Gestión de Usuarios
+      <header className="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="w-full md:w-auto">
+          <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">
+            GESTIÓN DE USUARIOS
           </h1>
-          <p className="text-gray-500 font-medium mt-2">
-            Administración de personal y control de accesos al sistema.
+          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mt-4 ml-1">
+            ADMINISTRACIÓN DE PERSONAL · CONTROL DE ACCESOS
           </p>
         </div>
         <button 
           onClick={() => { setSelectedUser(null); setIsModalOpen(true); }}
-          className="bg-yellow-400 hover:bg-yellow-500 text-black px-8 py-4 rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-yellow-400/10 transition-all active:scale-95 text-sm uppercase tracking-widest"
+          className="bg-yellow-400 hover:bg-yellow-500 text-black font-black px-8 py-4 rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-yellow-400/10 text-[11px] uppercase tracking-widest shrink-0"
         >
-          <UserPlus size={20}/> Nuevo Usuario
+          <UserPlus size={18}/> <span>Nuevo Usuario</span>
         </button>
       </header>
 
-
-      <div className="flex flex-col lg:flex-row gap-4 bg-white/[0.01] p-4 rounded-[2.5rem] border border-white/5 backdrop-blur-2xl shadow-2xl relative overflow-hidden group">
-        
-        <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
-        
-        <div className="flex-1 relative z-10">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-yellow-400 transition-colors" size={20}/>
+      <div className="glass-card p-2 flex flex-col lg:flex-row gap-2 relative overflow-hidden group border-white/5 bg-white/[0.02]">
+        <div className="flex-1 relative">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-yellow-400 transition-colors" size={18}/>
           <input 
             value={search} 
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por nombre o correo..." 
-            className="w-full bg-black/20 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white outline-none focus:border-yellow-400/30 transition-all placeholder:text-gray-700 backdrop-blur-sm"
+            placeholder="BUSCAR POR NOMBRE O CORREO..." 
+            className="w-full bg-transparent border-none py-5 pl-16 pr-6 text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase"
           />
         </div>
         
-        <select 
-          value={roleFilter} 
-          onChange={e => setRoleFilter(e.target.value)}
-          className="bg-black/20 border border-white/5 rounded-2xl px-8 py-4 text-gray-400 outline-none cursor-pointer hover:border-yellow-400/20 transition-all appearance-none backdrop-blur-sm z-10"
-        >
-          <option value="Todos" className="bg-[#0b101f] text-gray-300">Todos los roles</option>
-          <option value="admin" className="bg-[#0b101f] text-gray-300">Administradores</option>
-          <option value="coordinator" className="bg-[#0b101f] text-gray-300">Coordinadores</option>
-        </select>
+        <div className="flex gap-2 p-2">
+          <select 
+            value={roleFilter} 
+            onChange={e => setRoleFilter(e.target.value)}
+            className="bg-white/5 border border-white/10 rounded-xl px-6 py-3 text-gray-400 outline-none cursor-pointer hover:border-yellow-400/20 transition-all appearance-none font-bold text-[10px] uppercase tracking-widest min-w-[180px]"
+          >
+            <option value="Todos" className="bg-[#0b101f] text-gray-300">Todos los roles</option>
+            <option value="admin" className="bg-[#0b101f] text-gray-300">Administradores</option>
+            <option value="coordinator" className="bg-[#0b101f] text-gray-300">Coordinadores</option>
+          </select>
 
-        <button 
-          onClick={loadData} 
-          className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl text-gray-600 hover:text-white transition-all z-10 backdrop-blur-sm border border-white/5"
-          title="Refrescar datos"
-        >
-          <RefreshCcw size={20} className={`${loading ? "animate-spin text-yellow-400" : ""}`}/>
-        </button>
+          <button 
+            onClick={loadData} 
+            className="p-4 bg-white/5 hover:bg-white/10 rounded-xl text-gray-600 hover:text-white transition-all border border-white/10"
+            title="Refrescar datos"
+          >
+            <RefreshCcw size={18} className={`${loading ? "animate-spin text-yellow-400" : ""}`}/>
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white/[0.01] border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-2xl shadow-2xl relative">
-        
-        <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
-        
+      <div className="glass-card overflow-hidden relative border-white/5 bg-white/[0.01]">
+        <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
         <UserTable 
           users={users} 
           loading={loading} 
@@ -144,7 +140,7 @@ export default function Users() {
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmDisable}
         loading={isDisabling}
-        title="¿Desactivar Usuario?"
+        title="¿DESACTIVAR USUARIO?"
         message="Esta acción revocará el acceso del usuario al sistema de forma inmediata. Podrás reactivarlo editando su perfil más adelante."
       />
     </div>

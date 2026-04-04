@@ -8,6 +8,9 @@ import CoursesView from "../pages/CoursesView";
 import CourseDetailView from "../pages/CourseDetailView";
 import { ProtectedRoute } from "../ProtectedRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import SaludCarrera from "../pages/CareerHealth";
+import Settings from "../pages/Settings";
+import Recommendations from "../pages/Recommendations";
 
 export default function AppRouter() {
   return (
@@ -15,6 +18,7 @@ export default function AppRouter() {
       <Routes>
         {/* 1. RUTA PÚBLICAS */}
         <Route path="/login" element={<Login />} />
+      
 
         {/* RUTAS PROTEGIDAS */}
         <Route element={<ProtectedRoute />}>
@@ -33,9 +37,12 @@ export default function AppRouter() {
 
             <Route path="/cursos" element={<CoursesView />} />
             <Route path="/cursos/:id" element={<CourseDetailView />} />
+            
+            <Route path="/salud" element={<SaludCarrera/>} />
 
-
-            <Route path="/configuracion" element={<div>Configuración</div>} />
+            <Route path="/recomendaciones" element={<Recommendations/>} />
+  
+            <Route path="/configuracion" element={<Settings/>} />
             
           </Route>
         </Route>

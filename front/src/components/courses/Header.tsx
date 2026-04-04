@@ -5,7 +5,7 @@ export default function Header() {
     <div className="flex justify-between items-center mb-6">
 
       <div>
-        <h1 className="text-5xl font-black text-white tracking-tighter ">Gestion de Cursos</h1>
+        <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Gestion de Cursos</h1>
         <p className="text-gray-400 text-sm">
           Análisis detallado por materia y sección
         </p>
