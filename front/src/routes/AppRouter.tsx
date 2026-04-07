@@ -11,6 +11,9 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 import SaludCarrera from "../pages/CareerHealth";
 import Settings from "../pages/Settings";
 import Recommendations from "../pages/Recommendations";
+import GlobalActionsView from "../pages/GlobalActionsView";
+import ReportsView from "../pages/ReportsView";
+import NotificationsView from "../pages/NotificationsView";
 
 export default function AppRouter() {
   return (
@@ -18,37 +21,42 @@ export default function AppRouter() {
       <Routes>
         {/* 1. RUTA PÚBLICAS */}
         <Route path="/login" element={<Login />} />
-      
-
         {/* RUTAS PROTEGIDAS */}
         <Route element={<ProtectedRoute />}>
-      
+
           <Route element={<DashboardLayout />}>
-            
+
 
             <Route path="/dashboard" element={<Dashboard />} />
-          
+
             <Route path="/usuarios" element={<Users />} />
-            
+
 
             <Route path="/docentes" element={<DocentesViews />} />
             <Route path="/docentes/:id" element={<TeacherDetail />} />
-            
+
 
             <Route path="/cursos" element={<CoursesView />} />
             <Route path="/cursos/:id" element={<CourseDetailView />} />
-            
-            <Route path="/salud" element={<SaludCarrera/>} />
 
-            <Route path="/recomendaciones" element={<Recommendations/>} />
-  
-            <Route path="/configuracion" element={<Settings/>} />
+            <Route path="/salud" element={<SaludCarrera />} />
+
+            <Route path="/recomendaciones" element={<Recommendations />} />
+
+            <Route path="/configuracion" element={<Settings />} />
+
+            <Route path="/global-actions" element={<GlobalActionsView />} />
+
+            <Route path="/reports" element={<ReportsView />} />
+            
+            <Route path="/notifications" element={<NotificationsView />} />
+
             
           </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
-        
+
       </Routes>
     </BrowserRouter>
   );
