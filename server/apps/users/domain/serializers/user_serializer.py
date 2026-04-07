@@ -15,6 +15,8 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
             'role',
             'faculty',
+            'is_active',
+            'password',
             'evaluation_count',
         ]
 

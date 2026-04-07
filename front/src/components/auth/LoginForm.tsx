@@ -1,89 +1,95 @@
-import { useState } from 'react';
-import { Mail, Lock, LogIn } from "lucide-react";
+import React, { useState } from 'react';
+import { Mail, Lock, LogIn, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../../services/authService";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
+  const { setUser } = useAuth();
+  const [email, setEmail] = useState(localStorage.getItem('remembered_email') || '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-   
-    console.log("Login intent:", { email, password });
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    localStorage.setItem('remembered_email', value);
+    if (error) setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); 
+    setIsLoading(true);
+    setError(null);
+
+    if (!email.includes('@')) {
+      setError("El correo debe incluir un '@' (ejemplo@url.edu.gt)");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const loggedInUser = await loginUser({ email, password });
+      setUser(loggedInUser);
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err.detail || err.message || "Correo o contraseña incorrectos");
+      setPassword(''); 
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="w-full max-w-[400px] p-8 bg-secondary/30 border border-white/10 backdrop-blur-xl rounded-3xl shadow-2xl z-10">
+    <div className="w-full max-w-[500px] min-h-[600px] p-10 bg-[#0b101f]/60 border border-white/10 backdrop-blur-[30px] rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10 flex flex-col justify-center relative overflow-hidden">
+      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <div className="absolute -top-[30%] -left-[10%] w-[120%] h-[120%] bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.05)_0%,transparent_50%)] pointer-events-none" />
 
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-accent rounded-2xl text-black text-3xl mb-4 shadow-lg shadow-accent/20 font-bold">
-          🎓
+      <div className="text-center mb-4 flex flex-col items-center relative z-10">
+        <div className="w-full h-24 flex items-center justify-center mb-8 relative">
+          <img src="/letraslandivar.png" alt="Logo Landívar" className="h-full w-auto object-contain transform scale-[2.5] transition-transform duration-300" />
         </div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Bienvenido</h2>
-        <p className="text-gray-400 text-sm mt-1">Ingresa a EvalDocente Ingeniería</p>
+        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">BIENVENIDO</h2>
+        <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-4">EVALDOCENTE · FACULTAD DE INGENIERÍA</p>
       </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="h-24 mb-2 flex items-center relative z-10">
+        {error && (
+          <div className="w-full p-5 rounded-[2rem] bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-4 animate-in fade-in zoom-in duration-300">
+            <AlertCircle size={20} className="shrink-0" />
+            <p className="leading-tight">{error}</p>
+          </div>
+        )}
+      </div>
 
-        <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
-            Correo Electrónico
-          </label>
+      <form className="space-y-7 relative z-10" onSubmit={handleSubmit} noValidate>
+        <div className="space-y-3">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] ml-2">CORREO INSTITUCIONAL</label>
           <div className="relative group">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-accent transition-colors" size={18} />
-            <input 
-              type="email" 
-              required
-              placeholder="usuario@universidad.edu"
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <Mail className={`absolute left-6 top-1/2 -translate-y-1/2 transition-colors duration-300 ${error ? 'text-red-400/60' : 'text-gray-600 group-focus-within:text-yellow-400'}`} size={20} />
+            <input type="email" placeholder="usuario@url.edu.gt" className={`w-full bg-white/[0.02] border rounded-2xl py-5 pl-16 pr-6 text-xs font-bold text-white outline-none transition-all tracking-widest shadow-inner ${error ? 'border-red-500/40 bg-red-500/5' : 'border-white/5 focus:border-yellow-400/40 focus:bg-white/[0.05]'}`} value={email} onChange={(e) => handleEmailChange(e.target.value)} />
           </div>
         </div>
 
-
-        <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
-            Contraseña
-          </label>
+        <div className="space-y-3">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] ml-2">CONTRASEÑA</label>
           <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-accent transition-colors" size={18} />
-            <input 
-              type="password" 
-              required
-              placeholder="••••••••"
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Lock className={`absolute left-6 top-1/2 -translate-y-1/2 transition-colors duration-300 ${error ? 'text-red-400/60' : 'text-gray-600 group-focus-within:text-yellow-400'}`} size={20} />
+            <input type={showPassword ? "text" : "password"} placeholder="••••••••" className={`w-full bg-white/[0.02] border rounded-2xl py-5 pl-16 pr-16 text-xs font-bold text-white outline-none transition-all tracking-widest shadow-inner ${error ? 'border-red-500/40 bg-red-500/5' : 'border-white/5 focus:border-yellow-400/40 focus:bg-white/[0.05]'}`} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors p-1">
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
         </div>
 
-
-        <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium">
-          <label className="flex items-center gap-2 cursor-pointer hover:text-gray-300">
-            <input type="checkbox" className="w-3 h-3 rounded border-white/10 bg-white/5 accent-accent" /> 
-            Recordarme
-          </label>
-          <a href="#" className="hover:text-accent transition-colors">¿Olvidaste tu contraseña?</a>
-        </div>
-
-
-        <button 
-          type="submit"
-          className="w-full bg-accent hover:bg-yellow-500 text-black font-bold py-3.5 rounded-xl shadow-lg shadow-accent/10 flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-2"
-        >
-          <LogIn size={18} />
-          Iniciar Sesión
+        <button type="submit" disabled={isLoading} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-black py-5 rounded-[2rem] shadow-[0_10px_30px_rgba(250,204,21,0.2)] flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 uppercase tracking-[0.2em] text-[11px] mt-4">
+          {isLoading ? <Loader2 className="animate-spin" size={20} /> : <><LogIn size={20} /><span>ENTRAR AL SISTEMA</span></>}
         </button>
       </form>
-
-
-      <div className="mt-8 pt-6 border-t border-white/5 text-center">
-        <p className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.2em]">
-          Facultad de Ingeniería URL
-        </p>
-      </div>
+      <p className="text-center text-[9px] text-gray-600 font-bold uppercase tracking-widest mt-10 relative z-10">© UNIVERSIDAD RAFAEL LANDÍVAR</p>
     </div>
   );
 }
