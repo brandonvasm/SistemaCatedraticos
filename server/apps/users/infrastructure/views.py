@@ -2,11 +2,13 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 
 from django.conf import settings
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from .authentication import CookieJWTAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from ..models import User
 from ..domain.serializers.user_serializer import UserSerializer
+from ..domain.serializers.login_serializer import LoginSerializer
 from .permissions import IsSysAdmin, IsSysAdminOrCoordinator
 
 # Use cases
@@ -20,8 +22,13 @@ class AuthViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
     authentication_classes = [CookieJWTAuthentication]
 
+    @extend_schema(
+        request=LoginSerializer,
+        responses={200:{OpenApiParameter(name="message", type=str, description="Login successful")}},
+        description="Endpoint for user login. Accepts email and password, returns a success message and sets a JWT token in an HTTP-only cookie."
+    )
     def login(self, request):
-
+    
         result = LoginUseCase.execute(
             email=request.data.get("email"),
             password=request.data.get("password")
@@ -50,6 +57,10 @@ class LogoutViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
+    @extend_schema(
+        responses={200: OpenApiParameter(name="message", type=str, description="Logout successful")},
+        description="Endpoint for user logout. Deletes the JWT token from the HTTP-only cookie."
+    )
     def logout(self, request):
         response = Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
         response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE'])
