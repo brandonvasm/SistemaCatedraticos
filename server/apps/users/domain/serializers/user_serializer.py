@@ -19,7 +19,11 @@ class UserSerializer(serializers.ModelSerializer):
             'password',
             'evaluation_count',
         ]
-
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password'].write_only = True
+    
     
     def create(self, validated_data):
 
