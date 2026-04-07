@@ -28,6 +28,7 @@ class AuthViewSet(viewsets.ViewSet):
         )
 
         user_data = UserSerializer(result["user"]).data
+        user_data.pop("password", None)
 
         response = Response(
             {'message': 'Login successful', "user_id": result["user"].id, "role": result["user"].role, "user": user_data},
@@ -67,15 +68,43 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return [permission() for permission in permission_classes]
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         user = CreateUserUseCase.execute(serializer.validated_data)
-        return user
-    
-    def perform_update(self, serializer):
+
+        return Response(
+            {'message': 'User successfully created', 'user_id': user.id},
+            status=status.HTTP_201_CREATED
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
         user = UpdateUserUseCase.execute(
-            request_user=self.request.user,
+            request_user=request.user,
             target_user=serializer.instance,
             data=serializer.validated_data
         )
-        return user
+
+        return Response(
+            {'message': 'User successfully updated', 'user_id': user.id},
+            status=status.HTTP_200_OK
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.id == request.user.id:
+            return Response({'message': 'You cannot delete your own account'}, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.get(id=instance.id)
+        user.is_active = False
+        user.save()
+        return Response({'message': 'User successfully deleted'}, status=status.HTTP_200_OK)
     
