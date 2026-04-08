@@ -5,7 +5,7 @@ import NotificationsList from "../components/notifications/NotificationsList";
 
 export default function NotificationsView() {
   return (
-    <div className="min-h-screen bg-[#0b1324] text-white p-6">
+    <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
 
       <NotificationsHeader />
 

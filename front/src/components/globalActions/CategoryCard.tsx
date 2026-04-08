@@ -2,21 +2,32 @@ import CategoryCard from "./CategoryDecisions";
 
 export default function CategoryDecisions() {
   return (
-    <div className="bg-[#1c2746] p-6 rounded-xl mt-6">
+    <div className="bg-[#0f111a]/50 border border-white/10 p-6 rounded-2xl backdrop-blur-2xl shadow-xl mt-6">
 
-      <div className="flex justify-between mb-6">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
+
         <div>
-          <h2 className="font-semibold">
+          <h2 className="font-bold text-white tracking-tight">
             Decisiones Automáticas por Categoría
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-500">
             Recomendaciones del sistema basadas en evaluaciones
           </p>
         </div>
 
-        <button className="bg-yellow-400 text-black px-4 py-2 rounded-lg text-sm">
+        <button className="
+          bg-yellow-400/90
+          text-black
+          px-4 py-2
+          rounded-lg
+          text-sm font-semibold
+          hover:bg-yellow-300
+          active:scale-95
+          transition-all
+        ">
           Aplicar Todas
         </button>
+
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -30,10 +41,10 @@ export default function CategoryDecisions() {
             "Dr. Carlos Méndez (4.8)",
             "Dra. Ana Rodríguez (4.7)",
           ]}
-          bg="bg-gradient-to-br from-green-900/40 to-green-700/20"
-          border="border-green-500/40"
-          textColor="text-green-400"
-          barColor="bg-green-400"
+          bg="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5"
+          border="border-emerald-500/20"
+          textColor="text-emerald-400"
+          barColor="bg-emerald-400"
         />
 
         <CategoryCard
@@ -44,8 +55,8 @@ export default function CategoryDecisions() {
           examples={[
             "Ing. Claudia Juárez (4.4)",
           ]}
-          bg="bg-gradient-to-br from-blue-900/40 to-blue-700/20"
-          border="border-blue-500/40"
+          bg="bg-gradient-to-br from-blue-500/10 to-blue-500/5"
+          border="border-blue-500/20"
           textColor="text-blue-400"
           barColor="bg-blue-400"
         />
@@ -58,8 +69,8 @@ export default function CategoryDecisions() {
           examples={[
             "Lic. Pedro Martínez (3.8)",
           ]}
-          bg="bg-gradient-to-br from-yellow-900/40 to-yellow-700/20"
-          border="border-yellow-500/40"
+          bg="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5"
+          border="border-yellow-500/20"
           textColor="text-yellow-400"
           barColor="bg-yellow-400"
         />
@@ -72,8 +83,8 @@ export default function CategoryDecisions() {
           examples={[
             "Lic. Roberto Mejía (3.2)",
           ]}
-          bg="bg-gradient-to-br from-red-900/40 to-red-700/20"
-          border="border-red-500/40"
+          bg="bg-gradient-to-br from-red-500/10 to-red-500/5"
+          border="border-red-500/20"
           textColor="text-red-400"
           barColor="bg-red-400"
         />

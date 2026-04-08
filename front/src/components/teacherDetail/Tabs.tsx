@@ -1,4 +1,5 @@
 export default function Tabs({ tab, setTab }: any) {
+
   const tabs = [
     { id: "resumen", label: "Resumen General" },
     { id: "semestres", label: "Calificación por Semestre" },
@@ -7,26 +8,44 @@ export default function Tabs({ tab, setTab }: any) {
   ];
 
   return (
-    <div className="flex gap-3 mb-6 border-b border-white/10 pb-2">
+    <div className="
+      w-full
+      
+      rounded-2xl
+      p-2
+      backdrop-blur-2xl
+    ">
 
-      {tabs.map((t) => (
-        <button
-          key={t.id}
-          onClick={() => setTab(t.id)}
-          className={`
-            px-4 py-2 rounded-lg text-sm
-            transition-all duration-200
+      <div className="flex gap-2 flex-wrap">
 
-            ${tab === t.id
-              ? "bg-white/10 text-white border border-white/10"
-              : "bg-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200"
-            }
-          `}
-        >
-          {t.label}
-        </button>
-      ))}
+        {tabs.map((t) => {
+          const isActive = tab === t.id;
 
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`
+                px-4 py-2
+                rounded-xl
+                text-xs md:text-sm
+                font-semibold
+                tracking-wide
+                transition-all duration-300
+                border
+
+                ${isActive
+                  ? "bg-yellow-400/20 text-yellow-400 border-yellow-400/30 shadow-inner"
+                  : "bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white hover:border-white/10"
+                }
+              `}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+
+      </div>
     </div>
   );
 }

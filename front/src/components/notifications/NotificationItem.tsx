@@ -17,25 +17,39 @@ export default function NotificationItem({
   const isWarning = type === "warning";
 
   return (
-    <div className="bg-[#1c2746] p-5 rounded-xl flex justify-between items-start mb-4">
+    <div className="
+      bg-white/5
+      border border-white/10
+      p-4 rounded-xl
+      flex justify-between items-start gap-4
+      hover:bg-white/10
+      transition
+    ">
 
-      <div className="flex gap-4">
+      <div className="flex gap-3 items-start">
 
+        {/* ICONO ARREGLADO (NO MÁS ESTIRADO) */}
         <div className={`
-          p-3 rounded-lg
-          ${isWarning ? "bg-red-500/20" : "bg-green-500/20"}
+          w-10 h-10 flex items-center justify-center
+          rounded-lg shrink-0
+          ${isWarning
+            ? "bg-red-500/10 border border-red-500/20"
+            : "bg-emerald-500/10 border border-emerald-500/20"}
         `}>
           {isWarning ? (
-            <AlertTriangle className="text-red-400" />
+            <AlertTriangle size={18} className="text-red-400" />
           ) : (
-            <CheckCircle className="text-green-400" />
+            <CheckCircle size={18} className="text-emerald-400" />
           )}
         </div>
 
+        {/* CONTENIDO */}
         <div>
-          <h3 className="font-semibold">{title}</h3>
+          <h3 className="font-semibold text-gray-200">
+            {title}
+          </h3>
 
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-gray-400 mt-1 leading-relaxed">
             {description}
           </p>
 
@@ -46,15 +60,29 @@ export default function NotificationItem({
 
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* ACCIONES */}
+      <div className="flex items-center gap-2 shrink-0">
 
         {isWarning && (
-          <button className="bg-yellow-400 text-black px-3 py-1 rounded-lg text-sm">
-            Tomar Acción
+          <button className="
+            bg-yellow-400/90
+            text-black
+            px-3 py-1.5
+            rounded-lg text-xs font-medium
+            hover:bg-yellow-300
+            transition
+          ">
+            Acción
           </button>
         )}
 
-        <button className="text-gray-400 hover:text-white">
+        <button className="
+          w-7 h-7 flex items-center justify-center
+          rounded-md
+          text-gray-500
+          hover:text-white hover:bg-white/10
+          transition
+        ">
           ✕
         </button>
 

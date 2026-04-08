@@ -3,8 +3,7 @@ export default function StatsCards() {
     <div className="grid md:grid-cols-4 gap-4 mb-6">
 
       <div className="
-        bg-white/5
-        border border-white/10
+bg-secondary/40 border border-white/5
         p-5
         rounded-2xl
         backdrop-blur-xl
@@ -16,8 +15,7 @@ export default function StatsCards() {
       </div>
 
       <div className="
-        bg-white/5
-        border border-white/10
+bg-secondary/40 border border-white/5
         p-5
         rounded-2xl
         backdrop-blur-xl
@@ -29,8 +27,7 @@ export default function StatsCards() {
       </div>
 
       <div className="
-        bg-white/5
-        border border-white/10
+bg-secondary/40 border border-white/5
         p-5
         rounded-2xl
         backdrop-blur-xl
@@ -42,8 +39,7 @@ export default function StatsCards() {
       </div>
 
       <div className="
-        bg-white/5
-        border border-white/10
+bg-secondary/40 border border-white/5
         p-5
         rounded-2xl
         backdrop-blur-xl

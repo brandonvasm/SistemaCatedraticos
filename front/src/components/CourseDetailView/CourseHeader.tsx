@@ -2,7 +2,7 @@ import { BookOpen, TrendingUp } from "lucide-react";
 
 export default function CourseHeader() {
   return (
-    <div className="bg-white/5 border border-white/10 backdrop-blur-xl p-6 rounded-2xl flex justify-between items-center">
+    <div className="bg-[#0f111a]/50 border border-white/10 backdrop-blur-xl p-6 rounded-2xl flex justify-between items-center">
 
       <div className="flex gap-4 items-center">
         <div className="bg-blue-500/20 p-3 rounded-xl">

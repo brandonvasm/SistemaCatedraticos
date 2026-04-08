@@ -6,31 +6,31 @@ export default function QuickReports() {
     <div className="grid md:grid-cols-4 gap-4 mb-6">
 
       <ReportQuickCard
-        icon={<TrendingUp />}
+        icon={<TrendingUp size={18} />}
         title="Top 10 Docentes"
-        desc="Mejores evaluados del semestre"
-        color="bg-green-500/20 text-green-400"
+        desc="Mejores evaluados"
+        color="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
       />
 
       <ReportQuickCard
-        icon={<BookOpen />}
+        icon={<BookOpen size={18} />}
         title="Cursos Críticos"
-        desc="Requieren atención inmediata"
-        color="bg-orange-500/20 text-orange-400"
+        desc="Requieren atención"
+        color="bg-orange-500/10 text-orange-400 border border-orange-500/20"
       />
 
       <ReportQuickCard
-        icon={<CheckCircle />}
+        icon={<CheckCircle size={18} />}
         title="Resumen Ejecutivo"
-        desc="Métricas clave y decisiones"
-        color="bg-blue-500/20 text-blue-400"
+        desc="Métricas clave"
+        color="bg-blue-500/10 text-blue-400 border border-blue-500/20"
       />
 
       <ReportQuickCard
-        icon={<Calendar />}
-        title="Comparativa Semestral"
-        desc="vs semestre anterior"
-        color="bg-purple-500/20 text-purple-400"
+        icon={<Calendar size={18} />}
+        title="Comparativa"
+        desc="Semestre anterior"
+        color="bg-purple-500/10 text-purple-400 border border-purple-500/20"
       />
 
     </div>

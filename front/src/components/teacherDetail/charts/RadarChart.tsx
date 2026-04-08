@@ -3,6 +3,7 @@ import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
+  PolarRadiusAxis,
   ResponsiveContainer,
 } from "recharts";
 
@@ -19,32 +20,52 @@ const data = [
 
 export default function RadarChartComp() {
   return (
-    <div className="
-      bg-white/5
-      border border-white/10
-      p-6
-      rounded-2xl
-      backdrop-blur-xl
-    ">
-      <h2 className="mb-4 text-gray-200 font-semibold">
-        Evaluación por Categoría
-      </h2>
+    <div
+      className="
+      
+        p-5
+        rounded-2xl
+        backdrop-blur-2xl
+        shadow-xl
+      "
+    >
+      {/* HEADER */}
+      <div className="mb-4">
+        <h2 className="text-sm font-bold text-white tracking-tight">
+          Evaluación por Categoría
+        </h2>
+        <p className="text-[11px] text-gray-500 uppercase tracking-wider">
+          Competencias docentes
+        </p>
+      </div>
 
-      <ResponsiveContainer width="100%" height={250}>
+      {/* CHART */}
+      <ResponsiveContainer width="100%" height={260}>
         <RadarChart data={data}>
 
-          <PolarGrid stroke="rgba(255,255,255,0.1)" />
+          {/* GRID */}
+          <PolarGrid stroke="rgba(255,255,255,0.05)" />
 
+          {/* LABELS */}
           <PolarAngleAxis
             dataKey="subject"
-            tick={{ fill: "#94a3b8", fontSize: 12 }}
+            tick={{ fill: "#64748b", fontSize: 11 }}
           />
 
+          {/* ESCALA */}
+          <PolarRadiusAxis
+            angle={30}
+            domain={[0, 10]}
+            tick={{ fill: "#475569", fontSize: 10 }}
+          />
+
+          {/* RADAR */}
           <Radar
             dataKey="A"
-            stroke="#facc15"   
+            stroke="#facc15"
+            strokeWidth={2}
             fill="#facc15"
-            fillOpacity={0.3}  
+            fillOpacity={0.25}
           />
 
         </RadarChart>

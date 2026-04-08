@@ -42,8 +42,7 @@ const data = [
 export default function CoursesChart() {
   return (
     <div className="
-      bg-white/5
-      border border-white/10
+bg-[#11141d]/50 border border-white/5
       p-6
       rounded-2xl
       backdrop-blur-xl

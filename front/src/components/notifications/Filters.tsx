@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export default function Filters() {
   const filters = [
     "Todas (8)",
@@ -7,23 +9,42 @@ export default function Filters() {
     "Prioridad Media (3)",
   ];
 
-  return (
-    <div className="bg-[#1c2746] p-4 rounded-xl mb-6">
+  const [active, setActive] = useState(filters[0]);
 
-      <p className="mb-3 text-sm font-semibold">
+  return (
+    <div className="
+      bg-[#0f111a]/50
+      border border-white/10
+      p-5
+      rounded-2xl
+      backdrop-blur-2xl
+      shadow-xl
+      mb-6
+    ">
+
+      <p className="mb-4 text-sm font-semibold text-gray-300 tracking-tight">
         Filtrar Notificaciones
       </p>
 
       <div className="flex flex-wrap gap-3">
 
-        {filters.map((f, i) => (
+        {filters.map((f) => (
           <button
-            key={i}
+            key={f}
+            onClick={() => setActive(f)}
             className={`
-              px-4 py-2 rounded-lg text-sm
-              ${i === 0
-                ? "bg-yellow-400 text-black"
-                : "bg-white/5 hover:bg-white/10"}
+              px-4 py-2
+              rounded-xl
+              text-sm
+              font-medium
+              transition-all
+              active:scale-95
+
+              ${
+                active === f
+                  ? "bg-yellow-400/90 text-black shadow-sm"
+                  : "bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white"
+              }
             `}
           >
             {f}

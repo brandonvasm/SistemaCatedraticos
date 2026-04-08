@@ -45,11 +45,11 @@ export default function AppRouter() {
 
             <Route path="/configuracion" element={<Settings />} />
 
-            <Route path="/global-actions" element={<GlobalActionsView />} />
+            <Route path="/acciones" element={<GlobalActionsView />} />
 
-            <Route path="/reports" element={<ReportsView />} />
+            <Route path="/reportes" element={<ReportsView />} />
             
-            <Route path="/notifications" element={<NotificationsView />} />
+            <Route path="/notificaciones" element={<NotificationsView />} />
 
             
           </Route>

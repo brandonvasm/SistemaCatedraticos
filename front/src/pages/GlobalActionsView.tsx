@@ -5,7 +5,7 @@ import MassOperations from "../components/globalActions/MassOperations";
 
 export default function GlobalActionsView() {
 	return (
-		<div className="min-h-screen bg-[#0b1324] text-white p-6">
+    <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
 
 			<GlobalHeader />
 
