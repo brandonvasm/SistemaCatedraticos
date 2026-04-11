@@ -1,4 +1,6 @@
 from django.db.models import Avg, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,11 +13,20 @@ from .serializers import FacultySerializer, SemesterSerializer, TeacherStatsSeri
 
 
 class FacultyCreateView(APIView):
+    @extend_schema(
+        summary="Listar facultades",
+        responses={200: FacultySerializer(many=True)},
+    )
     def get(self, request):
         faculties = Faculty.objects.all()
         serializer = FacultySerializer(faculties, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary="Crear facultad",
+        request=FacultySerializer,
+        responses={201: FacultySerializer},
+    )
     def post(self, request):
         serializer = FacultySerializer(data=request.data)
         if serializer.is_valid():
@@ -31,6 +42,10 @@ class FacultyDetailView(APIView):
         except Faculty.DoesNotExist:
             return None
 
+    @extend_schema(
+        summary="Obtener facultad por ID",
+        responses={200: FacultySerializer, 404: None},
+    )
     def get(self, request, pk):
         faculty = self.get_object(pk)
         if not faculty:
@@ -39,6 +54,11 @@ class FacultyDetailView(APIView):
             )
         return Response(FacultySerializer(faculty).data)
 
+    @extend_schema(
+        summary="Actualizar parcialmente una facultad",
+        request=FacultySerializer,
+        responses={200: FacultySerializer, 404: None},
+    )
     def patch(self, request, pk):
         faculty = self.get_object(pk)
         if not faculty:
@@ -51,6 +71,10 @@ class FacultyDetailView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        summary="Eliminar facultad",
+        responses={204: None, 404: None},
+    )
     def delete(self, request, pk):
         faculty = self.get_object(pk)
         if faculty:
@@ -59,6 +83,19 @@ class FacultyDetailView(APIView):
 
 
 class SemesterListCreateView(APIView):
+    @extend_schema(
+        summary="Listar semestres",
+        parameters=[
+            OpenApiParameter(
+                name="faculty",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filtrar semestres por ID de facultad",
+                required=False,
+            )
+        ],
+        responses={200: SemesterSerializer(many=True)},
+    )
     def get(self, request):
         semesters = Semester.objects.all().order_by("-year", "-number")
         faculty_id = request.query_params.get("faculty")
@@ -66,6 +103,11 @@ class SemesterListCreateView(APIView):
             semesters = semesters.filter(faculty_id=faculty_id)
         return Response(SemesterSerializer(semesters, many=True).data)
 
+    @extend_schema(
+        summary="Crear semestre",
+        request=SemesterSerializer,
+        responses={201: SemesterSerializer},
+    )
     def post(self, request):
         serializer = SemesterSerializer(data=request.data)
         if serializer.is_valid():
@@ -74,30 +116,53 @@ class SemesterListCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class SemesterDetailView(APIView):
+    def get_object(self, pk):
+        try:
+            return Semester.objects.get(pk=pk)
+        except Semester.DoesNotExist:
+            return None
+
+    @extend_schema(
+        summary="Actualizar booleanos de un semestre",
+        request=SemesterSerializer,
+        responses={200: SemesterSerializer, 404: None},
+    )
+    def patch(self, request, pk):
+        semester = self.get_object(pk)
+        if semester is None:
+            return Response(
+                {"error": "Semester not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = SemesterSerializer(semester, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class TeacherStatsDetailView(APIView):
+    @extend_schema(
+        summary="Estadísticas de un docente",
+        responses={200: TeacherStatsSerializer},
+    )
     def get(self, request, pk):
-        # 📌 Cursos impartidos
         secciones = CourseSection.objects.filter(teacher_id=pk).select_related("course")
         cursos = list(set([s.course.name for s in secciones if s.course]))
 
-        # 📊 Promedio general y total evaluaciones
         evaluaciones_qs = StudentEvaluation.objects.filter(
             course_section__teacher_id=pk
         )
-
         stats = evaluaciones_qs.aggregate(promedio=Avg("score"), total=Count("id"))
-
         promedio = stats["promedio"] or 0.0
         total = stats["total"] or 0
 
-        # 📈 Tendencia (por semestre real)
         historico = (
             TeacherCourseHistory.objects.filter(teacher_id=pk)
             .values("semester_id")
             .annotate(avg_score=Avg("student_score"))
             .order_by("-semester_id")[:2]
         )
-
         tendencia = 0.0
         if len(historico) == 2 and historico[1]["avg_score"] > 0:
             tendencia = (
@@ -105,18 +170,15 @@ class TeacherStatsDetailView(APIView):
                 / historico[1]["avg_score"]
             ) * 100
 
-        # 📊 Comparación con TODOS los docentes (más consistente)
         promedio_global = (
             StudentEvaluation.objects.aggregate(m=Avg("score"))["m"] or 0.0
         )
-
         recomendado = (
             ((promedio - promedio_global) / promedio_global * 100)
             if promedio_global > 0
             else 0.0
         )
 
-        # 📦 Respuesta final
         data = {
             "cursos_impartidos": cursos,
             "promedio_general": round(promedio, 2),
@@ -124,5 +186,4 @@ class TeacherStatsDetailView(APIView):
             "evaluaciones_total": total,
             "recomendado_vs_otros": f"{round(recomendado, 2)}%",
         }
-
         return Response(TeacherStatsSerializer(data).data)
