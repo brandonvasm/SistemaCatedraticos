@@ -2,19 +2,27 @@ import ReportItem from "./ReportItem";
 
 export default function ReportsList() {
   return (
-    <div className="
-      bg-[#0f111a]/50
-      border border-white/10
-      p-6
-      rounded-2xl
-      backdrop-blur-2xl
-      shadow-xl
-      mb-6
-    ">
+    <div
+      className="
+        relative
+        bg-[#0f111a]/50
+        border border-white/10
+        p-6
+        rounded-[1.8rem]
+        backdrop-blur-2xl
+        shadow-xl
+        mb-10
+        overflow-hidden
+      "
+    >
+      <div className="absolute inset-0 opacity-0 hover:opacity-100 transition bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
-      <h2 className="mb-5 font-bold text-gray-200 tracking-tight">
-        Reportes Disponibles (6)
-      </h2>
+      <div className="flex items-center gap-4 mb-6">
+        <div className="h-px w-10 bg-yellow-400/30" />
+        <h2 className="text-sm font-black text-white uppercase tracking-tighter">
+          Reportes Disponibles (6)
+        </h2>
+      </div>
 
       <div className="divide-y divide-white/5">
         <ReportItem
@@ -41,7 +49,6 @@ export default function ReportsList() {
           size="5.2 MB"
         />
       </div>
-
     </div>
   );
 }

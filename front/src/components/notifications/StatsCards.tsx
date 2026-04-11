@@ -10,35 +10,35 @@ type CardProps = {
 function StatCard({ icon: Icon, title, value, color }: CardProps) {
   return (
     <div className="
-      bg-[#0f111a]/50
+      bg-white/[0.02]
       border border-white/10
-      p-5
-      rounded-2xl
+      p-6
+      rounded-[1.8rem]
       backdrop-blur-2xl
       shadow-xl
-      flex items-center gap-4
-      hover:bg-white/[0.04]
+      flex items-center gap-5
+      hover:bg-white/10
       hover:border-white/20
-      transition-all
+      hover:scale-[1.02]
+      transition-all duration-300
     ">
 
-      {/* ICON */}
       <div className={`
         p-3
-        rounded-xl
+        rounded-2xl
         border
         ${color}
+        shadow-inner
       `}>
         <Icon size={20} />
       </div>
 
-      {/* TEXT */}
       <div>
-        <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-gray-500 font-black">
           {title}
         </p>
 
-        <p className="text-2xl font-bold text-gray-200 tracking-tight">
+        <p className="text-3xl font-black text-white tracking-tighter mt-1">
           {value}
         </p>
       </div>
@@ -49,7 +49,7 @@ function StatCard({ icon: Icon, title, value, color }: CardProps) {
 
 export default function StatsCards() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
 
       <StatCard
         icon={Bell}

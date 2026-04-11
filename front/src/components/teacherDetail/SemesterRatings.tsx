@@ -16,24 +16,22 @@ export default function SemesterRatings() {
   return (
     <div
       className="
-        p-6
-        rounded-2xl
+        p-8
+        rounded-[2.5rem]
         backdrop-blur-2xl
         shadow-xl
       "
     >
-      {/* HEADER */}
-      <div className="mb-4">
-        <h2 className="text-sm font-bold text-white tracking-tight">
-          Calificación por Semestre
+      <div className="mb-6">
+        <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
+          CALIFICACIÓN POR SEMESTRE
         </h2>
-        <p className="text-[11px] text-gray-500 uppercase tracking-wider">
-          Evolución del rendimiento
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
+          EVOLUCIÓN DEL RENDIMIENTO
         </p>
       </div>
 
-      {/* LISTA */}
-      <div className="space-y-3">
+      <div className="space-y-4">
 
         {data.map((d) => {
           const color = getColor(d.score);
@@ -42,31 +40,29 @@ export default function SemesterRatings() {
             <div
               key={d.semester}
               className="
-        bg-[#0f111a]/50
+                bg-[#0f111a]/50
                 border border-white/10
-                p-3 rounded-xl
-                hover:bg-white/10
+                p-4 rounded-2xl
+                hover:bg-white/[0.05]
                 hover:border-white/20
                 transition-all
               "
             >
-              {/* HEADER ROW */}
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-300 font-medium">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
                   {d.semester}
                 </span>
 
-                <span className="text-sm font-bold text-white">
+                <span className="text-lg font-black text-white">
                   {d.score}
                 </span>
               </div>
 
-              {/* PROGRESS BAR */}
-              <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
 
                 <div
                   className={`
-                    h-1.5 rounded-full
+                    h-2 rounded-full
                     ${color}
                   `}
                   style={{ width: `${d.score * 20}%` }}

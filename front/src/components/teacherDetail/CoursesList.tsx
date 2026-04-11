@@ -20,24 +20,22 @@ export default function CoursesList() {
   return (
     <div
       className="
-        p-6
-        rounded-2xl
+        p-8
+        rounded-[2.5rem]
         backdrop-blur-2xl
         shadow-xl
       "
     >
-      {/* HEADER */}
-      <div className="mb-4">
-        <h2 className="text-sm font-bold text-white tracking-tight">
-          Cursos
+      <div className="mb-6">
+        <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
+          CURSOS
         </h2>
-        <p className="text-[11px] text-gray-500 uppercase tracking-wider">
-          Desempeño por curso
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
+          DESEMPEÑO POR CURSO
         </p>
       </div>
 
-      {/* GRID */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
         {courses.map((course, i) => {
           const status = getStatus(course.score);
@@ -46,30 +44,30 @@ export default function CoursesList() {
             <div
               key={i}
               className="
-        bg-[#0f111a]/50
+                bg-[#0f111a]/50
                 border border-white/10
-                p-4
-                rounded-xl
-                hover:bg-white/10
+                p-5
+                rounded-2xl
+                hover:bg-white/[0.05]
                 hover:border-white/20
                 transition-all
               "
             >
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">
-                Curso
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-2">
+                CURSO
               </p>
 
-              <p className="text-white font-semibold">
+              <p className="text-white font-black text-[13px] uppercase tracking-wide">
                 {course.name}
               </p>
 
-              <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center justify-between mt-4">
 
-                <span className="text-yellow-400 font-bold text-lg">
+                <span className="text-yellow-400 font-black text-xl">
                   {course.score}
                 </span>
 
-                <span className={`text-xs font-semibold ${status.color}`}>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${status.color}`}>
                   {status.label}
                 </span>
 

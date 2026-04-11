@@ -39,55 +39,59 @@ export default function CommentsSection() {
   return (
     <div
       className="
-        p-6
-        rounded-2xl
+        p-8
+        rounded-[2.5rem]
         backdrop-blur-2xl
         shadow-xl
       "
     >
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8">
         <div>
-          <h2 className="text-sm font-bold text-white tracking-tight">
-            Comentarios de Estudiantes
+          <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
+            COMENTARIOS DE ESTUDIANTES
           </h2>
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider">
-            {comments.length} comentarios registrados
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
+            {comments.length} COMENTARIOS REGISTRADOS
           </p>
         </div>
 
         <button
           className="
             bg-white/5
+            hover:bg-white/10
             border border-white/10
-            px-4 py-2
-            rounded-xl text-xs md:text-sm
-            text-gray-300
-            hover:bg-white/10 hover:text-white
-            transition
+            px-6 py-3
+            rounded-2xl
+            text-[11px]
+            font-black
+            uppercase
+            tracking-widest
+            text-gray-400
+            hover:text-white
+            transition-all
+            active:scale-95
           "
         >
           Filtrar por Curso
         </button>
       </div>
 
-      {/* SENTIMENT BAR */}
-      <div className="mb-6">
+      <div className="mb-8">
 
-        <div className="flex justify-between text-xs mb-2 font-medium">
+        <div className="flex justify-between text-[11px] mb-3 font-bold uppercase tracking-widest">
 
-          <span className="flex items-center gap-1 text-emerald-400">
-            <ThumbsUp size={14} /> {goodPercent}% Positivo
+          <span className="flex items-center gap-2 text-emerald-400">
+            <ThumbsUp size={14} /> {goodPercent}% POSITIVO
           </span>
 
-          <span className="flex items-center gap-1 text-red-400">
-            <ThumbsDown size={14} /> {badPercent}% Negativo
+          <span className="flex items-center gap-2 text-red-400">
+            <ThumbsDown size={14} /> {badPercent}% NEGATIVO
           </span>
 
         </div>
 
-        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden flex">
+        <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden flex">
           <div
             className="bg-emerald-400 h-full"
             style={{ width: `${goodPercent}%` }}
@@ -100,34 +104,35 @@ export default function CommentsSection() {
 
       </div>
 
-      {/* COMMENTS */}
-      <div className="space-y-4">
+      <div className="space-y-5">
 
         {comments.map((c, i) => (
           <div
             key={i}
             className="
-        bg-[#0f111a]/50
+              bg-[#0f111a]/50
               border border-white/10
-              p-4 rounded-xl
-              hover:bg-white/10
+              p-5 rounded-2xl
+              hover:bg-white/[0.05]
               hover:border-white/20
               transition-all
             "
           >
 
-            {/* HEADER */}
-            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
 
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
 
                 <span
                   className="
                     bg-blue-500/10
                     text-blue-400
-                    px-2 py-1
+                    px-3 py-1.5
                     text-[10px]
-                    rounded-lg
+                    font-bold
+                    uppercase
+                    tracking-widest
+                    rounded-xl
                     border border-blue-500/20
                   "
                 >
@@ -136,27 +141,25 @@ export default function CommentsSection() {
 
                 <div className="flex text-yellow-400">
                   {Array.from({ length: c.rating }).map((_, i) => (
-                    <Star key={i} size={13} fill="currentColor" />
+                    <Star key={i} size={14} fill="currentColor" />
                   ))}
                 </div>
 
               </div>
 
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
                 {c.date}
               </span>
 
             </div>
 
-            {/* TEXT */}
-            <p className="text-sm text-gray-200 leading-relaxed mb-3">
+            <p className="text-[13px] text-gray-200 leading-relaxed mb-4">
               {c.text}
             </p>
 
-            {/* FOOTER */}
-            <div className="text-[11px] text-gray-500 flex items-center gap-2">
+            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-2">
               <ThumbsUp size={12} />
-              {c.likes} personas encontraron esto útil
+              {c.likes} PERSONAS ENCONTRARON ESTO ÚTIL
             </div>
 
           </div>
@@ -165,4 +168,4 @@ export default function CommentsSection() {
       </div>
     </div>
   );
-} 
+}

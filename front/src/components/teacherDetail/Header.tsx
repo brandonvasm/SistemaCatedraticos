@@ -2,24 +2,22 @@ export default function Header({ teacher }: any) {
   return (
     <div
       className="
-        p-5 md:p-6
-        rounded-2xl
+        p-6 md:p-8
+        rounded-[2.5rem]
         backdrop-blur-2xl
         shadow-xl
       "
     >
       <div className="flex flex-col md:flex-row justify-between gap-6">
 
-        {/* INFO DOCENTE */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
 
-          {/* AVATAR */}
           <div
             className="
-              w-14 h-14
+              w-16 h-16
               rounded-2xl
               flex items-center justify-center
-              font-bold text-sm
+              font-black text-sm
               bg-gradient-to-br from-yellow-400/20 to-yellow-600/5
               text-yellow-400
               border border-yellow-400/20
@@ -32,26 +30,24 @@ export default function Header({ teacher }: any) {
               .join("")}
           </div>
 
-          {/* TEXT */}
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tighter uppercase leading-none">
               {teacher.name}
             </h1>
 
-            <p className="text-gray-400 text-sm">
-              Matemáticas Aplicadas
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
+              MATEMÁTICAS APLICADAS
             </p>
           </div>
         </div>
 
-        {/* SCORE */}
         <div className="text-right">
-          <p className="text-3xl font-bold text-yellow-400">
+          <p className="text-4xl font-black text-yellow-400">
             {teacher.score}
           </p>
 
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider">
-            245 evaluaciones
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-2">
+            245 EVALUACIONES
           </p>
         </div>
 

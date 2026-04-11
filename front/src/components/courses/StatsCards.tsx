@@ -1,53 +1,73 @@
 export default function StatsCards() {
   return (
-    <div className="grid md:grid-cols-4 gap-4 mb-6">
+    <div className="grid md:grid-cols-4 gap-5 mb-10">
 
       <div className="
-bg-secondary/40 border border-white/5
+        bg-[#0f111a]/50
+        border border-white/10
         p-5
-        rounded-2xl
-        backdrop-blur-xl
-        hover:bg-white/10
-        transition
+        rounded-[2rem]
+        backdrop-blur-2xl
+        hover:bg-white/[0.05]
+        transition-all
       ">
-        <p className="text-gray-400 text-sm">Total Cursos</p>
-        <p className="text-2xl font-bold text-gray-200">6</p>
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-3">
+          TOTAL CURSOS
+        </p>
+        <p className="text-3xl font-black text-white">
+          6
+        </p>
       </div>
 
       <div className="
-bg-secondary/40 border border-white/5
+        bg-[#0f111a]/50
+        border border-white/10
         p-5
-        rounded-2xl
-        backdrop-blur-xl
-        hover:bg-white/10
-        transition
+        rounded-[2rem]
+        backdrop-blur-2xl
+        hover:bg-white/[0.05]
+        transition-all
       ">
-        <p className="text-gray-400 text-sm">Promedio Global</p>
-        <p className="text-yellow-400 text-2xl font-bold">4.1</p>
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-3">
+          PROMEDIO GLOBAL
+        </p>
+        <p className="text-3xl font-black text-yellow-400">
+          4.1
+        </p>
       </div>
 
       <div className="
-bg-secondary/40 border border-white/5
+        bg-[#0f111a]/50
+        border border-white/10
         p-5
-        rounded-2xl
-        backdrop-blur-xl
-        hover:bg-white/10
-        transition
+        rounded-[2rem]
+        backdrop-blur-2xl
+        hover:bg-white/[0.05]
+        transition-all
       ">
-        <p className="text-gray-400 text-sm">Secciones</p>
-        <p className="text-2xl font-bold text-gray-200">41</p>
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-3">
+          SECCIONES
+        </p>
+        <p className="text-3xl font-black text-white">
+          41
+        </p>
       </div>
 
       <div className="
-bg-secondary/40 border border-white/5
+        bg-[#0f111a]/50
+        border border-white/10
         p-5
-        rounded-2xl
-        backdrop-blur-xl
-        hover:bg-white/10
-        transition
+        rounded-[2rem]
+        backdrop-blur-2xl
+        hover:bg-white/[0.05]
+        transition-all
       ">
-        <p className="text-gray-400 text-sm">Estudiantes</p>
-        <p className="text-2xl font-bold text-gray-200">1174</p>
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mb-3">
+          ESTUDIANTES
+        </p>
+        <p className="text-3xl font-black text-white">
+          1174
+        </p>
       </div>
 
     </div>

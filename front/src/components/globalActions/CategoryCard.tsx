@@ -2,35 +2,59 @@ import CategoryCard from "./CategoryDecisions";
 
 export default function CategoryDecisions() {
   return (
-    <div className="bg-[#0f111a]/50 border border-white/10 p-6 rounded-2xl backdrop-blur-2xl shadow-xl mt-6">
+    <div className="
+      bg-[#0f111a]/50
+      border border-white/10
+      p-8
+      rounded-[2.5rem]
+      backdrop-blur-2xl
+      shadow-2xl
+      mt-8
+    ">
 
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8">
 
         <div>
-          <h2 className="font-bold text-white tracking-tight">
+          <h2 className="
+            text-sm
+            font-black
+            text-white
+            tracking-tight
+          ">
             Decisiones Automáticas por Categoría
           </h2>
-          <p className="text-sm text-gray-500">
+
+          <p className="
+            text-[11px]
+            text-gray-500
+            uppercase
+            tracking-[0.2em]
+            mt-2
+          ">
             Recomendaciones del sistema basadas en evaluaciones
           </p>
         </div>
 
         <button className="
+          px-5 py-2.5
           bg-yellow-400/90
           text-black
-          px-4 py-2
-          rounded-lg
-          text-sm font-semibold
+          rounded-xl
+          text-xs
+          font-black
+          uppercase
+          tracking-wide
           hover:bg-yellow-300
           active:scale-95
           transition-all
+          shadow-lg shadow-yellow-400/10
         ">
           Aplicar Todas
         </button>
 
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-5">
 
         <CategoryCard
           title="Excelencia (≥4.5)"

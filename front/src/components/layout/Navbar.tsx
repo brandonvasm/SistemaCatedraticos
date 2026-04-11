@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Bell, Download, Search } from "lucide-react";
-import { useAuth } from "../../context/authContext";
+import { useAuth } from "../../context/AuthContext";
 import ExportModal from "../common/ExportModal";
+import NotificationsDrawer from "../notifications/NotificationsDrawer";
 
 export default function Navbar() {
   const { user } = useAuth();
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   return (
     <>
@@ -23,6 +25,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-8">
+
           <button 
             onClick={() => setIsExportOpen(true)}
             className="flex items-center gap-2 px-6 py-3 bg-yellow-400 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 transition-all active:scale-95 shadow-xl shadow-yellow-400/10"
@@ -30,7 +33,10 @@ export default function Navbar() {
             <Download size={14} /> EXPORTAR
           </button>
 
-          <div className="relative cursor-pointer group p-2">
+          <div
+            onClick={() => setIsNotificationsOpen(true)}
+            className="relative cursor-pointer group p-2"
+          >
             <Bell size={22} className="text-gray-400 group-hover:text-white transition-colors" />
             <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0b101f]" />
           </div>
@@ -53,6 +59,11 @@ export default function Navbar() {
       </nav>
 
       <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
+
+      <NotificationsDrawer
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+      />
     </>
   );
 }

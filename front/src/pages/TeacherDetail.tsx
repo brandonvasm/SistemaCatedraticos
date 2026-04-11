@@ -22,20 +22,25 @@ export default function TeacherDetail() {
   if (!teacher) return <p className="text-white">No encontrado</p>;
 
   return (
-    <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
+    <div className="relative z-0 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-      {/* BOTÓN VOLVER */}
-      <div className="px-6 pt-6">
+      <div className="px-6 pt-8">
         <button
           onClick={() => navigate(-1)}
           className="
-            bg-[#0f111a]/50
+            bg-white/5
+            hover:bg-white/10
             border border-white/10
-            px-4 py-2
-            rounded-xl text-sm
-            text-gray-300
-            hover:bg-white/10 hover:text-white
-            transition
+            px-6 py-3
+            rounded-2xl
+            text-[11px]
+            font-black
+            uppercase
+            tracking-widest
+            text-gray-400
+            hover:text-white
+            transition-all
+            active:scale-95
             backdrop-blur-xl
           "
         >
@@ -43,15 +48,13 @@ export default function TeacherDetail() {
         </button>
       </div>
 
-      {/* CONTENIDO */}
-      <div className="px-6 py-6 max-w-[1300px] mx-auto space-y-6">
+      <div className="px-6 py-6 max-w-[1300px] mx-auto space-y-8">
 
-        {/* HEADER + STATS */}
         <div className="
           bg-[#0f111a]/50
           border border-white/10
-          rounded-2xl
-          p-6
+          rounded-[2.5rem]
+          p-8
           backdrop-blur-2xl
           shadow-xl
         ">
@@ -59,18 +62,16 @@ export default function TeacherDetail() {
           <StatsCards teacher={teacher} />
         </div>
 
-        {/* TABS */}
         <div className="
           bg-[#0f111a]/50
           border border-white/10
-          rounded-2xl
-          p-4
+          rounded-[2.5rem]
+          p-5
           backdrop-blur-2xl
         ">
           <Tabs tab={tab} setTab={setTab} />
         </div>
 
-        {/* CONTENIDO DINÁMICO */}
         {tab === "resumen" && (
           <>
             <div className="grid lg:grid-cols-2 gap-6">
@@ -78,8 +79,8 @@ export default function TeacherDetail() {
               <div className="
                 bg-[#0f111a]/50
                 border border-white/10
-                rounded-2xl
-                p-4
+                rounded-[2.5rem]
+                p-5
                 backdrop-blur-2xl
               ">
                 <LineChartComp />
@@ -88,8 +89,8 @@ export default function TeacherDetail() {
               <div className="
                 bg-[#0f111a]/50
                 border border-white/10
-                rounded-2xl
-                p-4
+                rounded-[2.5rem]
+                p-5
                 backdrop-blur-2xl
               ">
                 <RadarChartComp />
@@ -100,8 +101,8 @@ export default function TeacherDetail() {
             <div className="
               bg-[#0f111a]/50
               border border-white/10
-              rounded-2xl
-              p-6
+              rounded-[2.5rem]
+              p-8
               backdrop-blur-2xl
             ">
               <CoursesList />
@@ -110,8 +111,8 @@ export default function TeacherDetail() {
             <div className="
               bg-[#0f111a]/50
               border border-white/10
-              rounded-2xl
-              p-6
+              rounded-[2.5rem]
+              p-8
               backdrop-blur-2xl
             ">
               <Tags />
@@ -123,8 +124,8 @@ export default function TeacherDetail() {
           <div className="
             bg-[#0f111a]/50
             border border-white/10
-            rounded-2xl
-            p-6
+            rounded-[2.5rem]
+            p-8
             backdrop-blur-2xl
           ">
             <SemesterRatings />
@@ -135,8 +136,8 @@ export default function TeacherDetail() {
           <div className="
             bg-[#0f111a]/50
             border border-white/10
-            rounded-2xl
-            p-6
+            rounded-[2.5rem]
+            p-8
             backdrop-blur-2xl
           ">
             <ComentariosTab />
@@ -147,8 +148,8 @@ export default function TeacherDetail() {
           <div className="
             bg-[#0f111a]/50
             border border-white/10
-            rounded-2xl
-            p-6
+            rounded-[2.5rem]
+            p-8
             backdrop-blur-2xl
           ">
             <Recommendations />
