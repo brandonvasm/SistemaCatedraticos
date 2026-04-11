@@ -13,7 +13,8 @@ import Settings from "../pages/Settings";
 import Recommendations from "../pages/Recommendations";
 import GlobalActionsView from "../pages/GlobalActionsView";
 import ReportsView from "../pages/ReportsView";
-import NotificationsView from "../pages/NotificationsView";
+import NotificationsView from "../pages/NotificationsView"
+import DataHistory from "../pages/DataHistory";
 
 export default function AppRouter() {
   return (
@@ -51,6 +52,9 @@ export default function AppRouter() {
             
             <Route path="/notificaciones" element={<NotificationsView />} />
 
+            <Route path="/historial" element={<DataHistory/>} />
+
+           
             
           </Route>
         </Route>

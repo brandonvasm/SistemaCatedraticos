@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Search, Target, BrainCircuit, CheckCircle } from "lucide-react";
+import { Search, Target } from "lucide-react";
 import { CourseCard } from "../components/recommendations/CourseCard";
 import { TeacherMatchCard } from "../components/recommendations/TeacherMatchCard";
 
 const COURSES = [
-  { id: 1, name: "Cálculo I", status: "Necesita 2" },
-  { id: 2, name: "Cálculo II", status: "Necesita 1" },
-  { id: 3, name: "Ecuaciones Diferenciales", status: "Necesita 3" },
-  { id: 4, name: "Cálculo III", status: "Necesita 1" },
-  { id: 5, name: "Ingeniería de Software", status: "Necesita 2" },
+  { id: 1, name: "Cálculo I"},
+  { id: 2, name: "Cálculo II",},
+  { id: 3, name: "Ecuaciones Diferenciales"},
+  { id: 4, name: "Cálculo III"},
+  { id: 5, name: "Ingeniería de Software"},
 ];
 
 const TEACHER_DATA = {
@@ -58,7 +58,6 @@ export default function Recommendations() {
             <CourseCard 
               key={course.id}
               name={course.name}
-              status={course.status}
               isSelected={selectedId === course.id}
               onClick={() => setSelectedId(course.id)}
             />
@@ -66,34 +65,7 @@ export default function Recommendations() {
         </div>
       </div>
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 bg-white/[0.01] border border-white/5 p-10 rounded-[3rem] backdrop-blur-2xl relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-yellow-400/[0.02] blur-[100px] rounded-full -mr-40 -mt-40 pointer-events-none" />
-        <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
-        
-        <div className="space-y-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-yellow-400/10 rounded-2xl border border-yellow-400/20 shadow-lg shadow-yellow-400/5">
-              <BrainCircuit className="text-yellow-400" size={24} />
-            </div>
-            <h2 className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Métricas del Curso</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="px-4 py-2 bg-white/5 border border-white/5 rounded-xl text-[9px] font-bold text-gray-400 uppercase tracking-widest">Cálculo II</span>
-            <span className="px-4 py-2 bg-white/5 border border-white/5 rounded-xl text-[9px] font-bold text-gray-400 uppercase tracking-widest">Álgebra Lineal</span>
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 grid grid-cols-2 gap-y-6 gap-x-10 border-l border-white/5 pl-10 relative z-10">
-          {["Experiencia previa", "Evaluación > 4.0", "Disponibilidad", "Cursos afines"].map(item => (
-            <div key={item} className="flex items-center gap-3 group">
-              <div className="p-1.5 rounded-full bg-green-500/10 border border-green-500/20 group-hover:bg-green-500/20 transition-colors">
-                <CheckCircle size={14} className="text-green-500" />
-              </div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em]">{item}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      
 
       <div className="space-y-8 pb-20">
         <div className="flex items-center gap-4 ml-2">
