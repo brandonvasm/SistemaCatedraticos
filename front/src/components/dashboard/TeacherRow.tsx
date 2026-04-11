@@ -11,46 +11,32 @@ export const TeacherRow = ({ teacher }: { teacher: Teacher }) => {
 
   const navigate = useNavigate();
 
-  const getStatus = () => {
-    if (teacher.score >= 4.5) return "Excelente";
-    if (teacher.score >= 4) return "Bueno";
-    return "Bajo";
-  };
-
-  const status = getStatus();
-
-  const statusStyles =
-    status === "Excelente"
-      ? "bg-emerald-500/10 text-emerald-400"
-      : status === "Bueno"
-        ? "bg-blue-500/10 text-blue-400"
-        : "bg-red-500/10 text-red-400";
-
   return (
-    <tr className="border-b border-white/10 hover:bg-white/5 transition-all duration-200">
-
-      <td className="p-4">
-        <div className="text-sm md:text-base font-medium text-gray-200">
-          {teacher.name}
-        </div>
-        <div className="text-xs md:text-sm text-gray-500">
-          Matemáticas Aplicadas
+    <>
+      <td className="px-6 py-5">
+        <div>
+          <div className="text-sm font-black text-white uppercase tracking-wide group-hover:text-yellow-400 transition">
+            {teacher.name}
+          </div>
+          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
+            Matemáticas Aplicadas
+          </div>
         </div>
       </td>
 
-      <td>
-        <div className="flex flex-wrap gap-1 md:gap-2">
+      <td className="px-6 py-5">
+        <div className="flex flex-wrap gap-2">
 
-          <span className="bg-blue-500/10 text-blue-300 px-2 py-1 text-[10px] md:text-xs rounded-lg border border-blue-500/20">
+          <span className="bg-blue-500/10 text-blue-300 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-xl border border-blue-500/20">
             Cálculo I
           </span>
 
-          <span className="bg-blue-500/10 text-blue-300 px-2 py-1 text-[10px] md:text-xs rounded-lg border border-blue-500/20">
+          <span className="bg-blue-500/10 text-blue-300 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-xl border border-blue-500/20">
             Cálculo II
           </span>
 
           {teacher.courses > 2 && (
-            <span className="bg-white/5 text-gray-400 px-2 py-1 text-[10px] md:text-xs rounded-lg border border-white/10">
+            <span className="bg-white/5 text-gray-400 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-xl border border-white/10">
               +{teacher.courses - 2}
             </span>
           )}
@@ -58,67 +44,82 @@ export const TeacherRow = ({ teacher }: { teacher: Teacher }) => {
         </div>
       </td>
 
-      <td>
+      <td className="px-6 py-5">
         <div className="flex flex-col">
-
-          <div className="flex scale-90 md:scale-100">
+          <div className="flex">
             {renderStars(teacher.score, 12)}
           </div>
 
-          <span className="text-gray-200 font-bold text-sm md:text-lg">
+          <span className="text-white font-black text-xl">
             {teacher.score}
           </span>
         </div>
       </td>
 
-      <td>
+      <td className="px-6 py-5">
         <div
-          className={`flex items-center gap-1 font-medium ${teacher.isTrendUp ? "text-emerald-400" : "text-red-400"
-            }`}
+          className={`flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest ${
+            teacher.isTrendUp ? "text-emerald-400" : "text-red-400"
+          }`}
         >
           {teacher.isTrendUp ? (
-            <ArrowUpRight size={14} />
+            <ArrowUpRight size={16} />
           ) : (
-            <ArrowDownRight size={14} />
+            <ArrowDownRight size={16} />
           )}
           {teacher.trend}
         </div>
       </td>
 
-      <td className="text-gray-300 font-medium">
+      <td className="px-6 py-5 text-gray-300 font-bold text-[11px] uppercase tracking-widest">
         {teacher.students}
       </td>
 
-      <td className="text-emerald-400 font-semibold">
+      <td className="px-8 py-5 text-emerald-400 font-black text-[11px] uppercase tracking-widest">
         {Math.round(teacher.score * 20)}%
       </td>
 
-      <td>
+      <td className="px-6 py-5">
         <span
-          className={`flex items-center gap-1 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium w-fit ${statusStyles}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest w-fit border ${
+            teacher.score >= 4.5
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              : teacher.score >= 4
+              ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+              : "bg-red-500/10 text-red-400 border-red-500/20"
+          }`}
         >
           <CheckCircle size={12} />
-          {status}
+          {teacher.score >= 4.5
+            ? "Excelente"
+            : teacher.score >= 4
+            ? "Bueno"
+            : "Bajo"}
         </span>
       </td>
 
-      <td>
+      <td className="px-6 py-5 text-right">
         <button
           onClick={() => navigate(`/docentes/${teacher.id}`)}
           className="
+            px-6 py-3
             bg-white/5
-            border border-white/10
-            text-gray-300
-            px-2 md:px-4 py-1 md:py-2
-            rounded-lg text-xs md:text-sm
-            hover:bg-white/10 hover:text-white
-            transition
+            hover:bg-yellow-400/20
+            border border-white/5
+            hover:border-yellow-400/30
+            text-yellow-400
+            rounded-2xl
+            text-[11px]
+            font-black
+            uppercase
+            tracking-widest
+            transition-all
+            active:scale-95
           "
         >
           Ver Detalle
         </button>
       </td>
-
-    </tr>
+    </>
   );
 };
