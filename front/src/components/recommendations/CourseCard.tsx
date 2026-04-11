@@ -1,11 +1,10 @@
 interface CourseCardProps {
   name: string;
-  status: string;
   isSelected: boolean;
   onClick: () => void;
 }
 
-export const CourseCard = ({ name, status, isSelected, onClick }: CourseCardProps) => (
+export const CourseCard = ({ name, isSelected, onClick }: CourseCardProps) => (
   <button
     onClick={onClick}
     className={`p-5 text-left transition-all duration-300 w-full relative overflow-hidden ${

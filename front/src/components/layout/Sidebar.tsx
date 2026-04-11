@@ -12,6 +12,7 @@ import {
   Bell,
   Settings,
   LogOut,
+  FolderClock,
 } from "lucide-react";
 
 const menu = [
@@ -49,6 +50,11 @@ const menu = [
     name: "Acciones Globales",
     icon: Zap,
     path: "/acciones" 
+  },
+  {
+    name: "Historial de Datos", 
+    icon: FolderClock,
+    path: "/historial" 
   },
   {
     name: "Reportes",

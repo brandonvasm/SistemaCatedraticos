@@ -11,6 +11,7 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 import SaludCarrera from "../pages/CareerHealth";
 import Settings from "../pages/Settings";
 import Recommendations from "../pages/Recommendations";
+import DataHistory from "../pages/DataHistory";
 
 export default function AppRouter() {
   return (
@@ -43,6 +44,10 @@ export default function AppRouter() {
             <Route path="/recomendaciones" element={<Recommendations/>} />
   
             <Route path="/configuracion" element={<Settings/>} />
+
+            <Route path="/historial" element={<DataHistory/>} />
+
+            
             
           </Route>
         </Route>
