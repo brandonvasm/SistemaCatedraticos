@@ -7,10 +7,11 @@ from .serializers import FileSerializer
 from .models import File
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db import transaction
 
 from .application.upload_file_use_case import UploadFileUseCase
 from .application.save_file_use_case import SaveFileUseCase
-from .application.process_file_use_case import ProcessFileUseCase
+from .application.validate_request_file import ValidateFileRequestUseCase
 
 
 
@@ -33,33 +34,38 @@ class FileView(viewsets.ModelViewSet):
         if not str_data or str_data.strip() == "":
             return Response({"error": "No metadata provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        processor = ProcessFileUseCase(file_obj, str_data)
+        processor = ValidateFileRequestUseCase(file_obj)
         uploader = UploadFileUseCase()
         saver = SaveFileUseCase()
 
-        # procesar archivo excel y validarlo
+        # validar metadatos del archivo de excel
 
         try:
-            processor.execute()
+            with transaction.atomic():
+                processor.execute()
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-        # subir archivo a la nube
+        # guardar registro en la base de datos sin url
 
+        file_record = None
+        try:
+            with transaction.atomic():
+                file_record = saver.execute("", file_obj, str_data, request.user.id)
+        except Exception as e:
+            return Response({"error": "Error saving file record: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # subir archivo a la nube
         upload_result = None
         try:
             upload_result = uploader.execute()
         except Exception as e:
             return Response({"error": "Error uploading file: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # guardar registro en la base de datos
-
-        try:
-            file_record = saver.execute(upload_result["file_url"], file_obj, str_data, request.user.id)
-            return Response(file_record, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({"error": "Error saving file record: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # actualizar url del registro en la base de datos con la url de la nube
+        cloud_url = upload_result.get("file_url")
+        registered_file = file_record.instance
+        registered_file.url = cloud_url
+        registered_file.save()
+        return Response(file_record, status=status.HTTP_201_CREATED)
         
-    
-
-    
