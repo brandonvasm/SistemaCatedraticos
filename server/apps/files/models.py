@@ -11,7 +11,9 @@ class File(models.Model):
         ("pensum", "Pensum"),
     ]
 
-    url = models.URLField(max_length=500, null=False)
+    name = models.CharField(max_length=255)
+
+    url = models.URLField(max_length=500, null=True, blank=True)
 
     size = models.IntegerField()
 
