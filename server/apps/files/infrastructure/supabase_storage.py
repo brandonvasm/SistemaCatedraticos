@@ -9,14 +9,15 @@ class SupabaseStorageService(FileRepository):
         self.client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
         self.bucket = settings.SUPABASE_BUCKET
 
-    def upload_file(self, file, destination_folder: str, file_id: int) -> dict:
+    def upload_file(self, file, faculty_id: int) -> dict:
         """
         file: objeto de archivo 
         destination_folder: carpeta dentro del bucket
         """
-        extension = file.name.split('.')[-1]
-        unique_name = f"{file_id}.{extension}"
-        blob_path = f"{destination_folder}/{unique_name}"
+        folder = "faculty_{}".format(faculty_id)
+        format = file.name.split('.')[-1].lower()
+        unique_name = f"{uuid.uuid4()}.{format}"
+        blob_path = f"{folder}/{unique_name}"
 
         file_bytes = file.read()
 
@@ -34,10 +35,11 @@ class SupabaseStorageService(FileRepository):
             "public_url": public_url
         }
 
-    def get_download_url(self, blob_path, expiration_seconds=3600):
+    def get_download_url(self, blob_path, file_name, expiration_seconds=3600):
         response = self.client.storage.from_(self.bucket).create_signed_url(
             path=blob_path,
-            expires_in=expiration_seconds
+            expires_in=expiration_seconds, 
+            options={"download": file_name}
         )
         return response.get("signedURL")
 
