@@ -9,6 +9,7 @@ class File(models.Model):
         ("control", "Control docente"),
         ("evaluation", "Evaluacion docente"),
         ("pensum", "Pensum"),
+        ("roster", "Nomina")
     ]
 
     name = models.CharField(max_length=255)
@@ -33,6 +34,11 @@ class File(models.Model):
         "academics.Semester",
         on_delete=models.CASCADE,
         null=True,
+    )
+
+    faculty = models.ForeignKey(
+        "academics.Faculty",
+        on_delete=models.CASCADE
     )
 
     processed = models.BooleanField(default=False)

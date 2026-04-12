@@ -71,6 +71,17 @@ class FileView(viewsets.ModelViewSet):
         registered_file.save()
         return Response(file_record, status=status.HTTP_201_CREATED)
 
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        blob_path = instance.url
+        try:
+            self.storage_service.delete_file(blob_path)
+        except Exception as e:
+            return Response({"error": "Error deleting file from storage: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        instance.delete()
+
     @action(detail=True, methods=['get'], url_path='download')
     def download_file(self, request, pk=None):
         file_record = self.get_object()
