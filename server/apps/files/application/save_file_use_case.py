@@ -20,6 +20,6 @@ class SaveFileUseCase:
 
         if serializer.is_valid():
             serializer.save()
-            return serializer
+            return serializer.data
         else:
             raise Exception("Error saving file record: " + str(serializer.errors))

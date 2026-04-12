@@ -10,11 +10,10 @@ from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 
-from .application.upload_file_use_case import UploadFileUseCase
+from .infrastructure.supabase_storage import SupabaseStorageService
 from .application.save_file_use_case import SaveFileUseCase
 from .application.validate_request_file import ValidateFileRequestUseCase
 from .application.process_excel import ProcessExcelUseCase
-
 
 # Create your views here.
 
@@ -24,6 +23,7 @@ class FileView(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['user', 'semester', 'format']
     parser_classes = (MultiPartParser, FormParser)
+    storage_service = SupabaseStorageService()
 
     def create(self, request, *args, **kwargs):
         file_obj = request.FILES.get("file", None)
@@ -36,7 +36,6 @@ class FileView(viewsets.ModelViewSet):
             return Response({"error": "No metadata provided"}, status=status.HTTP_400_BAD_REQUEST)
 
         processor = ValidateFileRequestUseCase(file_obj)
-        uploader = UploadFileUseCase()
         saver = SaveFileUseCase()
 
         # validar metadatos del archivo de excel
@@ -59,27 +58,46 @@ class FileView(viewsets.ModelViewSet):
         # subir archivo a la nube
 
         upload_result = None
+        folder = file_record.get("format")
         try:
-            upload_result = uploader.execute()
+            upload_result = self.storage_service.upload_file(file_obj, destination_folder=folder, file_id=file_record["id"])
         except Exception as e:
             return Response({"error": "Error uploading file: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # actualizar url del registro en la base de datos con la url de la nube
-        cloud_url = upload_result.get("file_url")
-        registered_file = file_record.instance
+        cloud_url = upload_result.get("blob_path")
+        registered_file = File.objects.get(id=file_record["id"])
         registered_file.url = cloud_url
         registered_file.save()
         return Response(file_record, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'], url_path='download')
+    def download_file(self, request, pk=None):
+        file_record = self.get_object()
+        file_path = file_record.url
+
+        try:
+            download_url = self.storage_service.get_download_url(file_path)
+            return Response({"download_url": download_url}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Error generating download URL: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=True, methods=['post'], url_path='process')
     def process_file(self, request, pk=None):
         file_record = self.get_object()
-        file_path = file_record.file.url
         file_type = file_record.format
+        file_path = file_record.url
+
+        file_bytes = self.storage_service.download_file_bytes(file_path)
+        print("File bytes length:", len(file_bytes))
+
 
         use_case = ProcessExcelUseCase()
         try:
             basic_info, records = use_case.execute(file_path=file_path, file_type=file_type)
+            file_record.processed = True
+            file_record.processed_at = timezone.now()
+            file_record.save()
             return Response({
                 "basic_info": basic_info,
                 "records": records
