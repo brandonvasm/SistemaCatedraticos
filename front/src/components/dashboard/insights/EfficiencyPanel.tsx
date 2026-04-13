@@ -20,7 +20,6 @@ export default function EfficiencyPanel() {
         </div>
         <div className="flex justify-between text-sm text-white">
           <span>Dra. Ana Rodríguez</span>
-          <span className="text-gray-500">142 est.</span>
         </div>
         <p className="text-[11px] text-green-500/70 mt-2 italic">💡 Pueden asumir más secciones o cursos complejos</p>
       </div>
@@ -31,9 +30,8 @@ export default function EfficiencyPanel() {
         </div>
         <div className="flex justify-between text-sm text-white">
           <span>Ing. Patricia López</span>
-          <span className="text-gray-500">189 est.</span>
         </div>
-        <p className="text-[11px] text-red-500/70 mt-2 italic">⚠️ Considerar redistribución de carga o apoyo adicional</p>
+        <p className="text-[11px] text-red-500/70 mt-2 italic"> Considerar redistribución de carga o apoyo adicional</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mt-auto pt-4">

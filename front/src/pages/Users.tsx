@@ -18,6 +18,7 @@ export default function Users() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("Todos");
+  const [statusFilter, setStatusFilter] = useState("active");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -77,24 +78,42 @@ export default function Users() {
         </div>
         <button 
           onClick={() => { setSelectedUser(null); setIsModalOpen(true); }}
-          className="bg-yellow-400 hover:bg-yellow-500 text-black font-black px-8 py-4 rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-yellow-400/10 text-[11px] uppercase tracking-widest shrink-0"
+          className="flex items-center gap-2 px-6 py-3 bg-yellow-400 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 transition-all active:scale-95 shadow-xl shadow-yellow-400/10"
         >
-          <UserPlus size={18}/> <span>Nuevo Usuario</span>
+          <UserPlus size={14} /> 
+          <span>NUEVO USUARIO</span>
         </button>
       </header>
 
       <div className="glass-card p-2 flex flex-col lg:flex-row gap-2 relative overflow-hidden group border-white/5 bg-white/[0.02]">
         <div className="flex-1 relative">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-yellow-400 transition-colors" size={18}/>
-          <input 
-            value={search} 
-            onChange={e => setSearch(e.target.value)}
-            placeholder="BUSCAR POR NOMBRE O CORREO..." 
-            className="w-full bg-transparent border-none py-5 pl-16 pr-6 text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase"
-          />
-        </div>
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-yellow-400 transition-colors" size={18}/>
+        <input 
+          value={search} 
+          onChange={e => setSearch(e.target.value)}
+          placeholder="BUSCAR POR NOMBRE O CORREO..." 
+          autoComplete="off"
+          name="search_field_general"
+          className="w-full bg-transparent border-none py-5 pl-16 pr-6 text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase"
+        />
+      </div>
         
         <div className="flex gap-2 p-2">
+
+          <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 items-center">
+            <button 
+              onClick={() => setStatusFilter("active")}
+              className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${statusFilter === "active" ? "bg-white/10 text-yellow-400 shadow-lg" : "text-gray-600 hover:text-gray-400"}`}
+            >
+              Activos
+            </button>
+            <button 
+              onClick={() => setStatusFilter("inactive")}
+              className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${statusFilter === "inactive" ? "bg-white/10 text-yellow-400 shadow-lg" : "text-gray-600 hover:text-gray-400"}`}
+            >
+              Inactivos
+            </button>
+          </div>
           <select 
             value={roleFilter} 
             onChange={e => setRoleFilter(e.target.value)}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom"; 
-import { X, Save, Shield, Mail, User, Lock } from "lucide-react";
+import { X, Save, Shield, Mail, User } from "lucide-react";
 import { userService } from "../../services/userService";
 import type { UserData, UserRole } from "../../types/user";
 
@@ -17,7 +17,6 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
   const [formData, setFormData] = useState<Partial<UserData>>({
     username: "",
     email: "",
-    password: "",
     role: "coordinator" as UserRole
   });
 
@@ -27,11 +26,10 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
       setFormData({
         username: selectedUser.username,
         email: selectedUser.email,
-        role: selectedUser.role,
-        password: "" 
+        role: selectedUser.role
       });
     } else {
-      setFormData({ username: "", email: "", password: "", role: "coordinator" });
+      setFormData({ username: "", email: "", role: "coordinator" });
     }
   }, [selectedUser, isOpen]);
 
@@ -45,16 +43,8 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
     try {
       const payload = { ...formData };
       if (selectedUser) {
-        if (!payload.password || payload.password.trim() === "") {
-          delete payload.password;
-        }
         await userService.updateUser(selectedUser.id, payload);
       } else {
-        if (!payload.password) {
-          setError("CONTRASEÑA REQUERIDA");
-          setLoading(false);
-          return;
-        }
         await userService.createUser(payload);
       }
       onSuccess();
@@ -66,15 +56,12 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
     }
   };
 
-
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-
       <div 
         className="fixed inset-0 bg-white/1 backdrop-blur-md transition-opacity" 
         onClick={onClose} 
       />
-
 
       <div className="relative w-full max-w-lg bg-[#0f111a] border border-white/10 rounded-[2.5rem] p-10 shadow-2xl animate-in fade-in zoom-in duration-200">
         
@@ -121,33 +108,18 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Rol</label>
-              <div className="relative">
-                <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
-                <select 
-                  value={formData.role}
-                  onChange={e => setFormData({...formData, role: e.target.value as UserRole})}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-gray-300 outline-none appearance-none"
-                >
-                  <option value="admin">Admin</option>
-                  <option value="coordinator">Coordinador</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
-                <input 
-                  type="password"
-                  value={formData.password}
-                  onChange={e => setFormData({...formData, password: e.target.value})}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40"
-                />
-              </div>
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Rol</label>
+            <div className="relative">
+              <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
+              <select 
+                value={formData.role}
+                onChange={e => setFormData({...formData, role: e.target.value as UserRole})}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-gray-300 outline-none appearance-none"
+              >
+                <option value="admin">Admin</option>
+                <option value="coordinator">Coordinador</option>
+              </select>
             </div>
           </div>
 
