@@ -4,9 +4,9 @@ export default function ExportOptions() {
   return (
     <div
       className="
-        relative
-        bg-[#0f111a]/50
-        border border-white/10
+        group relative
+        bg-white/[0.02]
+        border border-white/5
         p-6
         rounded-[1.8rem]
         backdrop-blur-2xl
@@ -14,27 +14,31 @@ export default function ExportOptions() {
         overflow-hidden
       "
     >
-      <div className="absolute inset-0 opacity-0 hover:opacity-100 transition bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+      <div className="absolute -top-20 -right-20 w-40 h-40 bg-yellow-400/[0.03] blur-[80px] rounded-full pointer-events-none" />
 
-      <div className="flex items-center gap-4 mb-6">
+      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+
+      <div className="flex items-center gap-4 mb-6 relative z-10">
         <div className="h-px w-10 bg-yellow-400/30" />
-        <h2 className="text-sm font-black text-white uppercase tracking-tighter">
+        <h2 className="text-[11px] font-black text-white uppercase tracking-tighter">
           Opciones de Exportación
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative z-10">
 
         <div
           className="
             group
-            bg-white/[0.03]
-            border border-white/10
+            bg-white/[0.02]
+            border border-white/5
             p-5
             rounded-[1.6rem]
-            hover:bg-white/[0.06]
-            hover:border-red-400/30
-            hover:scale-[1.03]
+            hover:bg-white/[0.05]
+            hover:border-yellow-400/30
+            hover:scale-[1.04]
             transition-all
             cursor-pointer
           "
@@ -45,9 +49,9 @@ export default function ExportOptions() {
               p-3
               rounded-2xl
               mb-4
-              bg-red-500/10
-              border border-red-500/20
-              text-red-400
+              bg-yellow-400/10
+              border border-yellow-400/20
+              text-yellow-400
               shadow-inner
               group-hover:scale-110
               transition
@@ -56,11 +60,11 @@ export default function ExportOptions() {
             <FileText size={18} />
           </div>
 
-          <p className="font-black text-white text-sm uppercase tracking-tight">
+          <p className="font-black text-white text-[11px] uppercase tracking-tight">
             Formato PDF
           </p>
 
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider mt-1">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">
             Para presentación
           </p>
         </div>
@@ -68,13 +72,13 @@ export default function ExportOptions() {
         <div
           className="
             group
-            bg-white/[0.03]
-            border border-white/10
+            bg-white/[0.02]
+            border border-white/5
             p-5
             rounded-[1.6rem]
-            hover:bg-white/[0.06]
-            hover:border-emerald-400/30
-            hover:scale-[1.03]
+            hover:bg-white/[0.05]
+            hover:border-green-400/30
+            hover:scale-[1.04]
             transition-all
             cursor-pointer
           "
@@ -85,9 +89,9 @@ export default function ExportOptions() {
               p-3
               rounded-2xl
               mb-4
-              bg-emerald-500/10
-              border border-emerald-500/20
-              text-emerald-400
+              bg-green-500/10
+              border border-green-500/20
+              text-green-500
               shadow-inner
               group-hover:scale-110
               transition
@@ -96,11 +100,11 @@ export default function ExportOptions() {
             <FileSpreadsheet size={18} />
           </div>
 
-          <p className="font-black text-white text-sm uppercase tracking-tight">
+          <p className="font-black text-white text-[11px] uppercase tracking-tight">
             Formato Excel
           </p>
 
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider mt-1">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">
             Para análisis
           </p>
         </div>
@@ -108,13 +112,13 @@ export default function ExportOptions() {
         <div
           className="
             group
-            bg-white/[0.03]
-            border border-white/10
+            bg-white/[0.02]
+            border border-white/5
             p-5
             rounded-[1.6rem]
-            hover:bg-white/[0.06]
-            hover:border-blue-400/30
-            hover:scale-[1.03]
+            hover:bg-white/[0.05]
+            hover:border-white/20
+            hover:scale-[1.04]
             transition-all
             cursor-pointer
           "
@@ -125,9 +129,9 @@ export default function ExportOptions() {
               p-3
               rounded-2xl
               mb-4
-              bg-blue-500/10
-              border border-blue-500/20
-              text-blue-400
+              bg-white/5
+              border border-white/10
+              text-gray-400
               shadow-inner
               group-hover:scale-110
               transition
@@ -136,11 +140,11 @@ export default function ExportOptions() {
             <File size={18} />
           </div>
 
-          <p className="font-black text-white text-sm uppercase tracking-tight">
+          <p className="font-black text-white text-[11px] uppercase tracking-tight">
             Formato CSV
           </p>
 
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider mt-1">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">
             Compatible con sistemas
           </p>
         </div>

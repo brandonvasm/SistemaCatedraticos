@@ -2,60 +2,58 @@ import CategoryCard from "./CategoryDecisions";
 
 export default function CategoryDecisions() {
   return (
-    <div className="
-      bg-[#0f111a]/50
-      border border-white/10
-      p-8
-      rounded-[2.5rem]
-      backdrop-blur-2xl
-      shadow-2xl
-      mt-8
-    ">
+    <div
+      className="
+        group relative
+        bg-white/[0.02]
+        border border-white/5
+        p-8
+        rounded-[2.5rem]
+        backdrop-blur-2xl
+        shadow-2xl
+        mt-8
+        overflow-hidden
+      "
+    >
+      <div className="absolute -top-24 -right-24 w-56 h-56 bg-yellow-400/[0.03] blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8">
+      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
 
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8 relative z-10">
         <div>
-          <h2 className="
-            text-sm
-            font-black
-            text-white
-            tracking-tight
-          ">
+          <h2 className="text-[11px] font-black text-white tracking-tight uppercase">
             Decisiones Automáticas por Categoría
           </h2>
 
-          <p className="
-            text-[11px]
-            text-gray-500
-            uppercase
-            tracking-[0.2em]
-            mt-2
-          ">
+          <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-2">
             Recomendaciones del sistema basadas en evaluaciones
           </p>
         </div>
 
-        <button className="
-          px-5 py-2.5
-          bg-yellow-400/90
-          text-black
-          rounded-xl
-          text-xs
-          font-black
-          uppercase
-          tracking-wide
-          hover:bg-yellow-300
-          active:scale-95
-          transition-all
-          shadow-lg shadow-yellow-400/10
-        ">
+        <button
+          className="
+            px-5 py-2.5
+            bg-yellow-400
+            text-black
+            rounded-xl
+            text-[11px]
+            font-black
+            uppercase
+            tracking-widest
+            hover:bg-yellow-300
+            hover:scale-[1.05]
+            active:scale-95
+            transition-all
+            shadow-lg shadow-yellow-400/20
+          "
+        >
           Aplicar Todas
         </button>
-
       </div>
 
-      <div className="grid md:grid-cols-2 gap-5">
-
+      <div className="grid md:grid-cols-2 gap-5 relative z-10">
         <CategoryCard
           title="Excelencia (≥4.5)"
           subtitle="Mantener y promover"
@@ -65,10 +63,10 @@ export default function CategoryDecisions() {
             "Dr. Carlos Méndez (4.8)",
             "Dra. Ana Rodríguez (4.7)",
           ]}
-          bg="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5"
-          border="border-emerald-500/20"
-          textColor="text-emerald-400"
-          barColor="bg-emerald-400"
+          bg="bg-green-500/10"
+          border="border-green-500/20"
+          textColor="text-green-500"
+          barColor="bg-green-500"
         />
 
         <CategoryCard
@@ -79,10 +77,10 @@ export default function CategoryDecisions() {
           examples={[
             "Ing. Claudia Juárez (4.4)",
           ]}
-          bg="bg-gradient-to-br from-blue-500/10 to-blue-500/5"
-          border="border-blue-500/20"
-          textColor="text-blue-400"
-          barColor="bg-blue-400"
+          bg="bg-white/5"
+          border="border-white/10"
+          textColor="text-gray-300"
+          barColor="bg-white/40"
         />
 
         <CategoryCard
@@ -93,8 +91,8 @@ export default function CategoryDecisions() {
           examples={[
             "Lic. Pedro Martínez (3.8)",
           ]}
-          bg="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5"
-          border="border-yellow-500/20"
+          bg="bg-yellow-400/10"
+          border="border-yellow-400/20"
           textColor="text-yellow-400"
           barColor="bg-yellow-400"
         />
@@ -107,12 +105,11 @@ export default function CategoryDecisions() {
           examples={[
             "Lic. Roberto Mejía (3.2)",
           ]}
-          bg="bg-gradient-to-br from-red-500/10 to-red-500/5"
+          bg="bg-red-500/10"
           border="border-red-500/20"
           textColor="text-red-400"
           barColor="bg-red-400"
         />
-
       </div>
     </div>
   );
