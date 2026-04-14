@@ -67,7 +67,7 @@ export default function Settings() {
           <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mt-4 ml-1">PERFIL DE USUARIO · SEGURIDAD DE ACCESO</p>
         </div>
         <button type="submit" form="settings-form" disabled={isSaving} className="bg-yellow-400 hover:bg-yellow-500 text-black font-black px-8 py-4 rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-yellow-400/10 text-[11px] uppercase tracking-widest shrink-0 disabled:opacity-50">
-          {isSaving ? <Loader2 size={18} className="animate-spin" /> : <><Save size={18} /><span>Guardar cambios</span></>}
+          {isSaving ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /><span>Guardar cambios</span></>}
         </button>
       </header>
 
