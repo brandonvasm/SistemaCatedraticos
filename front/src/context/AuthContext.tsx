@@ -4,6 +4,7 @@ import type { User } from '../types/auth';
 interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
+  logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -48,10 +49,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, isLoading]);
 
+  const logout = () => {
+    setUser(null);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       setUser, 
+      logout,
       isAuthenticated: !!user, 
       isLoading 
     }}>
