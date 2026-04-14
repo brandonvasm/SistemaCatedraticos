@@ -9,9 +9,12 @@ class File(models.Model):
         ("control", "Control docente"),
         ("evaluation", "Evaluacion docente"),
         ("pensum", "Pensum"),
+        ("roster", "Nomina")
     ]
 
-    url = models.URLField(max_length=500, null=False)
+    name = models.CharField(max_length=255)
+
+    url = models.URLField(max_length=500, null=True, blank=True)
 
     size = models.IntegerField()
 
@@ -31,6 +34,11 @@ class File(models.Model):
         "academics.Semester",
         on_delete=models.CASCADE,
         null=True,
+    )
+
+    faculty = models.ForeignKey(
+        "academics.Faculty",
+        on_delete=models.CASCADE
     )
 
     processed = models.BooleanField(default=False)

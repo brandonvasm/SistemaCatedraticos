@@ -1,18 +1,21 @@
 from django.shortcuts import render
+from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .serializers import FileSerializer
+from .serializers import FileSerializer, FileCreateSerializer
 from .models import File
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db import transaction
+from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 
-from .application.upload_file_use_case import UploadFileUseCase
+from .infrastructure.supabase_storage import SupabaseStorageService
 from .application.save_file_use_case import SaveFileUseCase
-from .application.process_file_use_case import ProcessFileUseCase
-
-
+from .application.validate_request_file import ValidateFileRequestUseCase
+from .application.process_excel import ProcessExcelUseCase
 
 # Create your views here.
 
@@ -20,9 +23,11 @@ class FileView(viewsets.ModelViewSet):
     queryset = File.objects.all()
     serializer_class = FileSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['user', 'semester', 'format']
+    filterset_fields = ['user', 'semester', 'format', 'faculty']
     parser_classes = (MultiPartParser, FormParser)
+    storage_service = SupabaseStorageService()
 
+    @extend_schema(request=FileCreateSerializer, responses=FileSerializer)
     def create(self, request, *args, **kwargs):
         file_obj = request.FILES.get("file", None)
         str_data = request.POST.get("data")
@@ -33,33 +38,67 @@ class FileView(viewsets.ModelViewSet):
         if not str_data or str_data.strip() == "":
             return Response({"error": "No metadata provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        processor = ProcessFileUseCase(file_obj, str_data)
-        uploader = UploadFileUseCase()
+        processor = ValidateFileRequestUseCase(file_obj)
         saver = SaveFileUseCase()
 
-        # procesar archivo excel y validarlo
-
+        cloud_url = ""
         try:
-            processor.execute()
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            with transaction.atomic():
+                processor.execute()
+                file_record = saver.execute("", file_obj, str_data, request.user.id)
+                
+                upload_result = self.storage_service.upload_file(file_obj, file_record.faculty.id)
+
+                cloud_url = upload_result.get("blob_path")
+                file_record.url = cloud_url
+                file_record.save()
+                return Response(FileSerializer(file_record).data, status=status.HTTP_201_CREATED)
         
-        # subir archivo a la nube
-
-        upload_result = None
-        try:
-            upload_result = uploader.execute()
         except Exception as e:
-            return Response({"error": "Error uploading file: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # guardar registro en la base de datos
-
-        try:
-            file_record = saver.execute(upload_result["file_url"], file_obj, str_data, request.user.id)
-            return Response(file_record, status=status.HTTP_201_CREATED)
-        except Exception as e:
+            self.storage_service.delete_file(cloud_url) if cloud_url != ""else None
             return Response({"error": "Error saving file record: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    
 
-    
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        blob_path = instance.url
+        try:
+            with transaction.atomic():
+                instance.delete()
+                self.storage_service.delete_file(blob_path)
+        except Exception as e:
+            return Response({"error": "Error deleting file from storage: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    @action(detail=True, methods=['get'], url_path='download')
+    def download_file(self, request, pk=None):
+        file_record = self.get_object()
+        file_path = file_record.url
+        file_name = file_record.name
+
+        try:
+            download_url = self.storage_service.get_download_url(file_path, file_name)
+            return Response({"download_url": download_url}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Error generating download URL: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    @action(detail=True, methods=['post'], url_path='process')
+    def process_file(self, request, pk=None):
+        file_record = self.get_object()
+        file_type = file_record.format
+        file_path = file_record.url
+        file_download_url = self.storage_service.get_download_url(file_path, file_record.name)
+
+        use_case = ProcessExcelUseCase()
+        try:
+            with transaction.atomic():
+                basic_info, records = use_case.execute(file_path=file_download_url, file_type=file_type)
+                file_record.processed = True
+                file_record.processed_at = timezone.now()
+                file_record.save()
+                return Response({
+                    "basic_info": basic_info,
+                    "records": records
+                }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Error processing file: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
