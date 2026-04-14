@@ -53,7 +53,7 @@ export default function LoginForm() {
           <img src="/letraslandivar.png" alt="Logo Landívar" className="h-full w-auto object-contain transform scale-[2.5] transition-transform duration-300" />
         </div>
         <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">BIENVENIDO</h2>
-        <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-4">EVALDOCENTE · FACULTAD DE INGENIERÍA</p>
+        <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-4">EVALDOCENTE</p>
       </div>
 
       <div className="h-24 mb-2 flex items-center relative z-10">

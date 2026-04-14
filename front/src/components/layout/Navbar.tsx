@@ -10,7 +10,7 @@ export default function Navbar() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-  const currentFacultad = localStorage.getItem("currentFacultad") || localStorage.getItem("pendingFacultad") || "DASHBOARD GENERAL";
+  const currentFacultad = "Ingenieria";
 
   const userRole = localStorage.getItem("user_role")?.toLowerCase().trim();
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom"; 
-import { X, Save, Shield, Mail, User } from "lucide-react";
+import { X, Save, Shield, Mail, User, Lock } from "lucide-react";
 import { userService } from "../../services/userService";
 import type { UserData, UserRole } from "../../types/user";
 
@@ -14,10 +14,11 @@ interface Props {
 export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<UserData>>({
+  const [formData, setFormData] = useState<Partial<UserData & { password?: string }>>({
     username: "",
     email: "",
-    role: "coordinator" as UserRole
+    role: "coordinator" as UserRole,
+    password: ""
   });
 
   useEffect(() => {
@@ -26,10 +27,11 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
       setFormData({
         username: selectedUser.username,
         email: selectedUser.email,
-        role: selectedUser.role
+        role: selectedUser.role,
+        password: "" 
       });
     } else {
-      setFormData({ username: "", email: "", role: "coordinator" });
+      setFormData({ username: "", email: "", role: "coordinator", password: "" });
     }
   }, [selectedUser, isOpen]);
 
@@ -37,15 +39,21 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+
+    if (!selectedUser && (formData.password?.length || 0) < 6) {
+      setError("LA CONTRASEÑA DEBE TENER AL MENOS 6 CARACTERES");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const payload = { ...formData };
       if (selectedUser) {
-        await userService.updateUser(selectedUser.id, payload);
+        await userService.updateUser(selectedUser.id, { role: formData.role });
       } else {
-        await userService.createUser(payload);
+        await userService.createUser(formData);
       }
       onSuccess();
       onClose();
@@ -87,9 +95,10 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
               <input 
                 required
+                readOnly={!!selectedUser}
                 value={formData.username}
                 onChange={e => setFormData({...formData, username: e.target.value})}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40"
+                className={`w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40 ${selectedUser ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             </div>
           </div>
@@ -101,12 +110,30 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
               <input 
                 required
                 type="email"
+                readOnly={!!selectedUser}
                 value={formData.email}
                 onChange={e => setFormData({...formData, email: e.target.value})}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40"
+                className={`w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40 ${selectedUser ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             </div>
           </div>
+
+          {!selectedUser && (
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Contraseña</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
+                <input 
+                  required
+                  type="password"
+                  value={formData.password}
+                  onChange={e => setFormData({...formData, password: e.target.value})}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40"
+                  placeholder="Min. 6 caracteres"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Rol</label>
@@ -128,7 +155,7 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
             disabled={loading}
             className="w-full mt-4 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-800 text-black font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all active:scale-[0.97]"
           >
-            {loading ? <div className="w-6 h-6 border-4 border-black/20 border-t-black rounded-full animate-spin" /> : <><Save size={20}/> CONFIRMAR REGISTRO</>}
+            {loading ? <div className="w-6 h-6 border-4 border-black/20 border-t-black rounded-full animate-spin" /> : <><Save size={20}/> CONFIRMAR {selectedUser ? "CAMBIOS" : "REGISTRO"}</>}
           </button>
         </form>
       </div>
