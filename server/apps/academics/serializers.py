@@ -53,6 +53,8 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 
 class TeacherStatsSerializer(serializers.Serializer):
+    teacher_id = serializers.IntegerField()
+    teacher_name = serializers.CharField()
     cursos_impartidos = serializers.ListField(child=serializers.CharField())
     promedio_general = serializers.FloatField()
     tendencia_mejora = serializers.CharField()
