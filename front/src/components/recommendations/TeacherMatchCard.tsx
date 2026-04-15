@@ -1,4 +1,4 @@
-import { Star, Award, Users, CheckCircle } from "lucide-react";
+import { Star} from "lucide-react";
 
 export const TeacherMatchCard = ({ teacher }: any) => (
   <div className="glass-card group relative p-8 transition-all hover:bg-white/10 hover:border-white/20">
@@ -10,7 +10,6 @@ export const TeacherMatchCard = ({ teacher }: any) => (
         </div>
         <div className="text-center">
           <span className="text-4xl font-black text-white tracking-tighter">{teacher.match}%</span>
-          <p className="text-[8px] font-black text-yellow-500 uppercase tracking-widest mt-1">Match Score</p>
         </div>
       </div>
 
@@ -19,12 +18,8 @@ export const TeacherMatchCard = ({ teacher }: any) => (
           <div>
             <h3 className="text-2xl font-black text-white uppercase tracking-tight">{teacher.name}</h3>
             <div className="flex gap-4 mt-3">
-              <span className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
-                <Award size={14} className="text-yellow-500"/> {teacher.specialty}
-              </span>
-              <span className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
-                <Users size={14} className="text-yellow-500"/> {teacher.experience}
-              </span>
+              
+              
               <span className="px-2 py-0.5 variant-green rounded text-[9px] font-bold uppercase">
                 Cumple requisitos
               </span>
@@ -50,12 +45,6 @@ export const TeacherMatchCard = ({ teacher }: any) => (
             </div>
           </div>
           <div className="space-y-2">
-            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">Fortalezas:</span>
-            {teacher.strengths.map((s: string) => (
-              <div key={s} className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
-                <CheckCircle size={12} className="text-green-500" /> {s}
-              </div>
-            ))}
           </div>
         </div>
         <div className="p-5 bg-white/5 border border-white/10 rounded-[1.5rem] shadow-inner">

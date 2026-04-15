@@ -36,9 +36,9 @@ class ProcessExcelUseCase:
     # Retorna el validador correcto según el tipo de archivo
     def _get_validator(self, file_type: str):
         validators = {
-            "control_docente": ControlDocenteValidator(),
-            "evaluacion_docente": EvaluacionDocenteValidator(),
-            "comentarios": ComentariosValidator(),
+            "control": ControlDocenteValidator(),
+            "evaluation": EvaluacionDocenteValidator(),
+            "comments": ComentariosValidator(),
             "ceat": CeatValidator(),
         }
 

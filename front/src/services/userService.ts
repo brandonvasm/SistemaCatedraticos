@@ -2,10 +2,11 @@ import api from "../api/axios";
 import type { UserData } from "../types/user";
 
 export const userService = {
-  getUsers: async (search?: string, role?: string): Promise<UserData[]> => {
+  getUsers: async (search?: string, role?: string, status?: string): Promise<UserData[]> => {
     const params: any = {};
     if (search) params.search = search;
     if (role && role !== "Todos") params.role = role;
+    if (status) params.status = status;
 
 
     const response = await api.get<UserData[]>("/users/management/", { params });

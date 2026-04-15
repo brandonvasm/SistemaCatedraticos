@@ -7,7 +7,7 @@ interface TeacherProps {
   color: 'green' | 'red';
 }
 
-export const TeacherRow = ({ name, score, students, color }: TeacherProps) => (
+export const TeacherRow = ({ name, score,  color }: TeacherProps) => (
   <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all group">
     <div className="flex items-center gap-3">
       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl bg-${color}-500/10 border border-${color}-500/20`}>👤</div>
@@ -15,7 +15,7 @@ export const TeacherRow = ({ name, score, students, color }: TeacherProps) => (
         <p className="text-sm font-bold text-white group-hover:text-accent transition-colors">{name}</p>
         <div className="flex items-center gap-2 text-[10px] text-gray-500 uppercase font-black">
           <Star size={10} className="text-yellow-500" fill="currentColor" />
-          <span>{students} Estudiantes</span>
+
         </div>
       </div>
     </div>

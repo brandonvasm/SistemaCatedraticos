@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Shield, Mail, User, Circle } from "lucide-react";
+import { Edit2, Trash2, Shield, Mail, User, Circle, RotateCcw } from "lucide-react";
 import type { UserData } from "../../types/user";
 
 interface Props {
@@ -46,7 +46,6 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
                 </div>
               </td>
 
-     
               <td className="px-8 py-5">
                 <span className={`text-[9px] font-black uppercase px-3 py-1.5 rounded-xl flex items-center gap-2 w-fit border ${
                   user.role === 'admin' 
@@ -57,7 +56,6 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
                   {user.role}
                 </span>
               </td>
-
 
               <td className="px-8 py-5">
                 {user.is_active ? (
@@ -76,7 +74,6 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
                 )}
               </td>
 
-
               <td className="px-8 py-5 text-right">
                 <div className="flex justify-end gap-3">
                   <button 
@@ -86,13 +83,27 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
                   >
                     <Edit2 size={18} />
                   </button>
-                  <button 
-                    onClick={() => onDelete(user.id!)} 
-                    className="p-3 bg-white/5 hover:bg-red-500/20 rounded-2xl text-red-400 border border-white/5 hover:border-red-500/30 transition-all active:scale-90"
-                    title="Eliminar"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+
+
+                  {user.is_active === true ? (
+                    <button 
+                      key="btn-desactivar"
+                      onClick={() => onDelete(user.id!)} 
+                      className="p-3 bg-white/5 hover:bg-red-500/20 rounded-2xl text-red-400 border border-white/5 hover:border-red-500/30 transition-all active:scale-90"
+                      title="Desactivar"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  ) : (
+                    <button 
+                      key="btn-reactivar"
+                      onClick={() => onDelete(user.id!)} 
+                      className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-2xl text-emerald-400 border border-white/5 hover:border-emerald-500/30 transition-all active:scale-90"
+                      title="Reactivar"
+                    >
+                      <RotateCcw size={18} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

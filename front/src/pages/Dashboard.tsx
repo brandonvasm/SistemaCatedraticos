@@ -28,20 +28,20 @@ export default function Dashboard() {
   return (
     <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
       
-      <header className="flex justify-between items-start">
+      <header className="flex justify-between items-center">
         <div>
           <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Dashboard General</h1>
-          <p className="text-gray-500 font-medium mt-1">
-            Vista completa de evaluación docente — Facultad de Ingeniería
+          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mt-4 ml-1">
+            VISTA COMPLETA - EVALUACIONES
           </p>
         </div>
 
    
         <button 
           onClick={() => setIsImportOpen(true)}
-          className="btn-url bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-500 transition-all active:scale-[0.97]"
+          className="flex items-center gap-2 px-6 py-3 bg-yellow-400 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 transition-all active:scale-95 shadow-xl shadow-yellow-400/10 border-none"
         >
-          <FileUp size={20} className="text-black"/> Importar
+          <FileUp size={14} /> IMPORTAR
         </button>
         
       </header>

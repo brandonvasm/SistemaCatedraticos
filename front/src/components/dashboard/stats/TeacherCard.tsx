@@ -12,7 +12,6 @@ export default function TeacherCard({ teacher }: { teacher: Teacher }) {
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-gray-200 group-hover:text-white transition-colors">{teacher.name}</h3>
-          <p className="text-[11px] text-gray-500">{teacher.students} estudiantes</p>
         </div>
         <div className={teacher.isTrendUp ? "text-success" : "text-danger"}>
           {teacher.isTrendUp ? <TrendingUp size={16} /> : <TrendingDown size={16} />}

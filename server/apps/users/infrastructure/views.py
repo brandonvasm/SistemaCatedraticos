@@ -114,8 +114,14 @@ class UserViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.id == request.user.id:
             return Response({'message': 'You cannot delete your own account'}, status=status.HTTP_400_BAD_REQUEST)
-        user = User.objects.get(id=instance.id)
-        user.is_active = False
-        user.save()
-        return Response({'message': 'User successfully deleted'}, status=status.HTTP_200_OK)
+        instance.is_active = not instance.is_active
+        instance.save()
+        
+        # Mensaje dinámico según el nuevo estado
+        estado = "activado" if instance.is_active else "desactivado"
+        
+        return Response({
+            'message': f'Usuario {estado} correctamente',
+            'is_active': instance.is_active
+        }, status=status.HTTP_200_OK)
     

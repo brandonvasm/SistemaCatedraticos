@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+
 
 export default function Header() {
   return (
@@ -13,25 +13,9 @@ export default function Header() {
         </p>
       </div>
 
-      <button className="
-        bg-yellow-400 hover:bg-yellow-500
-        text-black
-        font-black
-        px-8 py-4
-        rounded-2xl
-        flex items-center gap-3
-        transition-all
-        active:scale-95
-        shadow-xl shadow-yellow-400/10
-        text-[11px]
-        uppercase
-        tracking-widest
-        shrink-0
-      ">
-        <Download size={18} />
-        <span>Exportar</span>
-      </button>
+      
 
     </div>
   );
 }
+
