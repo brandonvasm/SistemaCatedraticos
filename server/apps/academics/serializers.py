@@ -1,16 +1,13 @@
 from rest_framework import serializers
-from dataclasses import fields
 
-from .models import Faculty, Semester, Contract, Teacher
+from .models import Contract, Faculty, Semester, Teacher
+
 
 class FacultySerializer(serializers.ModelSerializer):
     class Meta:
         model = Faculty
-        fields = [
-            "id", 
-            "name", 
-            "pensum_loaded"
-        ]
+        fields = ["id", "name", "pensum_loaded"]
+
 
 class SemesterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,21 +23,40 @@ class SemesterSerializer(serializers.ModelSerializer):
             "status",
             "faculty",
         ]
-        
+
+
 class ContractSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contract
-        fields = ['id', 'teacher', 'faculty', 'created_at', 'is_active']
+        fields = ["id", "teacher", "faculty", "created_at", "is_active"]
+
 
 class TeacherSerializer(serializers.ModelSerializer):
     faculty_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Teacher
-        fields = ['id', 'identity_code', 'name', 'created_at', 'is_active', 'faculty_id']
+        fields = [
+            "id",
+            "identity_code",
+            "name",
+            "created_at",
+            "is_active",
+            "faculty_id",
+        ]
 
     def create(self, validated_data):
-        faculty_id = validated_data.pop('faculty_id')
+        faculty_id = validated_data.pop("faculty_id")
         teacher = Teacher.objects.create(**validated_data)
         Contract.objects.create(teacher=teacher, faculty_id=faculty_id)
         return teacher
+
+
+class TeacherStatsSerializer(serializers.Serializer):
+    teacher_id = serializers.IntegerField()
+    teacher_name = serializers.CharField()
+    cursos_impartidos = serializers.ListField(child=serializers.CharField())
+    promedio_general = serializers.FloatField()
+    tendencia_mejora = serializers.CharField()
+    evaluaciones_total = serializers.IntegerField()
+    recomendado_vs_otros = serializers.CharField()
