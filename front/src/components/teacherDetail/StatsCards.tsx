@@ -1,6 +1,5 @@
 import {
   TrendingUp,
-  Users,
   BookOpen,
   CheckCircle,
 } from "lucide-react";
@@ -30,26 +29,7 @@ export default function StatsCards({ teacher }: any) {
         </p>
       </div>
 
-      <div className="
-        bg-[#0f111a]/50
-        border border-white/10
-        p-5 rounded-[2rem]
-        backdrop-blur-2xl
-        hover:border-blue-500/30
-        transition-all
-      ">
-        <div className="flex justify-between items-center mb-3">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em]">
-            ESTUDIANTES
-          </p>
-
-          <Users size={16} className="text-blue-400" />
-        </div>
-
-        <p className="text-3xl font-black text-white">
-          {teacher.students}
-        </p>
-      </div>
+      
 
       <div className="
         bg-[#0f111a]/50

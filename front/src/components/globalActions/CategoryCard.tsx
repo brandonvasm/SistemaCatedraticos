@@ -2,60 +2,27 @@ import CategoryCard from "./CategoryDecisions";
 
 export default function CategoryDecisions() {
   return (
-    <div className="
-      bg-[#0f111a]/50
-      border border-white/10
-      p-8
-      rounded-[2.5rem]
-      backdrop-blur-2xl
-      shadow-2xl
-      mt-8
-    ">
+    <div className="bg-secondary/40 border border-white/5 p-8 rounded-2xl backdrop-blur-md shadow-xl mt-8 relative overflow-hidden">
+      
+      <div className="absolute top-0 left-0 w-56 h-56 bg-yellow-400/10 blur-[100px] rounded-full -ml-28 -mt-28 opacity-20 pointer-events-none" />
 
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8">
-
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8 relative z-10">
         <div>
-          <h2 className="
-            text-sm
-            font-black
-            text-white
-            tracking-tight
-          ">
+          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">
             Decisiones Automáticas por Categoría
-          </h2>
+          </p>
 
-          <p className="
-            text-[11px]
-            text-gray-500
-            uppercase
-            tracking-[0.2em]
-            mt-2
-          ">
+          <p className="text-gray-500 text-[10px] leading-tight font-medium">
             Recomendaciones del sistema basadas en evaluaciones
           </p>
         </div>
 
-        <button className="
-          px-5 py-2.5
-          bg-yellow-400/90
-          text-black
-          rounded-xl
-          text-xs
-          font-black
-          uppercase
-          tracking-wide
-          hover:bg-yellow-300
-          active:scale-95
-          transition-all
-          shadow-lg shadow-yellow-400/10
-        ">
+        <button className="px-5 py-2.5 bg-yellow-400 text-black rounded-xl text-[10px] font-bold tracking-widest uppercase hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20">
           Aplicar Todas
         </button>
-
       </div>
 
-      <div className="grid md:grid-cols-2 gap-5">
-
+      <div className="grid md:grid-cols-2 gap-6 relative z-10">
         <CategoryCard
           title="Excelencia (≥4.5)"
           subtitle="Mantener y promover"
@@ -65,10 +32,10 @@ export default function CategoryDecisions() {
             "Dr. Carlos Méndez (4.8)",
             "Dra. Ana Rodríguez (4.7)",
           ]}
-          bg="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5"
-          border="border-emerald-500/20"
-          textColor="text-emerald-400"
-          barColor="bg-emerald-400"
+          bg="bg-green-500/10"
+          border="border-green-500/20"
+          textColor="text-green-500"
+          barColor="bg-green-500"
         />
 
         <CategoryCard
@@ -79,10 +46,10 @@ export default function CategoryDecisions() {
           examples={[
             "Ing. Claudia Juárez (4.4)",
           ]}
-          bg="bg-gradient-to-br from-blue-500/10 to-blue-500/5"
-          border="border-blue-500/20"
-          textColor="text-blue-400"
-          barColor="bg-blue-400"
+          bg="bg-white/5"
+          border="border-white/10"
+          textColor="text-gray-300"
+          barColor="bg-white/40"
         />
 
         <CategoryCard
@@ -93,8 +60,8 @@ export default function CategoryDecisions() {
           examples={[
             "Lic. Pedro Martínez (3.8)",
           ]}
-          bg="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5"
-          border="border-yellow-500/20"
+          bg="bg-yellow-400/10"
+          border="border-yellow-400/20"
           textColor="text-yellow-400"
           barColor="bg-yellow-400"
         />
@@ -107,12 +74,11 @@ export default function CategoryDecisions() {
           examples={[
             "Lic. Roberto Mejía (3.2)",
           ]}
-          bg="bg-gradient-to-br from-red-500/10 to-red-500/5"
+          bg="bg-red-500/10"
           border="border-red-500/20"
           textColor="text-red-400"
           barColor="bg-red-400"
         />
-
       </div>
     </div>
   );
