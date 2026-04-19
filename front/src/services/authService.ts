@@ -63,7 +63,12 @@ export const logoutUser = async () => {
   } catch (error) {
     console.error("Error al cerrar sesión", error);
   } finally {
-    localStorage.clear();
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("user_data");
+    localStorage.removeItem("user_role");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    
     window.location.href = "/";
   }
 };

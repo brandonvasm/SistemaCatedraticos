@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, Download, Calendar, AlertCircle, Search, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { FileText, Download, Calendar, AlertCircle, Search, Loader2, RefreshCw, Trash2, PlayCircle } from 'lucide-react';
 import { fileService } from '../services/fileService';
 import ConfirmDeleteModal from '../components/common/ConfirmDelete';
 import type { UploadedFile } from '../types/files';
@@ -10,6 +10,7 @@ export default function DataHistory() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [processingId, setProcessingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState<{ id: number, name: string } | null>(null);
 
@@ -30,6 +31,19 @@ export default function DataHistory() {
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
+
+  const handleProcess = async (fileId: number) => {
+    try {
+      setProcessingId(fileId);
+      await fileService.processFile(fileId);
+      await fetchFiles(false);
+    } catch (error) {
+      console.error(error);
+      alert("Error al procesar el archivo");
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const handleDownload = async (fileId: number, fileName: string) => {
     try {
@@ -178,9 +192,21 @@ export default function DataHistory() {
                     </td>
                     <td className="p-8">
                       <div className="flex items-center justify-end gap-3">
+                        {/* BOTÓN DE PROCESAR: Solo si no está procesado */}
+                        {!file.processed && (
+                          <button 
+                            onClick={() => handleProcess(file.id)}
+                            disabled={processingId === file.id || deletingId !== null}
+                            className="p-4 bg-yellow-400/10 border border-yellow-400/20 rounded-2xl text-yellow-400 hover:bg-yellow-400 hover:text-black transition-all active:scale-90 disabled:opacity-50 flex items-center gap-2 group/btn"
+                          >
+                            {processingId === file.id ? <Loader2 size={20} className="animate-spin" /> : <PlayCircle size={20} />}
+                            <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:block">Procesar</span>
+                          </button>
+                        )}
+
                         <button 
                           onClick={() => handleDownload(file.id, file.name)}
-                          disabled={downloadingId === file.id || deletingId !== null}
+                          disabled={downloadingId === file.id || deletingId !== null || processingId === file.id}
                           className="p-4 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-black hover:bg-yellow-400 transition-all active:scale-90 disabled:opacity-50"
                         >
                           {downloadingId === file.id ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
@@ -188,7 +214,7 @@ export default function DataHistory() {
 
                         <button 
                           onClick={() => setShowConfirm({ id: file.id, name: file.name })}
-                          disabled={deletingId !== null || downloadingId !== null}
+                          disabled={deletingId !== null || downloadingId !== null || processingId === file.id}
                           className="p-4 bg-white/5 border border-white/10 rounded-2xl text-gray-500 hover:text-white hover:bg-red-500/80 transition-all active:scale-90 disabled:opacity-50"
                         >
                           <Trash2 size={20} />

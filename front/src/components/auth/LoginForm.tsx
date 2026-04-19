@@ -33,6 +33,11 @@ export default function LoginForm() {
 
     try {
       const loggedInUser = await loginUser({ email, password });
+      
+      if (loggedInUser.id) {
+        localStorage.setItem('user_id', loggedInUser.id.toString());
+      }
+      
       setUser(loggedInUser);
       navigate("/dashboard");
     } catch (err: any) {
