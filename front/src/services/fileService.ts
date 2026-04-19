@@ -26,9 +26,8 @@ export const fileService = {
     });
   },
 
-  uploadFile: async (file: File, format: string) => {
+  uploadFile: async (file: File, format: string): Promise<UploadedFile> => {
     const formData = new FormData();
-    
     const userId = localStorage.getItem("user_id");
     const userDataRaw = localStorage.getItem("user_data");
     
@@ -36,28 +35,36 @@ export const fileService = {
     if (userDataRaw) {
       try {
         const userData = JSON.parse(userDataRaw);
-        facultyId = userData.faculty || 2;
+        facultyId = userData.faculty || 1;
       } catch (e) {
-        console.error("Error parsing user data", e);
+        console.error(e);
       }
     }
 
-    formData.append("file", file);
-    
     const metadata = JSON.stringify({
       format: format,
-      semester: 1, 
+      semester: 1,
       faculty: facultyId,
       user: userId ? parseInt(userId) : null
     });
-    
+
+    formData.append("file", file);
     formData.append("data", metadata);
 
-    return api.post('/files/', formData, {
+    const response = await api.post<UploadedFile>('/files/', formData, {
       headers: { 
         'Content-Type': 'multipart/form-data'
       },
       withCredentials: true
     });
+
+    return response.data;
+  },
+
+  processFile: async (fileId: number): Promise<{ message: string }> => {
+    const response = await api.post(`/files/${fileId}/process/`, {}, {
+      withCredentials: true
+    });
+    return response.data;
   }
 };

@@ -15,3 +15,8 @@ export interface UploadedFile {
 export interface DownloadResponse {
   download_url: string;
 }
+
+export interface FileRequirement {
+  id: string;
+  name: string;
+}
