@@ -1,13 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import type { Teacher } from "../../types/teacher";
+//import type { Teacher } from "../../types/teacher";
 import { renderStars } from "./renderStars";
+import type { TeacherTable } from "../../types/teacherTable";
+
 import {
   ArrowUpRight,
   ArrowDownRight,
   CheckCircle,
 } from "lucide-react";
 
-export const TeacherRow = ({ teacher }: { teacher: Teacher }) => {
+export const TeacherRow = ({ teacher }: { teacher: TeacherTable }) => {
 
   const navigate = useNavigate();
 

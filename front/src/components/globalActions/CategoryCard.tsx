@@ -2,58 +2,27 @@ import CategoryCard from "./CategoryDecisions";
 
 export default function CategoryDecisions() {
   return (
-    <div
-      className="
-        group relative
-        bg-white/[0.02]
-        border border-white/5
-        p-8
-        rounded-[2.5rem]
-        backdrop-blur-2xl
-        shadow-2xl
-        mt-8
-        overflow-hidden
-      "
-    >
-      <div className="absolute -top-24 -right-24 w-56 h-56 bg-yellow-400/[0.03] blur-[100px] rounded-full pointer-events-none" />
-
-      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
-
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+    <div className="bg-secondary/40 border border-white/5 p-8 rounded-2xl backdrop-blur-md shadow-xl mt-8 relative overflow-hidden">
+      
+      <div className="absolute top-0 left-0 w-56 h-56 bg-yellow-400/10 blur-[100px] rounded-full -ml-28 -mt-28 opacity-20 pointer-events-none" />
 
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8 relative z-10">
         <div>
-          <h2 className="text-[11px] font-black text-white tracking-tight uppercase">
+          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">
             Decisiones Automáticas por Categoría
-          </h2>
+          </p>
 
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-2">
+          <p className="text-gray-500 text-[10px] leading-tight font-medium">
             Recomendaciones del sistema basadas en evaluaciones
           </p>
         </div>
 
-        <button
-          className="
-            px-5 py-2.5
-            bg-yellow-400
-            text-black
-            rounded-xl
-            text-[11px]
-            font-black
-            uppercase
-            tracking-widest
-            hover:bg-yellow-300
-            hover:scale-[1.05]
-            active:scale-95
-            transition-all
-            shadow-lg shadow-yellow-400/20
-          "
-        >
+        <button className="px-5 py-2.5 bg-yellow-400 text-black rounded-xl text-[10px] font-bold tracking-widest uppercase hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20">
           Aplicar Todas
         </button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-5 relative z-10">
+      <div className="grid md:grid-cols-2 gap-6 relative z-10">
         <CategoryCard
           title="Excelencia (≥4.5)"
           subtitle="Mantener y promover"

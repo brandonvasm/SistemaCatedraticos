@@ -7,39 +7,22 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { useEffect, useState } from "react";
+import { chartService } from "../../services/chartService";
+import type { CourseChartPoint } from "../../types/chartCourses";
 
-const data = [
-  {
-    name: "2024-2",
-    calc1: 4.1,
-    calc2: 4.0,
-    ecuaciones: 4.2,
-    software: 4.1,
-  },
-  {
-    name: "2025-1",
-    calc1: 4.2,
-    calc2: 4.1,
-    ecuaciones: 4.1,
-    software: 4.2,
-  },
-  {
-    name: "2025-2",
-    calc1: 4.3,
-    calc2: 4.2,
-    ecuaciones: 4.0,
-    software: 4.3,
-  },
-  {
-    name: "2026-1",
-    calc1: 4.4,
-    calc2: 4.3,
-    ecuaciones: 3.9,
-    software: 4.5,
-  },
-];
 
 export default function CoursesChart() {
+  const [data, setData] = useState<CourseChartPoint[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await chartService.getCoursesEvolution();
+      setData(res);
+    };
+
+    fetchData();
+  }, []);
   return (
     <div
       className="
