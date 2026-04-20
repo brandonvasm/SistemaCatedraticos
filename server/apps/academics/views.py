@@ -10,6 +10,7 @@ from apps.historical.models import TeacherCourseHistory
 
 from .models import Contract, CourseSection, Faculty, Semester, Teacher
 from .serializers import (
+    CourseSectionSerializer,
     FacultySerializer,
     SemesterHistoricalSerializer,
     SemesterSerializer,
@@ -334,3 +335,60 @@ class FacultyHistoricalView(APIView):
             result.append(teacher_data)
 
         return Response(result)
+
+
+class CourseSectionByFacultyView(APIView):
+    @extend_schema(
+        summary="Docentes asignados a cada sección por facultad y semestre",
+        parameters=[
+            OpenApiParameter(
+                name="faculty",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="ID de la facultad",
+                required=True,
+            ),
+            OpenApiParameter(
+                name="semester",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="ID del semestre",
+                required=True,
+            ),
+        ],
+        responses={200: CourseSectionSerializer(many=True)},
+    )
+    def get(self, request):
+        faculty_id = request.query_params.get("faculty")
+        semester_id = request.query_params.get("semester")
+
+        if not faculty_id or not semester_id:
+            return Response(
+                {"error": "Los parámetros faculty y semester son requeridos"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        sections = (
+            CourseSection.objects.filter(
+                semester_id=semester_id,
+                course__cost_center__faculty_id=faculty_id,
+            )
+            .select_related("course", "teacher")
+            .order_by("section_number")
+        )
+
+        result = [
+            {
+                "section_id": section.id,
+                "section_number": section.section_number,
+                "shift": section.shift,
+                "course_id": section.course.id,
+                "course_name": section.course.name,
+                "teacher_id": section.teacher.id if section.teacher else None,
+                "teacher_name": section.teacher.name if section.teacher else None,
+            }
+            for section in sections
+        ]
+
+        serializer = CourseSectionSerializer(result, many=True)
+        return Response(serializer.data)

@@ -67,3 +67,13 @@ class SemesterHistoricalSerializer(serializers.Serializer):
     semester_label = serializers.CharField()
     avg_score = serializers.FloatField()
     is_current = serializers.BooleanField()
+
+
+class CourseSectionSerializer(serializers.Serializer):
+    section_id = serializers.IntegerField()
+    section_number = serializers.CharField()
+    shift = serializers.CharField()
+    course_id = serializers.IntegerField()
+    course_name = serializers.CharField()
+    teacher_id = serializers.IntegerField(allow_null=True)
+    teacher_name = serializers.CharField(allow_null=True)
