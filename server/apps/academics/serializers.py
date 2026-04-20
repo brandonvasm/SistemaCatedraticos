@@ -60,3 +60,10 @@ class TeacherStatsSerializer(serializers.Serializer):
     tendencia_mejora = serializers.CharField()
     evaluaciones_total = serializers.IntegerField()
     recomendado_vs_otros = serializers.CharField()
+
+
+class SemesterHistoricalSerializer(serializers.Serializer):
+    semester_id = serializers.IntegerField()
+    semester_label = serializers.CharField()
+    avg_score = serializers.FloatField()
+    is_current = serializers.BooleanField()

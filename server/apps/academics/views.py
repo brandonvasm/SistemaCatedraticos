@@ -9,7 +9,13 @@ from apps.evaluations.models import StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
 
 from .models import Contract, CourseSection, Faculty, Semester, Teacher
-from .serializers import FacultySerializer, SemesterSerializer, TeacherStatsSerializer
+from .serializers import (
+    FacultySerializer,
+    SemesterHistoricalSerializer,
+    SemesterSerializer,
+    TeacherStatsSerializer,
+)
+from .utils import get_historical_semesters
 
 
 class FacultyCreateView(APIView):
@@ -268,5 +274,63 @@ class TeacherStatsListView(APIView):
                     else "Sin datos",
                 }
             )
+
+        return Response(result)
+
+
+class FacultyHistoricalView(APIView):
+    @extend_schema(
+        summary="Evolución histórica de docentes por facultad",
+        parameters=[
+            OpenApiParameter(
+                name="faculty",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="ID de la facultad",
+                required=True,
+            )
+        ],
+        responses={200: SemesterHistoricalSerializer(many=True)},
+    )
+    def get(self, request):
+        faculty_id = request.query_params.get("faculty")
+        if not faculty_id:
+            return Response(
+                {"error": "El parámetro faculty es requerido"},
+                status=400,
+            )
+
+        semesters = get_historical_semesters(faculty_id)
+        if not semesters:
+            return Response([])
+
+        current_id = semesters[0].id
+
+        teacher_ids = Contract.objects.filter(
+            faculty_id=faculty_id, is_active=True
+        ).values_list("teacher_id", flat=True)
+
+        teachers = Teacher.objects.filter(id__in=teacher_ids)
+        result = []
+
+        for teacher in teachers:
+            teacher_data = {
+                "teacher_id": teacher.id,
+                "teacher_name": teacher.name,
+                "semesters": [],
+            }
+            for semester in semesters:
+                avg = TeacherCourseHistory.objects.filter(
+                    teacher_id=teacher.id, semester_id=semester.id
+                ).aggregate(avg_score=Avg("student_score"))["avg_score"]
+                teacher_data["semesters"].append(
+                    {
+                        "semester_id": semester.id,
+                        "semester_label": f"{semester.year} - {semester.number}",
+                        "avg_score": round(avg, 2) if avg is not None else None,
+                        "is_current": semester.id == current_id,
+                    }
+                )
+            result.append(teacher_data)
 
         return Response(result)
