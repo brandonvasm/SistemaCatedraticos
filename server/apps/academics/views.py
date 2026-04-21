@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.evaluations.models import StudentEvaluation
+from apps.evaluations.models import SectionControl, StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
 
 from .models import Contract, CourseSection, Faculty, Semester, Teacher
@@ -15,6 +15,7 @@ from .serializers import (
     SemesterHistoricalSerializer,
     SemesterSerializer,
     TeacherStatsSerializer,
+    TopCourseSerializer,
 )
 from .utils import get_historical_semesters
 
@@ -391,4 +392,78 @@ class CourseSectionByFacultyView(APIView):
         ]
 
         serializer = CourseSectionSerializer(result, many=True)
+        return Response(serializer.data)
+
+
+class TopCoursesByScoreView(APIView):
+    @extend_schema(
+        summary="Top 4 cursos con mejores punteos de control docente",
+        parameters=[
+            OpenApiParameter(
+                name="faculty",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="ID de la facultad",
+                required=True,
+            ),
+            OpenApiParameter(
+                name="semester",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="ID del semestre",
+                required=True,
+            ),
+        ],
+        responses={200: TopCourseSerializer(many=True)},
+    )
+    def get(self, request):
+        faculty_id = request.query_params.get("faculty")
+        semester_id = request.query_params.get("semester")
+
+        if not faculty_id or not semester_id:
+            return Response(
+                {"error": "Los parámetros faculty y semester son requeridos"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        controls = SectionControl.objects.filter(
+            course_section__semester_id=semester_id,
+            course_section__course__cost_center__faculty_id=faculty_id,
+        ).select_related("course_section__course")
+
+        # Agrupar punteos por curso
+        course_scores: dict[int, list[float]] = {}
+        course_names: dict[int, str] = {}
+
+        for control in controls:
+            course = control.course_section.course
+            high = control.high_count
+            mid = control.medium_count
+            low = control.low_count
+
+            if high == 0:
+                punteo = 0.0
+            else:
+                punteo = ((high + mid + low) / high) * 100
+
+            if course.id not in course_scores:
+                course_scores[course.id] = []
+                course_names[course.id] = course.name
+
+            course_scores[course.id].append(punteo)
+
+        # Promediar punteos por curso y ordenar
+        result = [
+            {
+                "course_id": course_id,
+                "course_name": course_names[course_id],
+                "punteo": round(sum(scores) / len(scores), 2),
+            }
+            for course_id, scores in course_scores.items()
+        ]
+
+        result.sort(key=lambda x: x["punteo"], reverse=True)
+        top4 = result[:4]
+
+        serializer = TopCourseSerializer(top4, many=True)
         return Response(serializer.data)

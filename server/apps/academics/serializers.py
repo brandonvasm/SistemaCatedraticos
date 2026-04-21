@@ -77,3 +77,9 @@ class CourseSectionSerializer(serializers.Serializer):
     course_name = serializers.CharField()
     teacher_id = serializers.IntegerField(allow_null=True)
     teacher_name = serializers.CharField(allow_null=True)
+
+
+class TopCourseSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()
+    course_name = serializers.CharField()
+    punteo = serializers.FloatField()

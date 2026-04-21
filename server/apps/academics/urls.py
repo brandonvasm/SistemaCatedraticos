@@ -9,6 +9,7 @@ from .views import (
     SemesterDetailView,
     SemesterListCreateView,
     TeacherStatsListView,
+    TopCoursesByScoreView,
 )
 
 urlpatterns = [
@@ -29,4 +30,5 @@ urlpatterns = [
         name="teacher-historical",
     ),
     path("sections/", CourseSectionByFacultyView.as_view(), name="sections-by-faculty"),
+    path("courses/top/", TopCoursesByScoreView.as_view(), name="courses-top"),
 ]
