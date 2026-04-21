@@ -19,6 +19,7 @@ class CourseHistoryViewSet(viewsets.ViewSet):
                 description="Courses and scores list",
                 examples=[
                     OpenApiExample(
+                        "course_evolution_example",
                         value=[
                             {
                                 "course_id": 1,

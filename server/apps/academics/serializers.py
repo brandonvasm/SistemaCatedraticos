@@ -60,3 +60,17 @@ class TeacherStatsSerializer(serializers.Serializer):
     tendencia_mejora = serializers.CharField()
     evaluaciones_total = serializers.IntegerField()
     recomendado_vs_otros = serializers.CharField()
+
+
+class CourseStatsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    code = serializers.CharField()
+    name = serializers.CharField()
+    credits = serializers.IntegerField()
+    score = serializers.FloatField(allow_null=True)
+    trend = serializers.FloatField(allow_null=True)
+
+
+class CourseListResponseSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    courses = CourseStatsSerializer(many=True)
