@@ -5,7 +5,6 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.evaluations.models import SectionControl
 from apps.users.infrastructure.authentication import CookieJWTAuthentication
 from apps.users.infrastructure.permissions import IsSysAdminOrCoordinator
 
@@ -47,56 +46,33 @@ class CourseHistoryViewSet(viewsets.ViewSet):
     def evolution(self, request):
         user_faculty = request.user.faculty_id
 
-        last_3_semester_ids = list(
+        histories = (
             CourseHistory.objects.filter(course__cost_center__faculty=user_faculty)
-            .values_list("semester_id", flat=True)
-            .distinct()
-            .order_by("-semester__year", "-semester__number")[:3]
-        )
-
-        controls = SectionControl.objects.filter(
-            course_section__semester_id__in=last_3_semester_ids,
-            course_section__course__cost_center__faculty=user_faculty,
-        ).values(
-            "course_section__course_id",
-            "course_section__course__name",
-            "course_section__semester__year",
-            "course_section__semester__number",
-            "high_count",
-            "medium_count",
-            "low_count",
+            .select_related("course", "semester")
+            .order_by("course_id", "-semester__year", "-semester__number")
         )
 
         course_names = {}
-        section_scores = defaultdict(lambda: defaultdict(list))
+        ratings_by_course = defaultdict(list)
 
-        for ctrl in controls:
-            course_id = ctrl["course_section__course_id"]
-            course_names[course_id] = ctrl["course_section__course__name"]
-            semester_key = (
-                ctrl["course_section__semester__year"],
-                ctrl["course_section__semester__number"],
+        for entry in histories:
+            print(entry.course_id, entry.control_high_count, entry.semester.year, entry.semester.number)
+            course_names[entry.course_id] = entry.course.name
+            ratings_by_course[entry.course_id].append(
+                {
+                    "rating": entry.control_high_count,
+                    "semester_year": entry.semester.year,
+                    "semester_number": entry.semester.number,
+                }
             )
-            total = ctrl["high_count"] + ctrl["medium_count"] + ctrl["low_count"]
-            if total > 0:
-                section_scores[course_id][semester_key].append(
-                    (ctrl["high_count"] / total) * 100
-                )
 
         data = [
             {
                 "course_id": course_id,
                 "course_name": course_names[course_id],
-                "semester_ratings": [
-                    {
-                        "rating": round(sum(scores) / len(scores), 2),
-                        "semester_year": year,
-                        "semester_number": number,
-                    }
-                    for (year, number), scores in sorted(semester_data.items())
-                ],
+                "semester_ratings": ratings,
             }
-            for course_id, semester_data in section_scores.items()
+            for course_id, ratings in ratings_by_course.items()
         ]
 
         return Response(CourseEvolutionSerializer(data, many=True).data)
