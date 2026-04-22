@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .teacher_views import TeacherHistoricalView, TeacherListCreateView
+from .courses_views import CourseListView
+
 from .views import (
     CourseSectionByFacultyView,
     FacultyCreateView,
@@ -31,4 +33,5 @@ urlpatterns = [
     ),
     path("sections/", CourseSectionByFacultyView.as_view(), name="sections-by-faculty"),
     path("courses/top/", TopCoursesByScoreView.as_view(), name="courses-top"),
+    path("courses/", CourseListView.as_view(), name="course-list"),
 ]

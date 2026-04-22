@@ -83,3 +83,16 @@ class TopCourseSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
     course_name = serializers.CharField()
     punteo = serializers.FloatField()
+    
+class CourseStatsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    code = serializers.CharField()
+    name = serializers.CharField()
+    credits = serializers.IntegerField()
+    score = serializers.FloatField(allow_null=True)
+    trend = serializers.FloatField(allow_null=True)
+
+
+class CourseListResponseSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    courses = CourseStatsSerializer(many=True)
