@@ -6,7 +6,7 @@ class CourseHistory(models.Model):
     semester = models.ForeignKey("academics.Semester", on_delete=models.CASCADE)
     avg_student_score = models.FloatField()
     avg_ai_score = models.FloatField()
-    control_high_count = models.IntegerField()
+    control_avg_score = models.FloatField()
     section_count = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -23,7 +23,7 @@ class TeacherCourseHistory(models.Model):
     course = models.ForeignKey("academics.Course", on_delete=models.CASCADE)
     ai_score = models.FloatField()
     student_score = models.FloatField()
-    control_high_count = models.IntegerField()
+    control_avg_score = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
 
 class SemesterHistory(models.Model):

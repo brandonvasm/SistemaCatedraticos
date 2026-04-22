@@ -33,6 +33,7 @@ class Semester(models.Model):
     ]
     year = models.IntegerField()
     number = models.IntegerField()
+    roster_loaded = models.BooleanField(default=False)
     ceat_loaded = models.BooleanField(default=False)
     comments_loaded = models.BooleanField(default=False)
     control_loaded = models.BooleanField(default=False)
@@ -57,6 +58,7 @@ class CourseSection(models.Model):
     teacher = models.ForeignKey(
         Teacher, on_delete=models.SET_NULL, null=True, blank=True
     )
+    control_score = models.FloatField(null=True, blank=True)
     shift = models.CharField(max_length=20, choices=SHIFT_CHOICES)
 
 

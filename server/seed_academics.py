@@ -65,7 +65,7 @@ def run_seed():
         course=curso,
         ai_score=85.0,
         student_score=80.0,
-        control_high_count=10,
+        control_avg_score=10.0,
     )
     # Historial Semestre 2
     TeacherCourseHistory.objects.get_or_create(
@@ -74,7 +74,7 @@ def run_seed():
         course=curso,
         ai_score=90.0,
         student_score=95.0,
-        control_high_count=15,
+        control_avg_score=10.5,
     )
 
     print(f"Éxito. Docente creado con ID: {docente.id}")
