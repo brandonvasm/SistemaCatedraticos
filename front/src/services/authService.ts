@@ -5,24 +5,22 @@ export const loginUser = async (data: LoginRequest): Promise<User> => {
   try {
     const response = await api.post<LoginResponse>("/users/login/", data);
     const resData = response.data;
-
-    const nameFromEmail = data.email.split('@')[0];
+    const rawUser = resData.user || resData;
 
     const userObject: User = {
-      id: resData.user_id,
-      username: (resData.user?.username || (resData as any).username || nameFromEmail),
-      email: (resData.user?.email || (resData as any).email || data.email),
-      role: resData.role || "ADMIN",
-      faculty: resData.user?.faculty || "",
-      evaluation_count: resData.user?.evaluation_count || 0
+      id: resData.user_id || rawUser.id,
+      username: rawUser.username || "",
+      email: rawUser.email || "",
+      role: resData.role || rawUser.role || "ADMIN",
+      faculty: rawUser.faculty || (resData as any).faculty || "",
+      faculty_id : rawUser.faculty_id,
+      evaluation_count: rawUser.evaluation_count || 0,
+      pensum_loaded : rawUser.pensum_loaded
     };
 
-    localStorage.setItem("user_id", String(resData.user_id));
+    localStorage.setItem("user_id", String(userObject.id));
     localStorage.setItem("user_data", JSON.stringify(userObject));
-    
-    if (resData.role) {
-      localStorage.setItem("user_role", resData.role.trim());
-    }
+    localStorage.setItem("user_role", userObject.role);
 
     return userObject;
   } catch (error: any) {

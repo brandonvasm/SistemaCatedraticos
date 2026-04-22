@@ -5,7 +5,8 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
 
-    faculty = serializers.CharField(source='faculty.name', read_only=True)
+    faculty = serializers.CharField(source='faculty_id.name', read_only=True)
+    pensum_loaded = serializers.ReadOnlyField(source='faculty_id.pensum_loaded')
 
     class Meta:
         model = User
@@ -16,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
             'role',
             'faculty',
             'is_active',
+            'pensum_loaded',
             'password',
             'evaluation_count',
         ]
