@@ -22,24 +22,30 @@ export default function RadarChartComp() {
   return (
     <div
       className="
-        p-6
-        rounded-[2.5rem]
+        bg-[#1e2230]/60
+        border border-white/5
+        rounded-3xl
+        p-8
+        shadow-2xl
+        h-full
+        w-full
+        mx-auto
         backdrop-blur-2xl
-        shadow-xl
+        relative
+        overflow-hidden
       "
     >
-      <div className="mb-6">
-        <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
-          EVALUACIÓN POR CATEGORÍA
+      <div className="mb-8">
+        <h2 className="text-lg font-bold text-white tracking-tight">
+          Evaluación por Categoría
         </h2>
-        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
-          COMPETENCIAS DOCENTES
+        <p className="text-xs text-gray-500 font-medium mt-1">
+          Competencias docentes
         </p>
       </div>
 
-      <ResponsiveContainer width="100%" height={270}>
+      <ResponsiveContainer width="100%" height={250}>
         <RadarChart data={data}>
-
           <PolarGrid stroke="rgba(255,255,255,0.05)" />
 
           <PolarAngleAxis
@@ -68,7 +74,6 @@ export default function RadarChartComp() {
             fill="#facc15"
             fillOpacity={0.25}
           />
-
         </RadarChart>
       </ResponsiveContainer>
     </div>

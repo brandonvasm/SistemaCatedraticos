@@ -62,3 +62,55 @@ class TeacherSerializer(serializers.ModelSerializer):
         )
 
         return teacher
+
+    def create(self, validated_data):
+        faculty_id = validated_data.pop("faculty_id")
+        teacher = Teacher.objects.create(**validated_data)
+        Contract.objects.create(teacher=teacher, faculty_id=faculty_id)
+        return teacher
+
+
+class TeacherStatsSerializer(serializers.Serializer):
+    teacher_id = serializers.IntegerField()
+    teacher_name = serializers.CharField()
+    cursos_impartidos = serializers.ListField(child=serializers.CharField())
+    promedio_general = serializers.FloatField()
+    tendencia_mejora = serializers.CharField()
+    evaluaciones_total = serializers.IntegerField()
+    recomendado_vs_otros = serializers.CharField()
+
+
+class SemesterHistoricalSerializer(serializers.Serializer):
+    semester_id = serializers.IntegerField()
+    semester_label = serializers.CharField()
+    avg_score = serializers.FloatField()
+    is_current = serializers.BooleanField()
+
+
+class CourseSectionSerializer(serializers.Serializer):
+    section_id = serializers.IntegerField()
+    section_number = serializers.CharField()
+    shift = serializers.CharField()
+    course_id = serializers.IntegerField()
+    course_name = serializers.CharField()
+    teacher_id = serializers.IntegerField(allow_null=True)
+    teacher_name = serializers.CharField(allow_null=True)
+
+
+class TopCourseSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()
+    course_name = serializers.CharField()
+    punteo = serializers.FloatField()
+    
+class CourseStatsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    code = serializers.CharField()
+    name = serializers.CharField()
+    credits = serializers.IntegerField()
+    score = serializers.FloatField(allow_null=True)
+    trend = serializers.FloatField(allow_null=True)
+
+
+class CourseListResponseSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    courses = CourseStatsSerializer(many=True)

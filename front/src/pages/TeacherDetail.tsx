@@ -11,6 +11,7 @@ import Tags from "../components/teacherDetail/Tags";
 import { useState } from "react";
 import ComentariosTab from "../components/teacherDetail/CommentsSection";
 import Recommendations from "../components/teacherDetail/Recommendations";
+import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
 
 export default function TeacherDetail() {
   const { id } = useParams();
@@ -77,19 +78,13 @@ export default function TeacherDetail() {
             <div className="grid lg:grid-cols-2 gap-6">
 
               <div className="
-                bg-[#0f111a]/50
-                border border-white/10
-                rounded-[2.5rem]
                 p-5
                 backdrop-blur-2xl
               ">
-                <LineChartComp />
+                <HistoryTrend />
               </div>
 
               <div className="
-                bg-[#0f111a]/50
-                border border-white/10
-                rounded-[2.5rem]
                 p-5
                 backdrop-blur-2xl
               ">

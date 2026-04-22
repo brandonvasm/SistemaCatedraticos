@@ -1,5 +1,7 @@
 import { TeacherRow } from "./TeacherRow";
-import teachers from "../../data/teachers";
+import { useEffect, useState } from "react";
+import { teacherService } from "../../services/teacherService";
+import type { TeacherTable } from "../../types/teacherTable";
 
 type Props = {
   filter: string;
@@ -12,6 +14,20 @@ export const TeachersTable = ({ filter }: Props) => {
     if (score >= 4) return "Bueno";
     return "Bajo";
   };
+  const [teachers, setTeachers] = useState<TeacherTable[]>([]);
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const data = await teacherService.getTeachers();
+        setTeachers(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchTeachers();
+  }, []);
 
   const filteredTeachers =
     filter === "Todos"

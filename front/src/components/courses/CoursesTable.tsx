@@ -1,54 +1,31 @@
-import { useState } from "react";
 import CourseRow from "./CourseRow";
+import { useEffect, useState } from "react";
+import { courseService } from "../../services/courseService";
+import type { CourseTable } from "../../types/courseTable";
 
-const coursesData = [
-  {
-    name: "Cálculo I",
-    code: "MAT101",
-    category: "Matemática",
-    evaluations: 245,
-    sections: 8,
-    teachers: 6,
-    students: 245,
-    avg: 2.3,
-    trend: 0.2,
-    rec: 88,
-    teacher: "Dr. Carlos Méndez",
-  },
-  {
-    name: "Ecuaciones Diferenciales",
-    code: "MAT201",
-    category: "Matemática",
-    evaluations: 156,
-    sections: 5,
-    teachers: 4,
-    students: 156,
-    avg: 1.8,
-    trend: -0.3,
-    rec: 72,
-    teacher: "Dra. Ana Rodríguez",
-  },
-  {
-    name: "Programación I",
-    code: "INF101",
-    category: "Informática",
-    evaluations: 300,
-    sections: 10,
-    teachers: 7,
-    students: 300,
-    avg: 4.7,
-    trend: 0.5,
-    rec: 92,
-    teacher: "Ing. Luis Pérez",
-  },
-];
+
 
 export default function CoursesTable() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
   const [order, setOrder] = useState("desc");
 
-  const filtered = coursesData.filter((c) => {
+  const [courses, setCourses] = useState<CourseTable[]>([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const data = await courseService.getCourses();
+        setCourses(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  const filtered = courses.filter((c) => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchCategory =
       category === "Todos" || c.category === category;
@@ -61,17 +38,7 @@ export default function CoursesTable() {
   );
 
   return (
-    <div
-      className="
-        w-full
-        bg-[#0f111a]/50
-        border border-white/10
-        p-8
-        rounded-[2.5rem]
-        backdrop-blur-2xl
-        shadow-2xl
-      "
-    >
+    <div className="w-full bg-[#0f111a]/50 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-2xl">
 
       <div className="mb-6">
         <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
@@ -87,42 +54,13 @@ export default function CoursesTable() {
         <input
           type="text"
           placeholder="BUSCAR CURSO..."
-          className="
-            w-full md:w-72
-            bg-transparent
-            border-none
-            py-4 px-6
-            rounded-2xl
-            text-[10px]
-            font-bold
-            text-white
-            outline-none
-            placeholder:text-gray-600
-            tracking-widest
-            uppercase
-            bg-white/[0.03]
-          "
+          className="w-full md:w-72 bg-transparent border-none py-4 px-6 rounded-2xl text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase bg-white/[0.03]"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
         <select
-          className="
-            bg-white/5
-            border border-white/10
-            px-6 py-4
-            rounded-2xl
-            text-gray-400
-            outline-none
-            cursor-pointer
-            hover:border-yellow-400/20
-            transition-all
-            font-bold
-            text-[10px]
-            uppercase
-            tracking-widest
-            min-w-[180px]
-          "
+          className="bg-white/5 border border-white/10 px-6 py-4 rounded-2xl text-gray-400 outline-none cursor-pointer hover:border-yellow-400/20 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[180px]"
           onChange={(e) => setCategory(e.target.value)}
         >
           <option value="Todos" className="bg-[#0b101f] text-gray-300">Todos</option>
@@ -131,22 +69,7 @@ export default function CoursesTable() {
         </select>
 
         <select
-          className="
-            bg-white/5
-            border border-white/10
-            px-6 py-4
-            rounded-2xl
-            text-gray-400
-            outline-none
-            cursor-pointer
-            hover:border-yellow-400/20
-            transition-all
-            font-bold
-            text-[10px]
-            uppercase
-            tracking-widest
-            min-w-[180px]
-          "
+          className="bg-white/5 border border-white/10 px-6 py-4 rounded-2xl text-gray-400 outline-none cursor-pointer hover:border-yellow-400/20 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[180px]"
           onChange={(e) => setOrder(e.target.value)}
         >
           <option value="desc" className="bg-[#0b101f] text-gray-300">Mayor Promedio</option>
@@ -156,25 +79,13 @@ export default function CoursesTable() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[1000px] w-full border-collapse">
+        <table className="min-w-[900px] w-full border-collapse">
 
-          <thead
-            className="
-              bg-white/[0.02]
-              text-gray-500
-              text-[10px]
-              font-black
-              uppercase
-              tracking-[0.2em]
-              border-b border-white/5
-            "
-          >
+          <thead className="bg-white/[0.02] text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
             <tr>
               <th className="px-6 py-5 w-[220px]">Curso</th>
               <th className="px-6 py-5 w-[90px] text-center">Código</th>
-              <th className="px-6 py-5 w-[80px] text-center">Secciones</th>
               <th className="px-6 py-5 w-[80px] text-center">Docentes</th>
-              <th className="px-6 py-5 w-[90px] text-center">Estudiantes</th>
               <th className="px-6 py-5 w-[120px] text-center">Promedio</th>
               <th className="px-6 py-5 w-[100px] text-center">Tendencia</th>
               <th className="px-6 py-5 w-[100px] text-center">Recomendado</th>
@@ -184,9 +95,9 @@ export default function CoursesTable() {
           </thead>
 
           <tbody className="divide-y divide-white/5">
-            {sorted.map((c, i) => (
+            {sorted.map((c) => (
               <tr
-                key={i}
+                key={c.id}
                 className="group hover:bg-white/[0.03] transition-all duration-300"
               >
                 <CourseRow course={c} />

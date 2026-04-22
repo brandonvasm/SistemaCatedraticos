@@ -1,36 +1,70 @@
-import api from "../api/axios";
+import api from '../api/axios';
+import type { UploadedFile, DownloadResponse } from '../types/files';
 
-export type UploadedFile = {
-  id: string | number;
-  name: string;
-  upload_date: string;
-  status: 'success' | 'warning' | 'error';
-  download_url?: string;
-};
+export const fileService = {
+  getAllFiles: async (): Promise<UploadedFile[]> => {
+    const response = await api.get<UploadedFile[]>('/files/');
+    return Array.isArray(response.data) ? response.data : [];
+  },
 
-export const getUploadHistory = async (): Promise<UploadedFile[]> => {
-  try {
-    const response = await api.get<UploadedFile[]>("/academics/upload-history/");
-    return response.data || [];
-  } catch (error: any) {
-    throw error.response?.data || new Error("ERROR AL OBTENER HISTORIAL");
-  }
-};
+  getDownloadUrl: async (fileId: number): Promise<string> => {
+    const response = await api.get<DownloadResponse>(`/files/${fileId}/download/`);
+    return response.data.download_url;
+  },
 
-export const downloadFile = async (fileId: string | number, fileName: string) => {
-  try {
-    const response = await api.get(`/academics/download/${fileId}/`, {
-      responseType: 'blob',
+  deleteFile: async (fileId: number): Promise<void> => {
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrftoken='))
+      ?.split('=')[1];
+
+    await api.delete(`/files/${fileId}/`, {
+      headers: {
+        ...(csrfToken && { 'X-CSRFToken': csrfToken })
+      },
+      withCredentials: true
     });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', fileName || 'archivo.xlsx');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Error al descargar el archivo", error);
+  },
+
+  uploadFile: async (file: File, format: string): Promise<UploadedFile> => {
+    const formData = new FormData();
+    const userId = localStorage.getItem("user_id");
+    const userDataRaw = localStorage.getItem("user_data");
+    
+    let facultyId = 1;
+    if (userDataRaw) {
+      try {
+        const userData = JSON.parse(userDataRaw);
+        facultyId = userData.faculty || 1;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const metadata = JSON.stringify({
+      format: format,
+      semester: 1,
+      faculty: facultyId,
+      user: userId ? parseInt(userId) : null
+    });
+
+    formData.append("file", file);
+    formData.append("data", metadata);
+
+    const response = await api.post<UploadedFile>('/files/', formData, {
+      headers: { 
+        'Content-Type': 'multipart/form-data'
+      },
+      withCredentials: true
+    });
+
+    return response.data;
+  },
+
+  processFile: async (fileId: number): Promise<{ message: string }> => {
+    const response = await api.post(`/files/${fileId}/process/`, {}, {
+      withCredentials: true
+    });
+    return response.data;
   }
 };

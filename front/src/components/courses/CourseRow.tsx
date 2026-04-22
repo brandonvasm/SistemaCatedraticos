@@ -5,9 +5,10 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
+import type { CourseTable } from "../../types/courseTable";
 
 type Props = {
-  course: any;
+  course: CourseTable;
 };
 
 export default function CourseRow({ course }: Props) {
@@ -35,7 +36,6 @@ export default function CourseRow({ course }: Props) {
     <>
       <td className="px-6 py-4">
         <div className="flex items-center gap-4">
-
           <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl">
             <BookOpen size={18} className="text-blue-400" />
           </div>
@@ -48,7 +48,6 @@ export default function CourseRow({ course }: Props) {
               {course.evaluations} evaluaciones
             </p>
           </div>
-
         </div>
       </td>
 
@@ -59,15 +58,7 @@ export default function CourseRow({ course }: Props) {
       </td>
 
       <td className="px-6 py-4 text-center text-gray-300 font-medium">
-        {course.sections}
-      </td>
-
-      <td className="px-6 py-4 text-center text-gray-300 font-medium">
         {course.teachers}
-      </td>
-
-      <td className="px-6 py-4 text-center text-gray-300 font-medium">
-        {course.students}
       </td>
 
       <td className="px-6 py-4 text-center">
@@ -110,21 +101,7 @@ export default function CourseRow({ course }: Props) {
       <td className="px-6 py-4 text-right">
         <button
           onClick={() => navigate(`/cursos/${course.code}`)}
-          className="
-            px-4 py-2
-            bg-white/5
-            hover:bg-yellow-400/20
-            border border-white/5
-            hover:border-yellow-400/30
-            text-yellow-400
-            rounded-xl
-            text-[11px]
-            font-bold
-            uppercase
-            tracking-widest
-            transition
-            active:scale-90
-          "
+          className="px-4 py-2 bg-white/5 hover:bg-yellow-400/20 border border-white/5 hover:border-yellow-400/30 text-yellow-400 rounded-xl text-[11px] font-bold uppercase tracking-widest transition active:scale-90"
         >
           Ver Detalle
         </button>
