@@ -1,3 +1,5 @@
+from dataclasses import fields
+
 from rest_framework import serializers
 
 from .models import Contract, Faculty, Semester, Teacher
@@ -44,6 +46,22 @@ class TeacherSerializer(serializers.ModelSerializer):
             "is_active",
             "faculty_id",
         ]
+        extra_kwargs = {"identity_code": {"validators": []}}
+
+    def create(self, validated_data):
+        from apps.academics.application.application import TeacherUpsertService
+
+        faculty_id = validated_data.pop("faculty_id")
+
+        teacher, created = TeacherUpsertService.execute(
+            identity_code=validated_data["identity_code"],
+            name=validated_data["name"],
+            faculty_id=faculty_id,
+            created_at=validated_data.get("created_at"),
+            is_active=validated_data.get("is_active", True),
+        )
+
+        return teacher
 
     def create(self, validated_data):
         faculty_id = validated_data.pop("faculty_id")
