@@ -4,12 +4,11 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.evaluations.models import SectionControl
 from apps.historical.models import CourseHistory
 from apps.users.infrastructure.authentication import CookieJWTAuthentication
 from apps.users.infrastructure.permissions import IsSysAdminOrCoordinator
 
-from .models import Course
+from .models import Course, CourseSection
 from .serializers import CourseListResponseSerializer
 
 
@@ -25,17 +24,13 @@ class CourseListView(APIView):
         courses = list(Course.objects.filter(cost_center__faculty=request.user.faculty_id))
         course_ids = [c.id for c in courses]
 
-        controls = SectionControl.objects.filter(
-            course_section__course_id__in=course_ids
-        ).values("course_section__course_id", "high_count", "medium_count", "low_count")
+        sections = CourseSection.objects.filter(
+            course_id__in=course_ids, control_score__isnull=False
+        ).values("course_id", "control_score")
 
         section_scores = defaultdict(list)
-        for ctrl in controls:
-            total = ctrl["high_count"] + ctrl["medium_count"] + ctrl["low_count"]
-            if total > 0:
-                section_scores[ctrl["course_section__course_id"]].append(
-                    (ctrl["high_count"] / total) * 100
-                )
+        for section in sections:
+            section_scores[section["course_id"]].append(section["control_score"])
 
         histories = (
             CourseHistory.objects.filter(course_id__in=course_ids)
