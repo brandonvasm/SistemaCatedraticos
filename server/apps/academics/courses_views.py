@@ -40,12 +40,12 @@ class CourseListView(APIView):
         histories = (
             CourseHistory.objects.filter(course_id__in=course_ids)
             .order_by("course_id", "semester__year", "semester__number")
-            .values("course_id", "control_high_count")
+            .values("course_id", "control_avg_score")
         )
 
         history_by_course = defaultdict(list)
         for h in histories:
-            history_by_course[h["course_id"]].append(h["control_high_count"])
+            history_by_course[h["course_id"]].append(h["control_avg_score"])
 
         courses_data = []
         for course in courses:
