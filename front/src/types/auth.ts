@@ -3,8 +3,10 @@ export interface User {
   username: string;
   email: string;
   role: string;
-  faculty: string; 
-  evaluation_count: number;
+  faculty: string;         
+  faculty_id: number;    
+  pensum_loaded: boolean;  
+  evaluation_count: number; 
 }
 
 export interface LoginRequest {

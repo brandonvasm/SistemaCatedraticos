@@ -1,4 +1,4 @@
-import { Edit2, Trash2, Shield, Mail, User, Circle, RotateCcw } from "lucide-react";
+import { Edit2, Trash2, Shield, Mail, User, Circle, RotateCcw, School } from "lucide-react";
 import type { UserData } from "../../types/user";
 
 interface Props {
@@ -22,6 +22,7 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
         <thead className="bg-white/[0.02] text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
           <tr>
             <th className="px-8 py-6">Usuario</th>
+            <th className="px-8 py-6">Facultad</th>
             <th className="px-8 py-6">Rol</th>
             <th className="px-8 py-6">Estado</th> 
             <th className="px-8 py-6 text-right">Acciones</th>
@@ -43,6 +44,15 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
                       <Mail size={12} className="text-gray-700" /> {user.email}
                     </div>
                   </div>
+                </div>
+              </td>
+
+              <td className="px-8 py-5">
+                <div className="flex items-center gap-2 text-gray-300">
+                  <School size={14} className="text-yellow-400/50" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">
+                    {user.faculty || "N/A"}
+                  </span>
                 </div>
               </td>
 
@@ -84,10 +94,8 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
                     <Edit2 size={18} />
                   </button>
 
-
                   {user.is_active === true ? (
                     <button 
-                      key="btn-desactivar"
                       onClick={() => onDelete(user.id!)} 
                       className="p-3 bg-white/5 hover:bg-red-500/20 rounded-2xl text-red-400 border border-white/5 hover:border-red-500/30 transition-all active:scale-90"
                       title="Desactivar"
@@ -96,7 +104,6 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
                     </button>
                   ) : (
                     <button 
-                      key="btn-reactivar"
                       onClick={() => onDelete(user.id!)} 
                       className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-2xl text-emerald-400 border border-white/5 hover:border-emerald-500/30 transition-all active:scale-90"
                       title="Reactivar"

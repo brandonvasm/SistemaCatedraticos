@@ -6,13 +6,11 @@ import NotificationsDrawer from "../notifications/NotificationsDrawer";
 
 export default function Navbar() {
   const { user } = useAuth();
-
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-  const currentFacultad = "Ingenieria";
-
-  const userRole = localStorage.getItem("user_role")?.toLowerCase().trim();
+  const currentFacultad = user?.faculty || "Sin Facultad";
+  const userRole = user?.role || localStorage.getItem("user_role")?.toLowerCase().trim();
 
   return (
     <>
@@ -58,7 +56,7 @@ export default function Navbar() {
               </p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-300 to-yellow-600 text-black flex items-center justify-center font-black text-xs uppercase shadow-lg shadow-yellow-500/10">
-              {(user?.username || "UR").substring(0, 2)}
+              {(user?.username || "U").substring(0, 2)}
             </div>
           </div>
         </div>
