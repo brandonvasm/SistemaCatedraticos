@@ -18,6 +18,7 @@ class Course(models.Model):
     name = models.CharField(max_length=200)
     credits = models.IntegerField(default=0)
     cost_center = models.ForeignKey(Career, on_delete=models.CASCADE)
+    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class Teacher(models.Model):
