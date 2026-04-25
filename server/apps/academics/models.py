@@ -3,11 +3,13 @@ from django.db import models
 
 class Faculty(models.Model):
     name = models.CharField(max_length=200)
-    pensum_loaded = models.BooleanField(default=False)
 
 
-class CostCenter(models.Model):
+class Career(models.Model):
     name = models.CharField(max_length=200)
+    code = models.CharField(max_length=20, blank=True, default='')
+    abbreviation = models.CharField(max_length=20, blank=True, default='')
+    pensum_loaded = models.BooleanField(default=False)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
 
 
@@ -15,7 +17,8 @@ class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=200)
     credits = models.IntegerField(default=0)
-    cost_center = models.ForeignKey(CostCenter, on_delete=models.CASCADE)
+    cost_center = models.ForeignKey(Career, on_delete=models.CASCADE)
+    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class Teacher(models.Model):
@@ -60,6 +63,11 @@ class CourseSection(models.Model):
     )
     control_score = models.FloatField(null=True, blank=True)
     shift = models.CharField(max_length=20, choices=SHIFT_CHOICES)
+    appointment_number = models.CharField(max_length=50, blank=True, default='')
+    credits = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        unique_together = (('course', 'section_number', 'shift'),)
 
 
 class Contract(models.Model):
