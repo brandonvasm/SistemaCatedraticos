@@ -8,7 +8,7 @@ from .models import Contract, Faculty, Semester, Teacher
 class FacultySerializer(serializers.ModelSerializer):
     class Meta:
         model = Faculty
-        fields = ["id", "name", "pensum_loaded"]
+        fields = ["id", "name"]
 
 
 class SemesterSerializer(serializers.ModelSerializer):
