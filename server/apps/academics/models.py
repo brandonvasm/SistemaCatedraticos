@@ -63,6 +63,11 @@ class CourseSection(models.Model):
     )
     control_score = models.FloatField(null=True, blank=True)
     shift = models.CharField(max_length=20, choices=SHIFT_CHOICES)
+    appointment_number = models.CharField(max_length=50, blank=True, default='')
+    credits = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        unique_together = (('course', 'section_number', 'shift'),)
 
 
 class Contract(models.Model):
