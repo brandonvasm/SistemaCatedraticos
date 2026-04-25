@@ -6,6 +6,7 @@ export interface TeacherStats {
   tendencia_mejora: string;
   evaluaciones_total: number;
   recomendado_vs_otros: string;
+  faculty_id: number;
 }
 
 export interface TeacherRowProps {

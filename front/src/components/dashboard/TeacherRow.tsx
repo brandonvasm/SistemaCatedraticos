@@ -13,20 +13,20 @@ export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
 
   return (
     <>
-      <td className="px-6 py-5">
+      <td className="px-6 py-5 w-[280px]">
         <div>
-          <div className="text-sm font-black text-white uppercase tracking-wide group-hover:text-yellow-400 transition">
+          <div className="text-sm font-black text-white uppercase tracking-wide group-hover:text-yellow-400 transition whitespace-nowrap">
             {teacher.teacher_name || "SIN NOMBRE"}
           </div>
         </div>
       </td>
 
-      <td className="px-6 py-5">
-        <div className="flex flex-wrap gap-2">
+      <td className="px-6 py-5 w-[400px]">
+        <div className="flex flex-nowrap gap-2 overflow-hidden">
           {teacher.cursos_impartidos.length > 0 ? (
             <>
               {teacher.cursos_impartidos.slice(0, 2).map((curso, idx) => (
-                <span key={idx} className="bg-blue-500/10 text-blue-300 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-xl border border-blue-500/20">
+                <span key={idx} className="bg-blue-500/10 text-blue-300 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-xl border border-blue-500/20 whitespace-nowrap">
                   {curso}
                 </span>
               ))}

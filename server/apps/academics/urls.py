@@ -12,6 +12,7 @@ from .views import (
     SemesterListCreateView,
     TeacherStatsListView,
     TopCoursesByScoreView,
+    TeacherStatsDetailView
 )
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path("semesters/<int:pk>/", SemesterDetailView.as_view(), name="semester-detail"),
     path("teachers/", TeacherListCreateView.as_view(), name="teacher-list"),
     path("teachers/stats/", TeacherStatsListView.as_view(), name="teacher-stats"),
+    path("teachers/stats/<int:pk>/", TeacherStatsDetailView.as_view(), name="teacher-stats-detail"),
     path(
         "teachers/historical/faculty/",
         FacultyHistoricalView.as_view(),

@@ -155,6 +155,8 @@ class TeacherStatsDetailView(APIView):
         responses={200: TeacherStatsSerializer},
     )
     def get(self, request, pk):
+        from django.shortcuts import get_object_or_404
+        teacher = get_object_or_404(Teacher, pk=pk)
         secciones = CourseSection.objects.filter(teacher_id=pk).select_related("course")
         cursos = list(set([s.course.name for s in secciones if s.course]))
 
@@ -188,6 +190,8 @@ class TeacherStatsDetailView(APIView):
         )
 
         data = {
+            "teacher_id": teacher.id,
+            "teacher_name": teacher.name,
             "cursos_impartidos": cursos,
             "promedio_general": round(promedio, 2),
             "tendencia_mejora": f"{round(tendencia, 2)}%",

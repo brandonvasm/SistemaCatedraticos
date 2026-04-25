@@ -7,6 +7,7 @@ const teachers: Teacher[] = [
   { id: "4", name: "MSc. Jorge Ramírez", students: 165, score: 4.2, courses: 2, trend: "+0.2", isTrendUp: true },
   { id: "5", name: "Lic. Roberto Mejía", students: 118, score: 3.2, courses: 2, trend: "-0.4", isTrendUp: false },
   { id: "6", name: "Ing. Claudia Juárez", students: 176, score: 4.4, courses: 2, trend: "+0.3", isTrendUp: true },
+  { id: "7", name: "Ing. Claudia Juárez", students: 176, score: 4.4, courses: 2, trend: "+0.3", isTrendUp: true }
 ];
 
 export default teachers;

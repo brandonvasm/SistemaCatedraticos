@@ -69,7 +69,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
             <p className="text-[10px] font-black uppercase tracking-[0.3em]">Sin registros académicos encontrados</p>
           </div>
         ) : (
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+          <table className="w-full text-left border-collapse min-w-[1200px]">
             <thead className="
               bg-white/[0.02]
               text-gray-500
@@ -81,7 +81,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
             ">
               <tr>
                 <th className="px-10 py-6">Docente</th>
-                <th className="px-6 py-6">Cursos</th>
+                <th className="px-6 py-6 w-[400px]">Cursos</th>
                 <th className="px-6 py-6">Promedio</th>
                 <th className="px-6 py-6">Tendencia</th>
                 <th className="px-6 py-6">Evaluaciones</th>

@@ -11,5 +11,30 @@ export const teacherService = {
       console.error("Error al obtener estadísticas de docentes:", error);
       return [];
     }
+  },
+
+  getTeacherStats: async (id: string | number) => {
+    try {
+      const response = await api.get(`/academics/teachers/stats/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching teacher stats:", error);
+      throw error;
+    }
+  },
+
+  getTeacherHistorical: async (teacherId: string | number, facultyId: number) => {
+    try {
+      const response = await api.get(`/academics/teachers/${teacherId}/historical/`, {
+        params: { faculty: facultyId } 
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error en getTeacherHistorical:", error);
+      throw error;
+    }
   }
+
+  
+
 };
