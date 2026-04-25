@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"; 
+import { useNavigate } from "react-router-dom";
 import StatsSection from "../components/dashboard/stats/StatsSection"
 import TeachersGrid from "../components/dashboard/stats/TeachersGrid"
 import RankingCard from "../components/dashboard/stats/RankingCard";
@@ -7,17 +8,25 @@ import PerformanceScatter from "../components/dashboard/charts/PerformanceScatte
 import EfficiencyPanel from "../components/dashboard/insights/EfficiencyPanel";
 import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
 import PerformancePie from "../components/dashboard/charts/PerformancePie";
-import CourseHealthBarChart from "../components/dashboard/courses/CourseBarChart";
+import CourseBarChart from "../components/dashboard/courses/CourseBarChart"; 
 import ImportModal from "../components/common/ImportModal";
 import DashboardConfig from "../components/dashboard/DashboardConfig";
 import { useAuth } from "../context/AuthContext";
-import { Award, AlertCircle, FileUp } from "lucide-react"; 
+import { teacherService } from "../services/teacherService";
+import { courseService } from "../services/courseService"; 
+import { Award, AlertCircle, FileUp, ArrowRight } from "lucide-react"; 
+import type { TeacherStats } from "../types/teacher";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isImportOpen, setIsImportOpen] = useState(false); 
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [teachers, setTeachers] = useState<TeacherStats[]>([]);
+  const [topCourses, setTopCourses] = useState([]);
 
+  const facultyId = user?.faculty_id;
+  const currentSemesterId = 1; 
   const USER_PREFS_KEY = user?.id ? `dashboard_prefs_${user.id}` : "dashboard_prefs_guest";
 
   const [visible, setVisible] = useState(() => {
@@ -32,17 +41,16 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
+    if (facultyId) {
+      teacherService.getTeachersStats(facultyId).then(setTeachers);
+      courseService.getTopCourses(facultyId, currentSemesterId).then(setTopCourses);
+    }
+  }, [facultyId]);
+
+  useEffect(() => {
     const saved = localStorage.getItem(USER_PREFS_KEY);
     if (saved) {
       setVisible(JSON.parse(saved));
-    } else {
-      setVisible({
-        stats: true,
-        teachers: true,
-        rankings: true,
-        charts: true,
-        history: true
-      });
     }
   }, [USER_PREFS_KEY]);
 
@@ -54,15 +62,25 @@ export default function Dashboard() {
     setVisible((prev: any) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const topTeachers = [
-    { name: "Dr. Juan Pérez", score: "4.9", students: "168" },
-    { name: "Dr. Carlos Méndez", score: "4.8", students: "187" }
-  ];
+  const topTeachers = [...teachers]
+    .filter(t => t.promedio_general > 0)
+    .sort((a, b) => b.promedio_general - a.promedio_general)
+    .slice(0, 3)
+    .map(t => ({ 
+      name: t.teacher_name, 
+      score: t.promedio_general.toFixed(1), 
+      students: t.evaluaciones_total.toString() 
+    }));
 
-  const alertTeachers = [
-    { name: "Lic. Roberto Mejía", score: "3.2", students: "118" },
-    { name: "Lic. María González", score: "3.6", students: "128" }
-  ];
+  const alertTeachers = [...teachers]
+    .filter(t => t.promedio_general > 0)
+    .sort((a, b) => a.promedio_general - b.promedio_general)
+    .slice(0, 3)
+    .map(t => ({ 
+      name: t.teacher_name, 
+      score: t.promedio_general.toFixed(1), 
+      students: t.evaluaciones_total.toString() 
+    }));
 
   return (
     <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
@@ -78,7 +96,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Dashboard General</h1>
           <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mt-4 ml-1">
-            VISTA COMPLETA - EVALUACIONES
+            VISTA COMPLETA - {user?.faculty_name || "EVALUACIONES"}
           </p>
         </div>
 
@@ -92,7 +110,7 @@ export default function Dashboard() {
 
       {visible.stats && (
         <section>
-          <StatsSection />
+          <StatsSection teachers={teachers} facultyName={user?.faculty_name} />
         </section>
       )}
 
@@ -110,11 +128,25 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="text-[10px] text-yellow-400 font-black uppercase tracking-[0.2em] bg-yellow-400/10 px-5 py-2 rounded-full border border-yellow-400/20 shadow-inner">
-              12 Docentes Activos
+              {teachers.length} Docentes Activos
             </div>
           </div>
           <div className="relative z-10">
-            <TeachersGrid />
+            <TeachersGrid teachers={teachers.slice(0, 5)} />
+            
+            <div className="mt-10 pt-6 border-t border-white/5 flex justify-center">
+              <button 
+                onClick={() => navigate("/docentes")}
+                className="group/btn flex items-center gap-3 px-8 py-4 bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-yellow-400/30 rounded-2xl transition-all duration-300"
+              >
+                <span className="text-[9px] text-gray-400 group-hover/btn:text-yellow-400 font-black uppercase tracking-[0.3em] transition-colors">
+                  Ver listado completo
+                </span>
+                <div className="w-8 h-8 rounded-full bg-white/5 group-hover/btn:bg-yellow-400 flex items-center justify-center transition-all">
+                  <ArrowRight size={14} className="text-gray-400 group-hover/btn:text-black" />
+                </div>
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -122,7 +154,7 @@ export default function Dashboard() {
       {visible.rankings && (
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <RankingCard title="Mejores Valorados" icon={Award} color="green" teachers={topTeachers} />
-          <ThresholdCard />
+          <ThresholdCard teachers={teachers}/>
           <RankingCard title="Requieren Atención" icon={AlertCircle} color="red" teachers={alertTeachers} />
         </section>
       )}
@@ -148,9 +180,9 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <HistoryTrend />
-            <PerformancePie />
+            <PerformancePie teachers={teachers}/>
           </div>
-          <CourseHealthBarChart />
+          <CourseBarChart courses={topCourses} />
         </section>
       )}
 

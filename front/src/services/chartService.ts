@@ -1,26 +1,39 @@
 import api from "../api/axios";
-import type { CourseChartPoint } from "../types/chartCourses";
 
 export const chartService = {
-  getCoursesEvolution: async (): Promise<CourseChartPoint[]> => {
+  getCoursesEvolution: async () => {
     try {
-      const response = await api.get("/courses/stats/");
+      const response = await api.get('/historical/course-history/evolution/');
+      const rawData = response.data;
 
-      if (!response.data || response.data.length === 0) {
-        return mockData();
+      if (!Array.isArray(rawData)) {
+        console.error("La respuesta no es un array:", rawData);
+        return [];
       }
 
-      return response.data;
+      const semesterMap: { [key: string]: any } = {};
 
+      rawData.forEach((course: any) => {
+        if (course.semester_ratings && Array.isArray(course.semester_ratings)) {
+          course.semester_ratings.forEach((rating: any) => {
+            const label = `${rating.semester_year}-${rating.semester_number}`;
+            
+            if (!semesterMap[label]) {
+              semesterMap[label] = { 
+                name: label,
+                sortKey: rating.semester_year * 10 + rating.semester_number 
+              };
+            }
+            
+            semesterMap[label][course.course_name] = rating.rating;
+          });
+        }
+      });
+      return Object.values(semesterMap)
+        .sort((a: any, b: any) => a.sortKey - b.sortKey);
     } catch (error) {
-      return mockData();
+      console.error("Error cargando evolución:", error);
+      return [];
     }
   }
 };
-
-const mockData = (): CourseChartPoint[] => [
-  { name: "2024-2", calc1: 4.1, calc2: 4.0, ecuaciones: 4.2, software: 4.1 },
-  { name: "2025-1", calc1: 4.2, calc2: 4.1, ecuaciones: 4.1, software: 4.2 },
-  { name: "2025-2", calc1: 4.3, calc2: 4.2, ecuaciones: 4.0, software: 4.3 },
-  { name: "2026-1", calc1: 4.4, calc2: 4.3, ecuaciones: 3.9, software: 4.5 },
-];

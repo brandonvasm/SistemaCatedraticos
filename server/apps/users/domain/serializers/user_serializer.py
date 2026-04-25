@@ -4,8 +4,9 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-
-    faculty = serializers.CharField(source='faculty_id.name', read_only=True)
+    faculty_name = serializers.CharField(source='faculty_id.name', read_only=True)
+    faculty_id = serializers.CharField(source='faculty_id.id', read_only=True)
+    pensum_loaded = serializers.ReadOnlyField(source='faculty_id.pensum_loaded')
 
     class Meta:
         model = User
@@ -14,10 +15,12 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'role',
-            'faculty',
+            'faculty_name',
+            'faculty_id',
             'is_active',
             'password',
             'evaluation_count',
+            'pensum_loaded'
         ]
     
     def __init__(self, *args, **kwargs):

@@ -9,7 +9,7 @@ export default function Navbar() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-  const currentFacultad = user?.faculty || "Sin Facultad";
+  const currentFacultad = user?.faculty_name || "Sin Facultad";
   const userRole = user?.role || localStorage.getItem("user_role")?.toLowerCase().trim();
 
   return (

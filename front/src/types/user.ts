@@ -6,7 +6,8 @@ export interface UserData {
   username: string; 
   email: string;
   role: UserRole;
-  faculty: string;  
+  faculty_name: string;  
+  faculty_id: number;
   evaluation_count: number;
   is_active: boolean;
   password?: string; 
