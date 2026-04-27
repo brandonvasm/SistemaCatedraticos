@@ -2,8 +2,7 @@ import CourseRow from "./CourseRow";
 import { useEffect, useState } from "react";
 import { courseService } from "../../services/courseService";
 import type { CourseTable } from "../../types/courseTable";
-
-
+import { Download } from "lucide-react";
 
 export default function CoursesTable() {
   const [search, setSearch] = useState("");
@@ -11,6 +10,7 @@ export default function CoursesTable() {
   const [order, setOrder] = useState("desc");
 
   const [courses, setCourses] = useState<CourseTable[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -24,6 +24,34 @@ export default function CoursesTable() {
 
     fetchCourses();
   }, []);
+
+  const descargarReporte = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        "http://localhost:8000/api/reports/cursos-reports/?faculty=7"
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al descargar");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "reporte_cursos.xlsx";
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = courses.filter((c) => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
@@ -40,13 +68,24 @@ export default function CoursesTable() {
   return (
     <div className="w-full bg-[#0f111a]/50 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-2xl">
 
-      <div className="mb-6">
-        <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
-          GESTIÓN DE CURSOS
-        </h2>
-        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
-          EVALUACIÓN · RENDIMIENTO ACADÉMICO
-        </p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
+            GESTIÓN DE CURSOS
+          </h2>
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
+            EVALUACIÓN · RENDIMIENTO ACADÉMICO
+          </p>
+        </div>
+
+        <button
+          onClick={descargarReporte}
+          disabled={loading}
+          className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-yellow-500 transition-all shadow-lg shadow-yellow-400/10 border-none disabled:opacity-50"
+        >
+          <Download size={12} />
+          {loading ? "DESCARGANDO..." : "DESCARGAR REPORTE"}
+        </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8">

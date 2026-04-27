@@ -19,8 +19,6 @@ export default function DocentesViews() {
             EVALUACIÓN · RENDIMIENTO · SEGUIMIENTO ACADÉMICO
           </p>
         </div>
-
-        
       </header>
 
       <Filters active={activeFilter} setActive={setActiveFilter} />
