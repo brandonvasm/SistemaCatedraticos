@@ -45,7 +45,7 @@ export default function CourseRow({ course }: Props) {
               {course.name}
             </p>
             <div className="flex gap-0.5 mt-1">
-              {renderStars(course.avg)}
+              {renderStars(course.score)}
             </div>
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function CourseRow({ course }: Props) {
       <td className="px-6 py-5 w-[120px] text-center">
         <div className="inline-flex flex-col items-center bg-yellow-400/5 px-4 py-1.5 rounded-2xl border border-yellow-400/10">
           <span className="text-yellow-400 font-black text-sm ">
-            {course.avg?.toFixed(1) || "0.0"}
+            {course.score?.toFixed(1) || "0.0"}
           </span>
         </div>
       </td>
@@ -88,7 +88,7 @@ export default function CourseRow({ course }: Props) {
 
       <td className="px-6 py-5 w-[120px] text-right">
         <button
-          onClick={() => navigate(`/cursos/${course.code}`)}
+          onClick={() => navigate(`/cursos/${course.id}`)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-yellow-400 border border-white/5 hover:border-yellow-400 text-white hover:text-black rounded-xl transition-all duration-300 group/btn shadow-xl active:scale-95"
         >
           <Eye size={12} className="transition-transform group-hover/btn:scale-110" />

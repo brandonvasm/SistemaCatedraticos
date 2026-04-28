@@ -12,3 +12,13 @@ export interface TeacherStats {
 export interface TeacherRowProps {
   teacher: TeacherStats;
 }
+
+export interface Courses {
+  id: number;
+  code: string;
+  name: string;
+  credits: number;
+  score: number;      
+  trend: string | null; 
+  category?: string;
+}

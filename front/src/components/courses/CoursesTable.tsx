@@ -21,7 +21,7 @@ export default function CoursesTable() {
           code: c.code,
           name: c.name,
           credits: c.credits,
-          avg: c.score, 
+          score: c.score, 
           trend: c.trend,
           category: c.code.startsWith("SIS") ? "Informática" : "General" 
         }));
@@ -46,7 +46,7 @@ export default function CoursesTable() {
   });
 
   const sorted = [...filtered].sort((a, b) =>
-    order === "asc" ? a.avg - b.avg : b.avg - a.avg
+    order === "asc" ? a.score - b.score : b.score - a.score
   );
 
   return (

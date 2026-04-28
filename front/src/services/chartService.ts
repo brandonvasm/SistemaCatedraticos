@@ -35,5 +35,19 @@ export const chartService = {
       console.error("Error cargando evolución:", error);
       return [];
     }
+  },
+
+  getCourseEvolution: async (id: string | number) => {
+    try {
+      const response = await api.get(`/historical/course-history/${id}/evolution/`);
+      return response.data; 
+    } catch (error: any) {
+      if (error.response && error.response.status === 404) {
+        return { semester_ratings: [] };
+      }
+      throw error;
+    }
   }
+
+
 };

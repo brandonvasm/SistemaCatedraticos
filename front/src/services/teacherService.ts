@@ -1,5 +1,5 @@
 import api from "../api/axios";
-import type { TeacherStats } from "../types/teacher";
+import type { Courses, TeacherStats } from "../types/teacher";
 
 
 export const teacherService = {
@@ -20,6 +20,16 @@ export const teacherService = {
     } catch (error) {
       console.error("Error fetching teacher stats:", error);
       throw error;
+    }
+  },
+
+  getTeacherCourses: async (teacherId: string | number): Promise<Courses[]> => {
+    try {
+      const response = await api.get(`/academics/teachers/${teacherId}/courses/`);
+      return response.data.courses || [];
+    } catch (error) {
+      console.error("Error fetching all teacher courses:", error);
+      return [];
     }
   },
 

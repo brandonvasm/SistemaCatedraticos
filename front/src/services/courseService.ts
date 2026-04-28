@@ -24,5 +24,27 @@ export const courseService = {
       console.error("Error fetching courses list:", error);
       return [];
     }
-  }
+  },
+
+  getCourseDetail: async (id: string | number) => {
+    try {
+      const response = await api.get(`/academics/courses/${id}/`);
+      return response.data; // 
+    } catch (error) {
+      console.error("Error al obtener detalle del curso:", error);
+      throw error;
+    }
+  },
+
+  getCourseTeachersStats: async (courseId: string | number) => {
+    try {
+      const response = await api.get(`/academics/courses/${courseId}/teachers-stats/`);
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener stats de docentes:", error);
+      return []; 
+    }
+  },
+
+
 };

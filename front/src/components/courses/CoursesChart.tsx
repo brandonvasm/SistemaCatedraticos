@@ -53,7 +53,7 @@ export default function CoursesChart() {
       <div className="mb-8 flex items-start justify-between relative z-20">
         <div>
           <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
-            EVOLUCIÓN POR CURSO
+            EVOLUCIÓN DE CURSOS
           </h2>
           <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.4em] mt-3 ml-1">
             ANÁLISIS HISTÓRICO DE NOTAS

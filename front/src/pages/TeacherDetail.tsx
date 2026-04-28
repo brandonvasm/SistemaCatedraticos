@@ -12,12 +12,15 @@ import ComentariosTab from "../components/teacherDetail/CommentsSection";
 import Recommendations from "../components/teacherDetail/Recommendations";
 import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
 import { teacherService } from "../services/teacherService";
+import type { Courses } from "../types/teacher";
 
 export default function TeacherDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [tab, setTab] = useState("resumen");
   const [teacherAPI, setTeacherAPI] = useState<any>(null);
+  const [courses, setCourses] = useState<Courses[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
   
   const teacherLocal = teachers.find((t) => t.id === id);
 
@@ -25,17 +28,25 @@ export default function TeacherDetail() {
     async function loadData() {
       if (id) {
         try {
-          const data = await teacherService.getTeacherStats(id);
-          setTeacherAPI(data);
+          const [statsData, coursesData] = await Promise.all([
+            teacherService.getTeacherStats(id),
+            teacherService.getTeacherCourses(id)
+          ]);
+          
+          setTeacherAPI(statsData);
+          setCourses(coursesData);
         } catch (error) {
           console.error("Error al cargar datos del docente:", error);
+        } finally {
+          setLoadingCourses(false);
         }
       }
     }
     loadData();
   }, [id]);
 
-  if (!teacherLocal && !teacherAPI) return <p className="text-white">No encontrado</p>;
+  if (!teacherLocal && !teacherAPI && loadingCourses) return <p className="text-white">Cargando...</p>;
+  if (!teacherLocal && !teacherAPI && !loadingCourses) return <p className="text-white">No encontrado</p>;
 
   return (
     <div className="relative z-0 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -74,7 +85,7 @@ export default function TeacherDetail() {
             </div>
 
             <div className="bg-[#0f111a]/50 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-2xl">
-              <CoursesList teacher={teacherAPI} />
+              <CoursesList courses={courses} isLoading={loadingCourses}/>
             </div>
 
             <div className="bg-[#0f111a]/50 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-2xl">

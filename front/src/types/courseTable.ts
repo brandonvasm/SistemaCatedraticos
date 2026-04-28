@@ -3,7 +3,7 @@ export interface CourseTable {
   code: string;
   name: string;
   credits: number;
-  avg: number;
+  score: number;
   trend: number | null; 
   category?: string;
 }
