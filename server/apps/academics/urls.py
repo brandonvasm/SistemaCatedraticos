@@ -1,7 +1,8 @@
 from django.urls import path
 
 from .teacher_views import (
-    TeacherCommentsView,
+    TeacherCommentsDetailView,
+    TeacherCommentsListView,
     TeacherHistoricalView,
     TeacherListCreateView,
 )
@@ -35,7 +36,16 @@ urlpatterns = [
         TeacherHistoricalView.as_view(),
         name="teacher-historical",
     ),
-    path("teachers/comments/", TeacherCommentsView.as_view(), name="teacher-comments"),
+    path(
+        "teachers/comments/",
+        TeacherCommentsListView.as_view(),
+        name="teacher-comments",
+    ),
+    path(
+        "teachers/<int:teacher_id>/comments/",
+        TeacherCommentsDetailView.as_view(),
+        name="teacher-comments-detail",
+    ),
     path("sections/", CourseSectionByFacultyView.as_view(), name="sections-by-faculty"),
     path("courses/top/", TopCoursesByScoreView.as_view(), name="courses-top"),
     path("courses/", CourseListView.as_view(), name="course-list"),

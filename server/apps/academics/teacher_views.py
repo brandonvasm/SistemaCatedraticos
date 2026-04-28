@@ -101,9 +101,9 @@ class TeacherHistoricalView(APIView):
         return Response(serializer.data)
 
 
-class TeacherCommentsView(APIView):
+class TeacherCommentsListView(APIView):
     @extend_schema(
-        summary="Obtener comentarios por docente",
+        summary="Obtener comentarios de todos los docentes",
         description="Devuelve todos los comentarios agrupados por docente.",
         responses={200: OpenApiTypes.OBJECT},
     )
@@ -130,3 +130,39 @@ class TeacherCommentsView(APIView):
         ]
 
         return Response(result)
+
+
+class TeacherCommentsDetailView(APIView):
+    @extend_schema(
+        summary="Obtener comentarios de un docente",
+        description="Devuelve todos los comentarios de un docente.",
+        parameters=[
+            OpenApiParameter(
+                name="teacher_id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH,
+                description="ID del docente",
+                required=True,
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request, teacher_id):
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+        except Teacher.DoesNotExist:
+            return Response(
+                {"error": "Docente no encontrado"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        comments = (
+            Comment.objects.filter(course_section__teacher_id=teacher.id)
+            .order_by("-created_at")
+        )
+        teacher_comments = [comment.content for comment in comments]
+
+        return Response({
+            "docente": teacher.name,
+            "comentarios": teacher_comments,
+        })
