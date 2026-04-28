@@ -1,6 +1,20 @@
-import { BookOpen, TrendingUp } from "lucide-react";
+import { BookOpen, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import type { CourseTable } from "../../types/courseTable";
 
-export default function CourseHeader() {
+interface CourseHeaderProps {
+  course: CourseTable | null;
+}
+
+export default function CourseHeader({ course }: CourseHeaderProps) {
+  if (!course) {
+    return (
+      <div className="bg-white/[0.02] border border-white/5 backdrop-blur-2xl p-8 rounded-[2.5rem] animate-pulse h-[140px]" />
+    );
+  }
+
+  const isPositive = (course.trend || 0) >= 0;
+  const isNeutral = course.trend === null;
+
   return (
     <div
       className="
@@ -35,18 +49,32 @@ export default function CourseHeader() {
 
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tighter uppercase leading-none">
-            INGENIERÍA DE SOFTWARE
+            {course.name}
           </h1>
 
           <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.4em] mt-3 ml-1">
-            METODOLOGÍAS · DESARROLLO · SISTEMAS
+            {course.code} 
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-emerald-400 font-black text-lg relative z-10">
-        <TrendingUp size={18} />
-        +0.4
+      <div className={`flex items-center gap-2 font-black text-lg relative z-10 ${
+        isNeutral ? "text-gray-500" : isPositive ? "text-emerald-400" : "text-red-400"
+      }`}>
+        {isNeutral ? (
+          <Minus size={18} />
+        ) : isPositive ? (
+          <TrendingUp size={18} />
+        ) : (
+          <TrendingDown size={18} />
+        )}
+        
+        <span className="tabular-nums">
+          {course.trend !== null 
+            ? `${isPositive ? '+' : ''}${course.trend.toFixed(1)}%` 
+            : "—"
+          }
+        </span>
       </div>
     </div>
   );
