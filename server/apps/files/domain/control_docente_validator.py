@@ -1,5 +1,7 @@
 from typing import Any
 
+import pandas as pd
+
 from apps.files.domain.base_validator import BaseExcelValidator
 
 
@@ -24,17 +26,16 @@ class ControlDocenteValidator(BaseExcelValidator):
 
     def validate_and_transform(
         self,
-        worksheet,
+        dataframe: pd.DataFrame,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-        rows = list(worksheet.iter_rows(values_only=True))
-
-        if not rows:
-            return self.build_basic_info(worksheet, [], []), []
+        if dataframe.empty:
+            return self.build_basic_info(dataframe, [], []), []
 
         # Normalizar encabezados
+        header_row = dataframe.iloc[0].tolist()
         headers = [
             self.normalize_header(value, index)
-            for index, value in enumerate(rows[0], start=1)
+            for index, value in enumerate(header_row, start=1)
         ]
 
         # Validar encabezados requeridos
@@ -61,7 +62,7 @@ class ControlDocenteValidator(BaseExcelValidator):
         evaluation_headers = headers[start_idx:end_idx + 1]
 
         # Procesar filas
-        for row in rows[1:]:
+        for row in dataframe.iloc[1:].itertuples(index=False, name=None):
             if self.is_empty_row(row):
                 continue
 
@@ -69,6 +70,11 @@ class ControlDocenteValidator(BaseExcelValidator):
                 headers[i]: row[idx] if idx < len(row) else None
                 for i, idx in enumerate(required_indexes)
             }
+
+            record["Docente"] = self.normalize_name(record.get("Docente"))
+            record["Curso"] = self.normalize_course(record.get("Curso"))
+            record["Jornada"] = self.normalize_shift(record.get("Jornada"))
+            record["Sección"] = self.normalize_section(record.get("Sección"))
 
             # Inicializar contadores
             count_1 = 0
@@ -80,7 +86,7 @@ class ControlDocenteValidator(BaseExcelValidator):
             for header in evaluation_headers:
                 value = record.get(header)
 
-                if value is None:
+                if self.is_blank(value):
                     continue
 
                 try:
@@ -105,4 +111,4 @@ class ControlDocenteValidator(BaseExcelValidator):
 
             records.append(record)
 
-        return self.build_basic_info(worksheet, headers, records), records
+        return self.build_basic_info(dataframe, headers, records), records

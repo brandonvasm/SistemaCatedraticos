@@ -1,5 +1,7 @@
 from typing import Any
 
+import pandas as pd
+
 from apps.files.domain.base_validator import BaseExcelValidator
 
 
@@ -17,17 +19,14 @@ class ComentariosValidator(BaseExcelValidator):
     # Valida la hoja y arma los registros finales
     def validate_and_transform(
         self,
-        worksheet,
+        dataframe: pd.DataFrame,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-        # Obtiene todas las filas de la hoja
-        rows = list(worksheet.iter_rows(values_only=True))
-
         # Si no alcanza la fila de encabezados, retorna vacío
-        if len(rows) < self.HEADER_ROW_INDEX:
-            return self.build_basic_info(worksheet, [], []), []
+        if len(dataframe) < self.HEADER_ROW_INDEX:
+            return self.build_basic_info(dataframe, [], []), []
 
         # Toma la fila 10 como encabezado
-        header_row = rows[self.HEADER_ROW_INDEX - 1]
+        header_row = dataframe.iloc[self.HEADER_ROW_INDEX - 1].tolist()
         headers = [
             self.normalize_header(value, index)
             for index, value in enumerate(header_row, start=1)
@@ -52,11 +51,17 @@ class ComentariosValidator(BaseExcelValidator):
 
         # Estas variables guardan el último curso y catedrático encontrado
         current_course = None
+        current_section = ""
+        current_shift = ""
         current_teacher = None
+        current_teacher_code = ""
         records: list[dict[str, Any]] = []
 
         # Recorre las filas después del encabezado
-        for row in rows[self.HEADER_ROW_INDEX:]:
+        for row in dataframe.iloc[self.HEADER_ROW_INDEX:].itertuples(
+            index=False,
+            name=None,
+        ):
             # Salta filas vacías
             if self.is_empty_row(row):
                 continue
@@ -72,15 +77,22 @@ class ComentariosValidator(BaseExcelValidator):
             comment_value = values[comment_index]
 
             # Actualiza el curso actual si viene con valor
-            if course_value is not None and str(course_value).strip():
-                current_course = str(course_value).strip()
+            if not self.is_blank(course_value):
+                current_course, current_section, current_shift = (
+                    self.extract_course_section_shift(course_value)
+                )
 
             # Actualiza el catedrático actual si viene con valor
-            if teacher_value is not None and str(teacher_value).strip():
-                current_teacher = str(teacher_value).strip()
+            if not self.is_blank(teacher_value):
+                current_teacher_code, current_teacher = self.split_code_and_name(
+                    teacher_value
+                )
+                current_teacher_code = self.normalize_teacher_code(
+                    current_teacher_code
+                )
 
             # Si no hay comentario, no guarda la fila
-            if comment_value is None or not str(comment_value).strip():
+            if self.is_blank(comment_value):
                 continue
 
             # Si aún no hay curso o catedrático, no guarda la fila
@@ -90,13 +102,23 @@ class ComentariosValidator(BaseExcelValidator):
             # Arma el registro final
             record = {
                 "Curso": current_course,
+                "Sección": current_section,
+                "Jornada": current_shift,
+                "Código Docente": current_teacher_code,
                 "Catedrático": current_teacher,
-                "Comentario": str(comment_value).strip(),
+                "Comentario": self.normalize_text(comment_value),
             }
             records.append(record)
 
         # Define los encabezados finales del resultado
-        final_headers = ["Curso", "Catedrático", "Comentario"]
+        final_headers = [
+            "Curso",
+            "Sección",
+            "Jornada",
+            "Código Docente",
+            "Catedrático",
+            "Comentario",
+        ]
 
         # Retorna información general y los registros procesados
-        return self.build_basic_info(worksheet, final_headers, records), records
+        return self.build_basic_info(dataframe, final_headers, records), records

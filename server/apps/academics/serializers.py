@@ -1,6 +1,6 @@
-from dataclasses import fields
-
 from rest_framework import serializers
+
+from apps.files.domain.base_validator import BaseExcelValidator
 
 from .models import Contract, Faculty, Semester, Teacher
 
@@ -9,6 +9,9 @@ class FacultySerializer(serializers.ModelSerializer):
     class Meta:
         model = Faculty
         fields = ["id", "name"]
+
+    def validate_name(self, value):
+        return BaseExcelValidator.normalize_faculty(value)
 
 
 class SemesterSerializer(serializers.ModelSerializer):
@@ -61,12 +64,6 @@ class TeacherSerializer(serializers.ModelSerializer):
             is_active=validated_data.get("is_active", True),
         )
 
-        return teacher
-
-    def create(self, validated_data):
-        faculty_id = validated_data.pop("faculty_id")
-        teacher = Teacher.objects.create(**validated_data)
-        Contract.objects.create(teacher=teacher, faculty_id=faculty_id)
         return teacher
 
 
