@@ -1,48 +1,50 @@
 import api from "../api/axios";
-import type { TeacherTable } from "../types/teacherTable";
+import type { Courses, TeacherStats } from "../types/teacher";
+
 
 export const teacherService = {
-  getTeachers: async (): Promise<TeacherTable[]> => {
+  getTeachersStats: async (facultyId: number): Promise<TeacherStats[]> => {
     try {
-      const response = await api.get<any[]>("/teachers/");
-
-      if (!response.data || response.data.length === 0) {
-        return mockTeachers();
-      }
-
-      return response.data.map((t) => ({
-        id: t.id,
-        name: t.name,
-        courses: 3,
-        score: 4.5,
-        trend: "+0.3",
-        isTrendUp: true,
-        students: 120
-      }));
-
+      const response = await api.get(`/academics/teachers/stats/?faculty=${facultyId}`);
+      return response.data;
     } catch (error) {
-      return mockTeachers();
+      console.error("Error al obtener estadísticas de docentes:", error);
+      return [];
+    }
+  },
+
+  getTeacherStats: async (id: string | number) => {
+    try {
+      const response = await api.get(`/academics/teachers/stats/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching teacher stats:", error);
+      throw error;
+    }
+  },
+
+  getTeacherCourses: async (teacherId: string | number): Promise<Courses[]> => {
+    try {
+      const response = await api.get(`/academics/teachers/${teacherId}/courses/`);
+      return response.data.courses || [];
+    } catch (error) {
+      console.error("Error fetching all teacher courses:", error);
+      return [];
+    }
+  },
+
+  getTeacherHistorical: async (teacherId: string | number, facultyId: number) => {
+    try {
+      const response = await api.get(`/academics/teachers/${teacherId}/historical/`, {
+        params: { faculty: facultyId } 
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error en getTeacherHistorical:", error);
+      throw error;
     }
   }
-};
 
-const mockTeachers = (): TeacherTable[] => [
-  {
-    id: 1,
-    name: "Juan Pérez",
-    courses: 3,
-    score: 4.6,
-    trend: "+0.2",
-    isTrendUp: true,
-    students: 120
-  },
-  {
-    id: 2,
-    name: "María López",
-    courses: 2,
-    score: 4.2,
-    trend: "-0.1",
-    isTrendUp: false,
-    students: 98
-  }
-];
+  
+
+};

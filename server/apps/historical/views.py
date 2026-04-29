@@ -76,3 +76,70 @@ class CourseHistoryViewSet(viewsets.ViewSet):
         ]
 
         return Response(CourseEvolutionSerializer(data, many=True).data)
+
+class CourseDetailHistoryViewSet(viewsets.ViewSet):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsSysAdminOrCoordinator]
+
+    @extend_schema(
+        summary="Evolucion de Curso Individual",
+        responses={
+            200: OpenApiResponse(
+                response=CourseEvolutionSerializer, 
+                description="Specific course evolution and scores",
+                examples=[
+                    OpenApiExample(
+                        "course_evolution_detail_example",
+                        value={
+                            "course_id": 1,
+                            "course_name": "Math",
+                            "semester_ratings": [
+                                {"rating": 4.5, "semester_year": 2024, "semester_number": 1},
+                                {"rating": 3.8, "semester_year": 2024, "semester_number": 2},
+                            ],
+                        },
+                    )
+                ],
+            )
+        },
+        tags=["Course History"],
+    )
+
+    @action(detail=True, methods=["get"], url_path="evolution")
+    def evolution(self, request, pk=None):
+        user_faculty = request.user.faculty_id
+
+        histories = (
+            CourseHistory.objects.filter(
+                course_id=pk, 
+                course__cost_center__faculty=user_faculty
+            )
+            .select_related("course", "semester")
+            .order_by("semester__year", "semester__number")
+        )
+
+        if not histories.exists():
+            return Response({"detail": "No history found for this course"}, status=404)
+
+        course_name = ""
+        semester_ratings = []
+
+        for entry in histories:
+            course_name = entry.course.name
+            
+            semester_ratings.append(
+                {
+                    "rating": entry.control_avg_score,
+                    "semester_year": entry.semester.year,
+                    "semester_number": entry.semester.number,
+                }
+            )
+
+        data = {
+            "course_id": int(pk),
+            "course_name": course_name,
+            "semester_ratings": semester_ratings,
+        }
+
+
+        return Response(CourseEvolutionSerializer(data).data)

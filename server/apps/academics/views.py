@@ -4,6 +4,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from collections import defaultdict
 
 from apps.evaluations.models import SectionControl, StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
@@ -155,6 +156,8 @@ class TeacherStatsDetailView(APIView):
         responses={200: TeacherStatsSerializer},
     )
     def get(self, request, pk):
+        from django.shortcuts import get_object_or_404
+        teacher = get_object_or_404(Teacher, pk=pk)
         secciones = CourseSection.objects.filter(teacher_id=pk).select_related("course")
         cursos = list(set([s.course.name for s in secciones if s.course]))
 
@@ -188,6 +191,8 @@ class TeacherStatsDetailView(APIView):
         )
 
         data = {
+            "teacher_id": teacher.id,
+            "teacher_name": teacher.name,
             "cursos_impartidos": cursos,
             "promedio_general": round(promedio, 2),
             "tendencia_mejora": f"{round(tendencia, 2)}%",
@@ -452,7 +457,6 @@ class TopCoursesByScoreView(APIView):
 
             course_scores[course.id].append(punteo)
 
-        # Promediar punteos por curso y ordenar
         result = [
             {
                 "course_id": course_id,
@@ -467,3 +471,110 @@ class TopCoursesByScoreView(APIView):
 
         serializer = TopCourseSerializer(top4, many=True)
         return Response(serializer.data)
+    
+
+class TeacherCourseListView(APIView):
+    @extend_schema (
+            summary = "Cursos asignados por docente"
+            
+    )
+    def get(self, request, pk):
+        sections = CourseSection.objects.filter(teacher_id=pk).select_related("course")
+        
+        courses_map = {}
+        for s in sections:
+            if s.course:
+                courses_map[s.course.id] = {
+                    "id": s.course.id,
+                    "code": getattr(s.course, 'code', f"C-{s.course.id}"),
+                    "name": s.course.name,
+                    "credits": getattr(s.course, 'credits', 0)
+                }
+
+        course_ids = list(courses_map.keys())
+
+        controls = SectionControl.objects.filter(
+            course_section__teacher_id=pk
+        ).select_related("course_section__course")
+
+        scores_by_course = defaultdict(list)
+        for ctrl in controls:
+            high, mid, low = ctrl.high_count, ctrl.medium_count, ctrl.low_count
+            total = high + mid + low
+            score = (total / high * 100) if high > 0 else 0.0
+            scores_by_course[ctrl.course_section.course_id].append(score)
+        histories = TeacherCourseHistory.objects.filter(
+            teacher_id=pk, 
+            course_id__in=course_ids
+        ).order_by("course_id", "-semester_id")
+
+        history_map = defaultdict(list)
+        for h in histories:
+            history_map[h.course_id].append(h.student_score)
+
+        result = []
+        for c_id, info in courses_map.items():
+            course_scores = scores_by_course.get(c_id, [])
+            avg_score = sum(course_scores) / len(course_scores) if course_scores else 0.0
+            
+            trend_str = "N/A"
+            c_hist = history_map.get(c_id, [])
+            if len(c_hist) >= 2 and c_hist[1] > 0:
+                diff = round(((c_hist[0] - c_hist[1]) / c_hist[1]) * 100, 2)
+                trend_str = f"{diff}%"
+
+            result.append({
+                "id": info["id"],
+                "code": info["code"],
+                "name": info["name"],
+                "credits": info["credits"],
+                "score": round(avg_score, 2),
+                "trend": trend_str
+            })
+
+        return Response({"total": len(result), "courses": result})
+
+
+class CourseTeachersStatsView(APIView):
+    @extend_schema(
+        summary="Estadísticas de docentes por curso individual",
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request, pk):
+        from django.shortcuts import get_object_or_404
+        controls = SectionControl.objects.filter(
+            course_section__course_id=pk
+        ).select_related("course_section__teacher")
+
+        teacher_scores = defaultdict(list)
+        teacher_names = {}
+
+        for control in controls:
+            teacher = control.course_section.teacher
+            if not teacher:
+                continue
+                
+            high = control.high_count
+            mid = control.medium_count
+            low = control.low_count
+
+            punteo = ((high + mid + low) / high) * 100 if high > 0 else 0.0
+
+            if teacher.id not in teacher_scores:
+                teacher_scores[teacher.id] = []
+                teacher_names[teacher.id] = teacher.name
+
+            teacher_scores[teacher.id].append(punteo)
+
+        result = [
+            {
+                "teacher_id": t_id,
+                "teacher_name": teacher_names[t_id],
+                "average_rating": round(sum(scores) / len(scores), 2)
+            }
+            for t_id, scores in teacher_scores.items()
+        ]
+
+        result.sort(key=lambda x: x["average_rating"], reverse=True)
+
+        return Response(result, status=status.HTTP_200_OK)

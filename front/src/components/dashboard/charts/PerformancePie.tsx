@@ -1,17 +1,28 @@
-import { PieChart as PieIcon } from "lucide-react";
+import { PieChart as PieIcon, Activity } from "lucide-react";
+import type { TeacherStats } from "../../../types/teacher";
 
-export default function PerformancePie() {
+interface PerformancePieProps {
+  teachers: TeacherStats[];
+}
+
+export default function PerformancePie({ teachers }: PerformancePieProps) {
+  const counts = {
+    excelente: teachers.filter(t => t.promedio_general > 4.25).length,
+    muyBueno: teachers.filter(t => t.promedio_general > 3.5 && t.promedio_general <= 4.25).length,
+    bueno: teachers.filter(t => t.promedio_general >= 3.0 && t.promedio_general <= 3.5).length,
+    atencion: teachers.filter(t => t.promedio_general > 0 && t.promedio_general < 3.0).length,
+  };
+
+  const totalEvaluated = Object.values(counts).reduce((a, b) => a + b, 0);
 
   const stats = [
-    { label: "Excelente", value: 31, color: "#22c55e" }, // Verde
-    { label: "Muy Bueno", value: 38, color: "#3b82f6" }, // Azul
-    { label: "Atención", value: 13, color: "#ef4444" },  // Rojo
-    { label: "Bueno", value: 19, color: "#f59e0b" },    // Naranja
-  ];
+    { label: "Excelente", value: counts.excelente, color: "#22c55e" },
+    { label: "Muy Bueno", value: counts.muyBueno, color: "#3b82f6" },
+    { label: "Bueno", value: counts.bueno, color: "#f59e0b" },
+    { label: "Atención", value: counts.atencion, color: "#ef4444" },
+  ].filter(s => s.value > 0);
 
-
-  const total = stats.reduce((sum, item) => sum + item.value, 0);
-  let cumulativeAngle = -90; 
+  let cumulativeAngle = -90;
 
   return (
     <div className="bg-[#1e2230]/60 border border-white/5 rounded-3xl p-6 h-full shadow-2xl relative overflow-hidden group">
@@ -26,51 +37,82 @@ export default function PerformancePie() {
       </div>
 
       <div className="flex flex-col items-center justify-center py-4">
-        <div className="relative w-56 h-56">
+        {totalEvaluated > 0 ? (
+          <>
+            <div className="relative w-56 h-56">
+              <svg viewBox="0 0 100 100" className="w-full h-full">
+                <circle cx="50" cy="50" r="48" fill="#111827" stroke="#1f2937" strokeWidth="1" />
+                
+                {stats.map((item, index) => {
+                  const angle = (item.value / totalEvaluated) * 360;
+                  const startAngle = cumulativeAngle;
+                  cumulativeAngle += angle;
 
-          <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-            <circle cx="50" cy="50" r="48" fill="#111827" stroke="#1f2937" strokeWidth="1" />
-            
-            {stats.map((item, index) => {
-              const angle = (item.value / total) * 360;
-              const startAngle = cumulativeAngle;
-              cumulativeAngle += angle;
+                  const x1 = 50 + 48 * Math.cos((startAngle * Math.PI) / 180);
+                  const y1 = 50 + 48 * Math.sin((startAngle * Math.PI) / 180);
+                  const x2 = 50 + 48 * Math.cos((cumulativeAngle * Math.PI) / 180);
+                  const y2 = 50 + 48 * Math.sin((cumulativeAngle * Math.PI) / 180);
+                  const largeArcFlag = angle > 180 ? 1 : 0;
 
-              const x1 = 50 + 48 * Math.cos((startAngle * Math.PI) / 180);
-              const y1 = 50 + 48 * Math.sin((startAngle * Math.PI) / 180);
-              const x2 = 50 + 48 * Math.cos((cumulativeAngle * Math.PI) / 180);
-              const y2 = 50 + 48 * Math.sin((cumulativeAngle * Math.PI) / 180);
-              const largeArcFlag = angle > 180 ? 1 : 0;
+                  return (
+                    <path
+                      key={index}
+                      d={`M50,50 L${x1},${y1} A48,48 0 ${largeArcFlag},1 ${x2},${y2} Z`}
+                      fill={item.color}
+                      stroke="#1e2230" 
+                      strokeWidth="1.5"
+                      className="transition-all duration-300 hover:opacity-90 cursor-pointer"
+                    />
+                  );
+                })}
+              </svg>
 
-              return (
-                <path
-                  key={index}
-                  d={`M50,50 L${x1},${y1} A48,48 0 ${largeArcFlag},1 ${x2},${y2} Z`}
-                  fill={item.color}
-                  stroke="#1e2230" 
-                  strokeWidth="1"
-                  className="transition-all duration-300 hover:opacity-90 cursor-pointer"
-                />
-              );
-            })}
-          </svg>
-
-          <div className="absolute inset-0 font-black text-xs text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
-            <span className="absolute top-[20%] right-[22%]">31%</span>
-            <span className="absolute top-[42%] left-[12%]">38%</span>
-            <span className="absolute bottom-[28%] right-[28%]">19%</span>
-            <span className="absolute top-[52%] -right-1">13%</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2.5 mt-10">
-          {stats.map((item, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">{item.label}</span>
+              <div className="absolute inset-0 pointer-events-none">
+                {stats.map((item, i) => {
+                  const percentage = Math.round((item.value / totalEvaluated) * 100);
+                  if (percentage < 5) return null;
+                  
+                  const midAngle = (cumulativeAngle - ((item.value / totalEvaluated) * 360) / 2);
+                  return (
+                    <div 
+                      key={i} 
+                      className="absolute font-black text-[10px] text-white drop-shadow-md"
+                      style={{
+                        left: `${50 + 30 * Math.cos((midAngle * Math.PI) / 180)}%`,
+                        top: `${50 + 30 * Math.sin((midAngle * Math.PI) / 180)}%`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                    >
+                      {percentage}%
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
+
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2.5 mt-10">
+              {stats.map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">{item.label}</span>
+                    <span className="text-[9px] text-gray-600 font-medium mt-0.5">{item.value} Docentes</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-56 w-full text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-gray-700">
+              <Activity size={32} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Esperando Evaluaciones</p>
+              <p className="text-[9px] text-gray-600 font-bold uppercase mt-1">No hay docentes con promedio mayor a 0.0</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
