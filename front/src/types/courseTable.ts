@@ -1,13 +1,14 @@
 export interface CourseTable {
   id: number;
-  name: string;
   code: string;
-  category: string;
+  name: string;
+  credits: number;
+  score: number;
+  trend: number | null; 
+  category?: string;
+}
 
-  evaluations: number;
-  teachers: number;
-  avg: number;
-  trend: number;
-  rec: number;
-  teacher: string;
+export interface CourseChartPoint {
+  name: string;
+  [courseName: string]: string | number;
 }

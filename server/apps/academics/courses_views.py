@@ -3,6 +3,7 @@ from collections import defaultdict
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 
 from apps.historical.models import CourseHistory
 from apps.users.infrastructure.authentication import CookieJWTAuthentication
@@ -64,3 +65,51 @@ class CourseListView(APIView):
             )
 
         return Response({"total": len(courses_data), "courses": courses_data})
+    
+class CourseDetailView(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsSysAdminOrCoordinator]
+
+    @extend_schema(
+        summary="detalles de cursos individuales",
+    )
+
+    def get(self, request, pk):
+        course = get_object_or_404(
+            Course, 
+            id=pk, 
+            cost_center__faculty_id=request.user.faculty_id
+        )
+
+        sections = CourseSection.objects.filter(
+            course_id=course.id, 
+            control_score__isnull=False
+        ).values("control_score")
+
+        scores = [section["control_score"] for section in sections]
+        course_score = round(sum(scores) / len(scores), 2) if scores else None
+
+        histories = (
+            CourseHistory.objects.filter(course_id=course.id)
+            .order_by("semester__year", "semester__number")
+            .values("control_avg_score")
+        )
+
+        hist = [h["control_avg_score"] for h in histories]
+        
+        trend = None
+
+        if len(hist) >= 2:
+            last_score = hist[-1]
+            previous_score = hist[-2]
+            if previous_score != 0:
+                trend = round(((last_score - previous_score) / previous_score) * 100, 2)
+
+        return Response({
+            "id": course.id,
+            "code": course.code,
+            "name": course.name,
+            "credits": course.credits,
+            "score": course_score,
+            "trend": trend,
+        })

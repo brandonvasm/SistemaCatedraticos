@@ -1,9 +1,24 @@
-export interface Teacher {
-  id: string;
+export interface TeacherStats {
+  teacher_id: number;
+  teacher_name: string;
+  cursos_impartidos: string[];
+  promedio_general: number;
+  tendencia_mejora: string;
+  evaluaciones_total: number;
+  recomendado_vs_otros: string;
+  faculty_id: number;
+}
+
+export interface TeacherRowProps {
+  teacher: TeacherStats;
+}
+
+export interface Courses {
+  id: number;
+  code: string;
   name: string;
-  students: number;
-  score: number;
-  courses: number;
-  trend: string;
-  isTrendUp: boolean;
+  credits: number;
+  score: number;      
+  trend: string | null; 
+  category?: string;
 }
