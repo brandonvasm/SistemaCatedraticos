@@ -1,5 +1,7 @@
 from typing import Any
 
+import pandas as pd
+
 from apps.files.domain.base_validator import BaseExcelValidator
 
 
@@ -26,17 +28,14 @@ class EvaluacionDocenteValidator(BaseExcelValidator):
     # Valida la hoja y convierte los datos en registros
     def validate_and_transform(
         self,
-        worksheet,
+        dataframe: pd.DataFrame,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-        # Obtiene todas las filas de la hoja
-        rows = list(worksheet.iter_rows(values_only=True))
-
         # Si no hay suficientes filas, retorna datos vacíos
-        if len(rows) < self.HEADER_ROW_INDEX:
-            return self.build_basic_info(worksheet, [], []), []
+        if len(dataframe) < self.HEADER_ROW_INDEX:
+            return self.build_basic_info(dataframe, [], []), []
 
         # Toma la fila 12 como fila de encabezados
-        header_row = rows[self.HEADER_ROW_INDEX - 1]
+        header_row = dataframe.iloc[self.HEADER_ROW_INDEX - 1].tolist()
 
         # Normaliza los nombres de los encabezados
         headers = [
@@ -58,14 +57,17 @@ class EvaluacionDocenteValidator(BaseExcelValidator):
         records: list[dict[str, Any]] = []
 
         # Recorre las filas después de los encabezados
-        for row in rows[self.HEADER_ROW_INDEX:]:
+        for row in dataframe.iloc[self.HEADER_ROW_INDEX:].itertuples(
+            index=False,
+            name=None,
+        ):
             # Salta filas vacías
             if self.is_empty_row(row):
                 continue
 
             # Toma el primer valor importante para validar si la fila sirve
             first_value = row[selected_indexes[0]] if selected_indexes else None
-            if first_value is None:
+            if self.is_blank(first_value):
                 continue
 
             # Construye un diccionario con encabezado y valor
@@ -74,7 +76,24 @@ class EvaluacionDocenteValidator(BaseExcelValidator):
                 if column_index < len(row) else None
                 for position, column_index in enumerate(selected_indexes)
             }
+
+            record["Código"] = self.normalize_teacher_code(record.get("Código"))
+            record["Catedrático"] = self.normalize_name(record.get("Catedrático"))
+            record["No. Nombramiento"] = self.normalize_code(
+                record.get("No. Nombramiento")
+            )
+            record["Cargo"] = self.normalize_title_case(record.get("Cargo"))
+            record["Jornada"] = self.normalize_shift(record.get("Jornada"))
+            record["Sección"] = self.normalize_section(record.get("Sección"))
+            record["Centro de Costo"] = self.normalize_academic_text(
+                record.get("Centro de Costo")
+            )
+            record["Curso"] = self.normalize_course(record.get("Curso"))
+
+            if not record["Código"] or not record["Catedrático"] or not record["Curso"]:
+                continue
+
             records.append(record)
 
         # Retorna la información general y los registros encontrados
-        return self.build_basic_info(worksheet, filtered_headers, records), records
+        return self.build_basic_info(dataframe, filtered_headers, records), records

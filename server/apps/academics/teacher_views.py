@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.evaluations.models import Comment
 from apps.historical.models import TeacherCourseHistory
 
 from .models import Contract, CourseSection, Teacher
@@ -102,6 +103,71 @@ class TeacherHistoricalView(APIView):
         return Response(serializer.data)
 
 
+class TeacherCommentsListView(APIView):
+    @extend_schema(
+        summary="Obtener comentarios de todos los docentes",
+        description="Devuelve todos los comentarios agrupados por docente.",
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        comments = (
+            Comment.objects.select_related(
+                "course_section__teacher",
+            )
+            .filter(course_section__teacher__isnull=False)
+            .order_by("-created_at")
+        )
+
+        comments_by_teacher: dict[str, list[str]] = {}
+        for comment in comments:
+            teacher_name = comment.course_section.teacher.name
+            comments_by_teacher.setdefault(teacher_name, []).append(comment.content)
+
+        result = [
+            {
+                "docente": teacher_name,
+                "comentarios": teacher_comments,
+            }
+            for teacher_name, teacher_comments in comments_by_teacher.items()
+        ]
+
+        return Response(result)
+
+
+class TeacherCommentsDetailView(APIView):
+    @extend_schema(
+        summary="Obtener comentarios de un docente",
+        description="Devuelve todos los comentarios de un docente.",
+        parameters=[
+            OpenApiParameter(
+                name="teacher_id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH,
+                description="ID del docente",
+                required=True,
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request, teacher_id):
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+        except Teacher.DoesNotExist:
+            return Response(
+                {"error": "Docente no encontrado"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        comments = (
+            Comment.objects.filter(course_section__teacher_id=teacher.id)
+            .order_by("-created_at")
+        )
+        teacher_comments = [comment.content for comment in comments]
+
+        return Response({
+            "docente": teacher.name,
+            "comentarios": teacher_comments,
+        })
 # ── Nuevas views ──────────────────────────────────────────────────────────────
 
 

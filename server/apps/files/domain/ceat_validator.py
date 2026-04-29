@@ -1,5 +1,7 @@
 from typing import Any
 
+import pandas as pd
+
 from apps.files.domain.base_validator import BaseExcelValidator
 
 
@@ -26,21 +28,27 @@ class CeatValidator(BaseExcelValidator):
     # Valida la hoja y convierte los datos en registros
     def validate_and_transform(
         self,
-        worksheet,
+        dataframe: pd.DataFrame,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        if dataframe.empty:
+            return self.build_basic_info(dataframe, [], []), []
+
         # Extrae la primera fila de encabezados
         top_headers = self._extract_header_values(
-            worksheet=worksheet,
+            dataframe=dataframe,
             row_index=self.HEADER_TOP_ROW_INDEX,
             total_columns=self.DATA_COLUMNS,
         )
 
         # Extrae la segunda fila de encabezados
         bottom_headers = self._extract_header_values(
-            worksheet=worksheet,
+            dataframe=dataframe,
             row_index=self.HEADER_BOTTOM_ROW_INDEX,
             total_columns=self.DATA_COLUMNS,
         )
+
+        # Rellena vacíos en encabezados superiores por celdas combinadas
+        top_headers = self._forward_fill(top_headers)
 
         # Une ambas filas para formar los encabezados finales
         headers = self._build_headers(top_headers, bottom_headers)
@@ -52,17 +60,15 @@ class CeatValidator(BaseExcelValidator):
         records: list[dict[str, Any]] = []
 
         # Recorre las filas de datos
-        for row in worksheet.iter_rows(
-            min_row=self.DATA_START_ROW_INDEX,
-            max_col=self.DATA_COLUMNS,
-            values_only=True,
-        ):
+        data_rows = dataframe.iloc[self.DATA_START_ROW_INDEX - 1 :, : self.DATA_COLUMNS]
+
+        for row in data_rows.itertuples(index=False, name=None):
             # Salta filas vacías
             if self.is_empty_row(row):
                 continue
 
             # Salta filas sin valor en la primera columna
-            if row[0] is None:
+            if self.is_blank(row[0]):
                 continue
 
             # Crea un diccionario con encabezado y valor
@@ -70,44 +76,57 @@ class CeatValidator(BaseExcelValidator):
                 headers[index]: row[index] if index < len(row) else None
                 for index in range(len(headers))
             }
+
+            record["Código Docente"] = self.normalize_teacher_code(
+                record.get("Código Docente")
+            )
+            record["Nombre(s) y Apellidos"] = self.normalize_name(
+                record.get("Nombre(s) y Apellidos")
+            )
+
+            if not record["Código Docente"] and not record["Nombre(s) y Apellidos"]:
+                continue
+
             records.append(record)
 
         # Retorna información general y los registros procesados
-        return self.build_basic_info(worksheet, headers, records), records
+        return self.build_basic_info(dataframe, headers, records), records
 
     # Extrae los valores de una fila de encabezados
     def _extract_header_values(
         self,
-        worksheet,
+        dataframe: pd.DataFrame,
         row_index: int,
         total_columns: int,
     ) -> list[str | None]:
         values: list[str | None] = []
 
-        # Recorre cada columna para obtener su valor
-        for column_index in range(1, total_columns + 1):
-            cell = worksheet.cell(row=row_index, column=column_index)
+        row = dataframe.iloc[row_index - 1, :total_columns]
 
-            # Obtiene el valor real, incluso si la celda está combinada
-            value = self._get_merged_cell_value(worksheet, cell.coordinate)
-
-            if value is None:
+        for value in row:
+            if self.is_blank(value):
                 values.append(None)
             else:
                 values.append(str(value).strip().replace("\n", " "))
 
         return values
 
-    # Obtiene el valor de una celda, incluyendo celdas combinadas
-    def _get_merged_cell_value(self, worksheet, coordinate: str) -> object:
-        for merged_range in worksheet.merged_cells.ranges:
-            if coordinate in merged_range:
-                return worksheet.cell(
-                    row=merged_range.min_row,
-                    column=merged_range.min_col,
-                ).value
+    # Rellena valores vacíos usando el último valor encontrado
+    def _forward_fill(
+        self,
+        values: list[str | None],
+    ) -> list[str | None]:
+        filled_values: list[str | None] = []
+        last_value: str | None = None
 
-        return worksheet[coordinate].value
+        for value in values:
+            if value is not None:
+                last_value = value
+                filled_values.append(value)
+            else:
+                filled_values.append(last_value)
+
+        return filled_values
 
     # Construye los encabezados finales usando dos filas
     def _build_headers(
