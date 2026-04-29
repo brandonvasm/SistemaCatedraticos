@@ -16,14 +16,6 @@ _COMPLEMENTARY = "Horas de Formación CEAT - Complementarias"
 class InsertCeatService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
-        """
-        Expects rows from CeatValidator output. Key field names:
-          "Código Docente", "Nombre(s) y Apellidos",
-          "Horas de Formación CEAT - Nivel 1 (iniciación)",
-          "Horas de Formación CEAT - Nivel 2 (transición)",
-          "Horas de Formación CEAT - Nivel 3 (autonomía)",
-          "Horas de Formación CEAT - Complementarias"
-        """
         created = 0
         errors = []
 
@@ -61,7 +53,6 @@ class InsertCeatService:
                 )
                 created += 1
 
-                # Historical: managed_credits from active sections in this semester
                 managed_credits = (
                     CourseSection.objects.filter(
                         teacher=teacher,

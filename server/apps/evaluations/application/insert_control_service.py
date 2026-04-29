@@ -93,13 +93,6 @@ def _update_semester_history(semester_id: int) -> None:
 class InsertControlService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
-        """
-        Expects rows from ControlDocenteValidator output. Key field names:
-          "Docente", "Curso", "Jornada", "Sección",
-          "cantidad_1"  → high_count  (value=1, verde)
-          "cantidad_0_5"→ medium_count (value=0.5, amarillo)
-          "cantidad_0"  → low_count   (value=0, rojo)
-        """
         created = 0
         errors = []
 
@@ -159,7 +152,6 @@ class InsertControlService:
             except Exception as e:
                 errors.append(f"Row {i}: {e}")
 
-        # Update CourseHistory and SemesterHistory once per course after all rows
         for course_id in processed_courses:
             try:
                 course = Course.objects.get(id=course_id)

@@ -25,12 +25,6 @@ def _performance_level(score: float) -> str:
 class InsertEvaluationService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
-        """
-        Expects rows from EvaluacionDocenteValidator output. Key field names:
-          "Código", "Catedrático", "Resultado", "No. Nombramiento",
-          "Jornada", "Curso", "Sección",
-          "Estudiantes que realizaron la evaluación", "Estudiantes Asignados"
-        """
         created = 0
         errors = []
 
@@ -88,7 +82,6 @@ class InsertEvaluationService:
                 )
                 created += 1
 
-                # Historical: update student_score for this teacher+course in this semester
                 TeacherCourseHistory.objects.update_or_create(
                     teacher=teacher,
                     semester_id=semester_id,
