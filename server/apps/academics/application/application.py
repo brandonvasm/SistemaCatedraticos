@@ -1,4 +1,5 @@
 from apps.academics.models import Contract, Teacher
+from apps.files.domain.base_validator import BaseExcelValidator
 
 
 class TeacherUpsertService:
@@ -10,6 +11,8 @@ class TeacherUpsertService:
         created_at=None,
         is_active: bool = True,
     ) -> tuple[Teacher, bool]:
+        identity_code = BaseExcelValidator.normalize_teacher_code(identity_code)
+        name = BaseExcelValidator.normalize_name(name)
 
         teacher = Teacher.objects.filter(identity_code=identity_code).first()
 

@@ -49,3 +49,8 @@ node_modules/
 # Local environment files
 .env
 .env.*
+
+#seeds
+seed_academics.py
+seed_performance_stats.py
+seed_section_control.py

@@ -4,16 +4,18 @@ from urllib.parse import urlparse
 from urllib.request import urlretrieve
 import tempfile
 
-from apps.files.infrastructure.excel_reader import OpenPyxlExcelReader
+from apps.files.infrastructure.excel_reader import PandasExcelReader
 from apps.files.domain.ceat_validator import CeatValidator
 from apps.files.domain.comentarios_validator import ComentariosValidator
 from apps.files.domain.control_docente_validator import ControlDocenteValidator
 from apps.files.domain.evaluacion_docente_validator import EvaluacionDocenteValidator
+from apps.files.domain.pensum_validator import PensumValidator
+from apps.files.domain.nomina_validator import NominaValidator
 
 
 class ProcessExcelUseCase:
-    def __init__(self, reader: OpenPyxlExcelReader | None = None) -> None:
-        self.reader = reader or OpenPyxlExcelReader()
+    def __init__(self, reader: PandasExcelReader | None = None) -> None:
+        self.reader = reader or PandasExcelReader()
 
     def execute(
         self,
@@ -26,13 +28,13 @@ class ProcessExcelUseCase:
         try:
             resolved_path, temp_file_path = self._resolve_to_local_path(file_path)
 
-            _, worksheet = self.reader.read(
+            dataframe = self.reader.read(
                 file_path=resolved_path,
                 sheet_name=sheet_name,
             )
 
             validator = self._get_validator(file_type)
-            return validator.validate_and_transform(worksheet)
+            return validator.validate_and_transform(dataframe)
 
         finally:
             if temp_file_path and temp_file_path.exists():
@@ -83,6 +85,8 @@ class ProcessExcelUseCase:
             "evaluation": EvaluacionDocenteValidator(),
             "comments": ComentariosValidator(),
             "ceat": CeatValidator(),
+            "pensum": PensumValidator(),
+            "roster": NominaValidator(),
         }
 
         validator = validators.get(file_type)

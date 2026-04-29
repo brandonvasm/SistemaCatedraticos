@@ -3,7 +3,7 @@ export interface User {
   username: string;
   email: string;
   role: string;
-  faculty: string;         
+  faculty_name: string;         
   faculty_id: number;    
   pensum_loaded: boolean;  
   evaluation_count: number; 
