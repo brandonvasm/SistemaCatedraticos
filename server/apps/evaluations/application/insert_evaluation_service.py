@@ -1,17 +1,6 @@
-from apps.academics.models import Course, CourseSection, Semester, Teacher
+from apps.academics.models import CourseSection, Semester, Teacher
 from apps.evaluations.models import StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
-
-_SHIFT_MAP = {
-    "Matutina": "matutina",
-    "Vespertina": "vespertina",
-    "Fin de semana": "fin de semana",
-    "Sabatina": "fin de semana",
-}
-
-
-def _normalize_shift(raw: str) -> str:
-    return _SHIFT_MAP.get(raw.strip().lower(), raw.strip().lower())
 
 
 def _performance_level(score: float) -> str:
@@ -31,15 +20,13 @@ class InsertEvaluationService:
         for i, row in enumerate(rows):
             try:
                 teacher_code = str(row.get("Código", "")).strip()
-                course_name = str(row.get("Curso", "")).strip()
-                section_number = str(row.get("Sección", "")).strip()
-                shift = _normalize_shift(str(row.get("Jornada", "")))
+                appointment_number = str(row.get("No. Nombramiento", "")).strip()
                 score_raw = row.get("Resultado")
                 submitted_raw = row.get("Estudiantes que realizaron la evaluación")
                 assigned_raw = row.get("Estudiantes Asignados")
 
-                if not teacher_code or not course_name or not section_number:
-                    errors.append(f"Row {i}: Código, Curso and Sección are required")
+                if not teacher_code or not appointment_number:
+                    errors.append(f"Row {i}: Código and No. Nombramiento are required")
                     continue
 
                 score = float(score_raw) if score_raw is not None else 0.0
@@ -53,23 +40,10 @@ class InsertEvaluationService:
                     continue
 
                 try:
-                    course = Course.objects.get(name=course_name, faculty_id=faculty_id)
-                except Course.DoesNotExist:
-                    errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
-                    continue
-                except Course.MultipleObjectsReturned:
-                    errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
-                    continue
-
-                try:
-                    section = CourseSection.objects.get(
-                        course=course,
-                        section_number=section_number,
-                        shift=shift,
-                    )
+                    section = CourseSection.objects.get(appointment_number=appointment_number)
                 except CourseSection.DoesNotExist:
                     errors.append(
-                        f"Row {i}: section {section_number}/{shift} for '{course_name}' not found — upload nomina first"
+                        f"Row {i}: section with appointment '{appointment_number}' not found — upload nomina first"
                     )
                     continue
 
@@ -85,7 +59,7 @@ class InsertEvaluationService:
                 TeacherCourseHistory.objects.update_or_create(
                     teacher=teacher,
                     semester_id=semester_id,
-                    course=course,
+                    course=section.course,
                     defaults={"student_score": score},
                 )
 

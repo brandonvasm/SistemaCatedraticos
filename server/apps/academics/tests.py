@@ -216,3 +216,27 @@ class InsertNominaServiceTest(TestCase):
         InsertNominaService.execute([self._row()], self.semester.id, self.faculty.id)
         self.assertEqual(Teacher.objects.filter(identity_code="27128").count(), 1)
         self.assertEqual(Teacher.objects.get(identity_code="27128").id, existing.id)
+
+    def test_activates_contract_for_teachers_in_nomina(self):
+        teacher = make_teacher(identity_code="27128")
+        Contract.objects.create(teacher=teacher, faculty=self.faculty, is_active=False)
+        InsertNominaService.execute([self._row()], self.semester.id, self.faculty.id)
+        contract = Contract.objects.get(teacher=teacher, faculty=self.faculty)
+        self.assertTrue(contract.is_active)
+
+    def test_deactivates_contracts_for_absent_teachers(self):
+        absent = make_teacher(identity_code="99999", name="Docente Ausente")
+        Contract.objects.create(teacher=absent, faculty=self.faculty, is_active=True)
+        InsertNominaService.execute([self._row()], self.semester.id, self.faculty.id)
+        absent_contract = Contract.objects.get(teacher=absent, faculty=self.faculty)
+        self.assertFalse(absent_contract.is_active)
+
+    def test_deactivation_only_affects_same_faculty(self):
+        other_faculty = make_faculty(name="Otra Facultad")
+        other_career = make_career(other_faculty, abbreviation="OTR")
+        absent = make_teacher(identity_code="99999", name="Docente Otra Facultad")
+        Contract.objects.create(teacher=absent, faculty=other_faculty, is_active=True)
+        InsertNominaService.execute([self._row()], self.semester.id, self.faculty.id)
+        # Contract in a different faculty must remain untouched
+        cross_contract = Contract.objects.get(teacher=absent, faculty=other_faculty)
+        self.assertTrue(cross_contract.is_active)

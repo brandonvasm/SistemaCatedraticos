@@ -20,6 +20,7 @@ class InsertNominaService:
         created = 0
         updated = 0
         errors = []
+        active_teacher_codes: set[str] = set()
 
         for i, row in enumerate(rows):
             try:
@@ -78,6 +79,8 @@ class InsertNominaService:
                     },
                 )
 
+                active_teacher_codes.add(teacher_code)
+
                 if s_created:
                     created += 1
                 else:
@@ -85,6 +88,18 @@ class InsertNominaService:
 
             except Exception as e:
                 errors.append(f"Row {i}: {e}")
+
+        if active_teacher_codes:
+            Contract.objects.filter(
+                faculty_id=faculty_id,
+                teacher__identity_code__in=active_teacher_codes,
+            ).update(is_active=True)
+
+        Contract.objects.filter(
+            faculty_id=faculty_id,
+        ).exclude(
+            teacher__identity_code__in=active_teacher_codes,
+        ).update(is_active=False)
 
         Semester.objects.filter(id=semester_id).update(roster_loaded=True)
 

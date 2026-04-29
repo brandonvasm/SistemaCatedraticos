@@ -16,10 +16,6 @@ def _normalize_shift(raw: str) -> str:
 class InsertCommentsService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
-        """
-        Expects rows from ComentariosValidator output. Key field names:
-          "Curso", "Sección", "Jornada", "Catedrático", "Comentario"
-        """
         created = 0
         errors = []
 
