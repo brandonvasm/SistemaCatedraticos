@@ -25,7 +25,6 @@ class Teacher(models.Model):
     identity_code = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=200)
     created_at = models.DateField()
-    is_active = models.BooleanField(default=True)
 
 
 class Semester(models.Model):

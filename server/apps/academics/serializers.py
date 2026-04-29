@@ -46,7 +46,6 @@ class TeacherSerializer(serializers.ModelSerializer):
             "identity_code",
             "name",
             "created_at",
-            "is_active",
             "faculty_id",
         ]
         extra_kwargs = {"identity_code": {"validators": []}}
