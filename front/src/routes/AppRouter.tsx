@@ -54,8 +54,6 @@ export default function AppRouter() {
 
             <Route path="/historial" element={<DataHistory/>} />
 
-           
-            
           </Route>
         </Route>
 
