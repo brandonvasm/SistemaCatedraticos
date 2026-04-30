@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import reporte_docentes, reporte_cursos
+from .views import reporte_docentes, reporte_cursos,reporte_usuarios
 
 urlpatterns = [
-    path("docentes-historico/", reporte_docentes),
+    path("docentes-reports/", reporte_docentes),
     path("cursos-reports/", reporte_cursos),
+    path("usuarios-reports/", reporte_usuarios),
 ]

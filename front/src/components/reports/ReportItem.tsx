@@ -1,4 +1,4 @@
-import { FileText, Eye, Download } from "lucide-react";
+import { FileText, Download } from "lucide-react";
 
 type Props = {
   title: string;
@@ -6,6 +6,7 @@ type Props = {
   date: string;
   format: string;
   size: string;
+  endpoint: string;
 };
 
 export default function ReportItem({
@@ -14,108 +15,83 @@ export default function ReportItem({
   date,
   format,
   size,
+  endpoint,
 }: Props) {
+
+  const descargar = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/reports/${endpoint}/?faculty=7`
+      );
+
+      if (!response.ok) throw new Error("Error al descargar");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${endpoint}.xlsx`;
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div
       className="
-        flex flex-col md:flex-row
-        justify-between
-        md:items-center
-        gap-5
-        py-5
-        px-3
-        rounded-2xl
+        flex justify-between items-center
+        py-5 px-3
         hover:bg-white/[0.04]
+        rounded-2xl
         transition-all
       "
     >
+
       <div className="flex gap-4 items-start">
 
-        <div
-          className="
-            bg-blue-500/10
-            border border-blue-500/20
-            p-3
-            rounded-2xl
-            shadow-inner
-          "
-        >
+        <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-2xl">
           <FileText className="text-blue-400" size={18} />
         </div>
 
         <div>
-          <p className="font-black text-white tracking-tight uppercase text-sm">
+          <p className="font-black text-white uppercase text-sm">
             {title}
           </p>
 
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider mt-1">
+          <p className="text-[11px] text-gray-500 uppercase">
             {desc}
           </p>
 
-          <div className="flex flex-wrap gap-3 text-[10px] text-gray-500 mt-3 uppercase tracking-wide">
-
-            <span>{date}</span>
-
-            <span className="bg-white/[0.03] border border-white/10 px-2 py-0.5 rounded-md">
-              {format}
-            </span>
-
-            <span>{size}</span>
-
-            <span className="flex items-center gap-1 text-emerald-400 font-bold">
-              ● Listo
-            </span>
-
+          <div className="text-[10px] text-gray-500 mt-2">
+            {date} • {format}
           </div>
         </div>
-      </div>
-
-      <div className="flex gap-2">
-
-        <button
-          className="
-            flex items-center gap-2
-            bg-white/[0.03]
-            border border-white/10
-            px-4 py-2
-            rounded-xl
-            text-[11px]
-            text-gray-300
-            uppercase
-            tracking-wide
-            hover:bg-white/[0.06]
-            hover:text-white
-            hover:border-white/20
-            transition-all
-          "
-        >
-          <Eye size={14} />
-          Vista
-        </button>
-
-        <button
-          className="
-            flex items-center gap-2
-            bg-yellow-400
-            text-black
-            px-4 py-2
-            rounded-xl
-            text-[11px]
-            font-black
-            uppercase
-            tracking-wide
-            shadow-lg shadow-yellow-400/20
-            hover:bg-yellow-300
-            hover:scale-[1.03]
-            active:scale-95
-            transition-all
-          "
-        >
-          <Download size={14} />
-          Descargar
-        </button>
 
       </div>
+
+      <button
+        onClick={descargar}
+        className="
+          flex items-center gap-2
+          bg-yellow-400
+          text-black
+          px-4 py-2
+          rounded-xl
+          text-[11px]
+          font-black
+          uppercase
+          hover:bg-yellow-300
+          transition-all
+        "
+      >
+        <Download size={14} />
+        Descargar
+      </button>
+
     </div>
   );
 }
