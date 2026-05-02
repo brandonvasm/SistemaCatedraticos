@@ -108,6 +108,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET_NAME")
 
+# AI settings
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 # Authentication model
 AUTH_USER_MODEL = "users.User"
 
