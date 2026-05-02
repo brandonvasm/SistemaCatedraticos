@@ -1,6 +1,10 @@
+from django.db.models import Avg
+
 from apps.academics.models import CourseSection, Semester, Teacher
+from apps.analytics.infrastructure.gemini_ai_client import GeminiAIClient
+from apps.analytics.models import TeacherProfileAnalysisAI
 from apps.evaluations.models import StudentEvaluation
-from apps.historical.models import TeacherCourseHistory
+from apps.historical.models import TeacherCourseHistory, TeacherLoadHistory
 
 
 def _performance_level(score: float) -> str:
@@ -11,11 +15,81 @@ def _performance_level(score: float) -> str:
     return "high"
 
 
+def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int) -> list[str]:
+    errors = []
+    try:
+        current_semester = Semester.objects.get(id=semester_id)
+        prev_semester = (
+            Semester.objects.filter(faculty_id=current_semester.faculty_id)
+            .exclude(id=semester_id)
+            .order_by("-year", "-number")
+            .first()
+        )
+
+        teachers_data = []
+        for teacher_id in processed_teachers:
+            current_avg = TeacherCourseHistory.objects.filter(
+                teacher_id=teacher_id,
+                semester_id=semester_id,
+                student_score__isnull=False,
+            ).aggregate(avg=Avg("student_score"))["avg"]
+
+            if current_avg is None:
+                continue
+
+            current_score = round(current_avg, 2)
+            tendency = None
+            if prev_semester:
+                prev_avg = TeacherCourseHistory.objects.filter(
+                    teacher_id=teacher_id,
+                    semester_id=prev_semester.id,
+                    student_score__isnull=False,
+                ).aggregate(avg=Avg("student_score"))["avg"]
+                if prev_avg:
+                    tendency = round(
+                        (current_score - prev_avg) / prev_avg * 100, 2
+                    )
+
+            load = TeacherLoadHistory.objects.filter(
+                teacher_id=teacher_id, semester_id=semester_id
+            ).first()
+
+            teachers_data.append({
+                "id_teacher": teacher_id,
+                "score": current_score,
+                "tendency": tendency,
+                "managed_credits": load.managed_credits if load else None,
+            })
+
+        if not teachers_data:
+            return errors
+
+        ai_client = GeminiAIClient()
+        response = ai_client.generate_teacher_profile_analysis(teachers_data)
+        for analysis in response.analyses:
+            try:
+                TeacherProfileAnalysisAI.objects.create(
+                    teacher_id=analysis.teacher_id,
+                    semester_id=semester_id,
+                    title=analysis.title,
+                    profile_overview=analysis.profile_overview,
+                    perception=analysis.perception,
+                    model_version=ai_client.model_version,
+                )
+            except Exception as e:
+                errors.append(f"AI save for teacher {analysis.teacher_id}: {e}")
+    except Exception as e:
+        errors.append(f"AI teacher analysis: {e}")
+
+    return errors
+
+
 class InsertEvaluationService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
         created = 0
         errors = []
+        processed_teachers: set[int] = set()
 
         for i, row in enumerate(rows):
             try:
@@ -62,10 +136,14 @@ class InsertEvaluationService:
                     course=section.course,
                     defaults={"student_score": score},
                 )
+                processed_teachers.add(teacher.id)
 
             except Exception as e:
                 errors.append(f"Row {i}: {e}")
 
         Semester.objects.filter(id=semester_id).update(evaluation_loaded=True)
+
+        if processed_teachers:
+            errors.extend(_trigger_teacher_ai_analysis(processed_teachers, semester_id))
 
         return {"created": created, "errors": errors}

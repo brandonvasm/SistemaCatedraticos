@@ -1,8 +1,12 @@
 from django.db.models import Avg, Count
 
 from apps.academics.models import Course, CourseSection, Semester
+from apps.analytics.infrastructure.gemini_ai_client import GeminiAIClient
+from apps.analytics.models import CourseAnalysisAI
 from apps.evaluations.models import SectionControl, StudentEvaluation
 from apps.historical.models import CourseHistory, SemesterHistory, TeacherCourseHistory
+
+
 
 _SHIFT_MAP = {
     "Matutina": "matutina",
@@ -90,6 +94,67 @@ def _update_semester_history(semester_id: int) -> None:
     )
 
 
+def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -> list[str]:
+    errors = []
+    try:
+        current_semester = Semester.objects.get(id=semester_id)
+        prev_semester = (
+            Semester.objects.filter(faculty_id=current_semester.faculty_id)
+            .exclude(id=semester_id)
+            .order_by("-year", "-number")
+            .first()
+        )
+
+        courses_data = []
+        for course_id in processed_courses:
+            current_history = CourseHistory.objects.filter(
+                course_id=course_id, semester_id=semester_id
+            ).first()
+            if not current_history or current_history.control_avg_score is None:
+                continue
+
+            current_score = current_history.control_avg_score
+            tendency = None
+            if prev_semester:
+                prev_history = CourseHistory.objects.filter(
+                    course_id=course_id, semester_id=prev_semester.id
+                ).first()
+                if prev_history and prev_history.control_avg_score:
+                    tendency = round(
+                        (current_score - prev_history.control_avg_score)
+                        / prev_history.control_avg_score * 100,
+                        2,
+                    )
+
+            courses_data.append({
+                "id_course": course_id,
+                "score": current_score,
+                "tendency": tendency,
+            })
+
+        if not courses_data:
+            return errors
+
+        ai_client = GeminiAIClient()
+        response = ai_client.generate_course_analysis(courses_data)
+        for analysis in response.analyses:
+            try:
+                CourseAnalysisAI.objects.create(
+                    course_id=analysis.course_id,
+                    semester_id=semester_id,
+                    title=analysis.title,
+                    course_overview=analysis.course_overview,
+                    perception=analysis.perception,
+                    model_version=ai_client.model_version,
+                )
+            except Exception as e:
+                errors.append(f"AI save for course {analysis.course_id}: {e}")
+    except Exception as e:
+        errors.append(f"AI course analysis: {e}")
+
+    return errors
+
+
 class InsertControlService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
@@ -166,5 +231,8 @@ class InsertControlService:
                 errors.append(f"SemesterHistory update: {e}")
 
         Semester.objects.filter(id=semester_id).update(control_loaded=True)
+
+        if processed_courses:
+            errors.extend(_trigger_course_ai_analysis(processed_courses, semester_id))
 
         return {"created": created, "errors": errors}
