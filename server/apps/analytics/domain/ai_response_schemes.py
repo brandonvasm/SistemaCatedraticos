@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 
 class CourseAnalysisResponse(BaseModel):
     course_id: int
-    title: str
-    course_overview: str
+    title: str = Field(max_length=40)
+    course_overview: str = Field(max_length=100)
     perception: str
 
 class CourseAnalysisListResponse(BaseModel):
@@ -12,8 +12,8 @@ class CourseAnalysisListResponse(BaseModel):
 
 class TeacherProfileAnalysisResponse(BaseModel):
     teacher_id: int
-    title: str
-    profile_overview: str
+    title: str = Field(max_length=40)
+    profile_overview: str = Field(max_length=100)
     perception: str
 
 class TeacherProfileAnalysisListResponse(BaseModel):
@@ -24,6 +24,6 @@ class TeacherCommentAnalysisResponse(BaseModel):
     positive_percentage: float
     negative_percentage: float
     neutral_percentage: float
-    comment_overview: str
-    comment: str
+    comment_overview: str = Field(max_length=40)
+    comment: str = Field(max_length=100)
     perception: str
