@@ -2,6 +2,17 @@ from apps.academics.models import CourseSection, Semester, Teacher
 from apps.evaluations.models import StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
 
+_SHIFT_MAP = {
+    "matutina": "matutina",
+    "vespertina": "vespertina",
+    "fin de semana": "fin de semana",
+    "sabatina": "fin de semana",
+}
+
+
+def _normalize_shift(raw: str) -> str:
+    return _SHIFT_MAP.get(raw.strip().lower(), raw.strip().lower())
+
 
 def _performance_level(score: float) -> str:
     if score < 60:
@@ -21,6 +32,9 @@ class InsertEvaluationService:
             try:
                 teacher_code = str(row.get("Código", "")).strip()
                 appointment_number = str(row.get("No. Nombramiento", "")).strip()
+                course_name = str(row.get("Curso", "")).strip()
+                section_number = str(row.get("Sección", "")).strip()
+                shift = _normalize_shift(str(row.get("Jornada", "")))
                 score_raw = row.get("Resultado")
                 submitted_raw = row.get("Estudiantes que realizaron la evaluación")
                 assigned_raw = row.get("Estudiantes Asignados")
@@ -39,11 +53,32 @@ class InsertEvaluationService:
                     errors.append(f"Row {i}: teacher '{teacher_code}' not found — upload nomina first")
                     continue
 
+                section_filters = {
+                    "appointment_number": appointment_number,
+                    "semester_id": semester_id,
+                    "teacher": teacher,
+                }
+
+                if course_name:
+                    section_filters["course__name"] = course_name
+                    section_filters["course__faculty_id"] = faculty_id
+
+                if section_number:
+                    section_filters["section_number"] = section_number
+
+                if shift:
+                    section_filters["shift"] = shift
+
                 try:
-                    section = CourseSection.objects.get(appointment_number=appointment_number)
+                    section = CourseSection.objects.get(**section_filters)
                 except CourseSection.DoesNotExist:
                     errors.append(
-                        f"Row {i}: section with appointment '{appointment_number}' not found — upload nomina first"
+                        f"Row {i}: section for appointment '{appointment_number}' not found — upload nomina first"
+                    )
+                    continue
+                except CourseSection.MultipleObjectsReturned:
+                    errors.append(
+                        f"Row {i}: multiple sections for appointment '{appointment_number}'"
                     )
                     continue
 

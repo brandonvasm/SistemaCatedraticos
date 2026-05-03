@@ -14,6 +14,14 @@ def _normalize_shift(raw: str) -> str:
     return _SHIFT_MAP.get(raw.strip().lower(), raw.strip().lower())
 
 
+def _first_value(row: dict, *keys: str):
+    for key in keys:
+        value = row.get(key)
+        if value not in (None, ""):
+            return value
+    return None
+
+
 class InsertNominaService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
@@ -25,13 +33,21 @@ class InsertNominaService:
         for i, row in enumerate(rows):
             try:
                 teacher_name = str(row.get("Docente", "")).strip()
-                teacher_code = str(row.get("Código  docente", "")).strip()
+                teacher_code = str(
+                    _first_value(row, "Código docente", "Código  docente") or ""
+                ).strip()
                 appointment_number = str(row.get("Nombramiento", "")).strip()
-                career_abbr = str(row.get("Carrera", "")).strip()
+                career_key = str(
+                    _first_value(row, "Clave Carrera", "Carrera") or ""
+                ).strip()
                 course_name = str(row.get("Curso", "")).strip()
                 section_number = str(row.get("Sección", "")).strip()
                 shift = _normalize_shift(str(row.get("Jornada", "")))
-                credits_raw = row.get("Total de Creditos")
+                credits_raw = _first_value(
+                    row,
+                    "Total de créditos",
+                    "Total de Creditos",
+                )
                 credits = int(credits_raw) if credits_raw is not None else None
 
                 if not teacher_code or not course_name or not section_number:
@@ -39,13 +55,19 @@ class InsertNominaService:
                     continue
 
                 try:
-                    career = Career.objects.get(abbreviation=career_abbr, faculty_id=faculty_id)
-                except Career.DoesNotExist:
-                    errors.append(
-                        f"Row {i}: career with abbreviation '{career_abbr}' not found in faculty {faculty_id}. "
-                        "Set the abbreviation on the career before uploading the nomina."
+                    career = Career.objects.get(
+                        abbreviation=career_key,
+                        faculty_id=faculty_id,
                     )
-                    continue
+                except Career.DoesNotExist:
+                    try:
+                        career = Career.objects.get(code=career_key, faculty_id=faculty_id)
+                    except Career.DoesNotExist:
+                        errors.append(
+                            f"Row {i}: career with key '{career_key}' not found in faculty {faculty_id}. "
+                            "Set the abbreviation or code on the career before uploading the nomina."
+                        )
+                        continue
 
                 try:
                     course = Course.objects.get(name=course_name, faculty_id=faculty_id)

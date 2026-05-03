@@ -16,6 +16,7 @@ from .infrastructure.supabase_storage import SupabaseStorageService
 from .application.save_file_use_case import SaveFileUseCase
 from .application.validate_request_file import ValidateFileRequestUseCase
 from .application.process_excel import ProcessExcelUseCase
+from .application.insert_processed_file import InsertProcessedFileUseCase
 
 # Create your views here.
 
@@ -89,16 +90,28 @@ class FileView(viewsets.ModelViewSet):
         file_path = file_record.url
         file_download_url = self.storage_service.get_download_url(file_path, file_record.name)
 
-        use_case = ProcessExcelUseCase()
+        process_use_case = ProcessExcelUseCase()
+        insert_use_case = InsertProcessedFileUseCase()
         try:
             with transaction.atomic():
-                basic_info, records = use_case.execute(file_path=file_download_url, file_type=file_type)
+                basic_info, records = process_use_case.execute(
+                    file_path=file_download_url,
+                    file_type=file_type,
+                )
+                insert_result = insert_use_case.execute(
+                    file_type=file_type,
+                    records=records,
+                    semester_id=file_record.semester_id,
+                    faculty_id=file_record.faculty_id,
+                )
                 file_record.processed = True
                 file_record.processed_at = timezone.now()
                 file_record.save()
                 return Response({
                     "basic_info": basic_info,
-                    "records": records
+                    "records_count": len(records),
+                    "records": records,
+                    "insert_result": insert_result,
                 }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": "Error processing file: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
