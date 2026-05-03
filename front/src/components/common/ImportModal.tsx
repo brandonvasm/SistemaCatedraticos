@@ -10,12 +10,12 @@ interface ImportModalProps {
 }
 
 const FILE_REQUIREMENTS: FileRequirement[] = [
-  { id: 'ceat', name: 'ceat.xlsx' },
-  { id: 'comentarios', name: 'comentarios.xlsx' },
-  { id: 'control', name: 'control docente.xlsx' },
-  { id: 'evaluacion', name: 'evaluación docente.xlsx' },
-  { id: 'nomina', name: 'nómina de ejemplo.xlsx' },
-  { id: 'pensum', name: 'pensum 24001.xls' },
+  { id: 'pensum', name: 'Pensum' },
+  { id: 'roster', name: 'Nómina' },
+  { id: 'evaluation', name: 'Evaluación docente' },
+  { id: 'comments', name: 'Comentarios' },
+  { id: 'control', name: 'Control docente' },
+  { id: 'ceat', name: 'CEAT' },
 ];
 
 export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
@@ -127,7 +127,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                     <div className="mt-4">
                       <label className="cursor-pointer inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-yellow-400 hover:text-black transition-all">
                         Seleccionar
-                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(file.id, f); }} />
+                        <input type="file" className="hidden" accept=".xlsx,.xls,.xlsm,.xltx,.xltm" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(file.id, f); }} />
                       </label>
                     </div>
                   )}

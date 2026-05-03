@@ -13,7 +13,7 @@ class PandasExcelReader:
 
         suffix = path.suffix.lower()
 
-        if suffix == ".xlsx":
+        if suffix in {".xlsx", ".xlsm", ".xltx", ".xltm"}:
             engine = "openpyxl"
         elif suffix == ".xls":
             engine = "xlrd"
