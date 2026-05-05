@@ -18,7 +18,6 @@ from .application.get_course_analysis_use_case import GetCourseAnalysisUseCase
 from .application.get_course_recommendations_use_case import GetCourseRecommendationsUseCase
 from .application.get_teacher_profile_analysis_use_case import GetTeacherProfileAnalysisUseCase
 from .application.get_teacher_recommendations_use_case import GetTeacherRecommendationsUseCase
-from .test_ai import TestUC
 
 
 class TeacherCommentsAnalysisAIView(APIView):
@@ -62,7 +61,6 @@ class TeacherProfileAnalysisAIView(ViewSet):
     @extend_schema(responses={200: TeacherProfileAnalysisAISerializer})
     @action(detail=True, methods=["get"], url_path="teacher-analysis")
     def teacher(self, request, pk=None):
-        TestUC._trigger_teacher_ai_analysis(set(range(31, 50)), 1)
         analysis = GetTeacherProfileAnalysisUseCase().execute(
             teacher_id=pk,
             faculty_id=request.user.faculty_id_id,
