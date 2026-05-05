@@ -38,9 +38,12 @@ class TeacherListCreateView(APIView):
             teacher_ids = Contract.objects.filter(
                 faculty_id=faculty_id, is_active=True
             ).values_list("teacher_id", flat=True)
-            teachers = Teacher.objects.filter(id__in=teacher_ids)
         else:
-            teachers = Teacher.objects.all()
+            teacher_ids = Contract.objects.filter(is_active=True).values_list(
+                "teacher_id", flat=True
+            )
+
+        teachers = Teacher.objects.filter(id__in=teacher_ids)
         serializer = TeacherSerializer(teachers, many=True)
         return Response(serializer.data)
 
@@ -158,17 +161,17 @@ class TeacherCommentsDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        comments = (
-            Comment.objects.filter(course_section__teacher_id=teacher.id)
-            .order_by("-created_at")
-        )
+        comments = Comment.objects.filter(
+            course_section__teacher_id=teacher.id
+        ).order_by("-created_at")
         teacher_comments = [comment.content for comment in comments]
 
-        return Response({
-            "docente": teacher.name,
-            "comentarios": teacher_comments,
-        })
-# ── Nuevas views ──────────────────────────────────────────────────────────────
+        return Response(
+            {
+                "docente": teacher.name,
+                "comentarios": teacher_comments,
+            }
+        )
 
 
 class TeacherWorkloadView(APIView):
@@ -201,7 +204,6 @@ class TeacherWorkloadView(APIView):
 
         result = []
         for teacher in teachers:
-            # Créditos totales: suma de créditos de todas las secciones asignadas
             total_credits = (
                 CourseSection.objects.filter(
                     teacher_id=teacher.id,
@@ -210,7 +212,6 @@ class TeacherWorkloadView(APIView):
                 or 0
             )
 
-            # Promedio histórico de calificaciones de estudiantes
             avg_score = TeacherCourseHistory.objects.filter(
                 teacher_id=teacher.id,
                 student_score__isnull=False,
@@ -251,7 +252,6 @@ class FacultyHistoricalTrendView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Semestre actual + 3 anteriores = 4 en total
         semesters = get_historical_semesters(faculty_id, limit=4)
         if not semesters:
             return Response([])
