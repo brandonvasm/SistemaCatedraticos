@@ -4,6 +4,7 @@ from django.db.models import Avg, Count
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -93,6 +94,8 @@ class FacultyDetailView(APIView):
 
 
 class SemesterListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Listar semestres",
         parameters=[
@@ -131,6 +134,8 @@ class SemesterListCreateView(APIView):
 
 
 class SemesterDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get_object(self, pk):
         try:
             return Semester.objects.get(pk=pk)
@@ -153,6 +158,36 @@ class SemesterDetailView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CurrentSemesterView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Obtener el semestre actual de la facultad del usuario",
+        responses={200: SemesterSerializer},
+    )
+    def get(self, request):
+        faculty_id = request.user.faculty_id_id
+        if not faculty_id:
+            return Response(
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Buscamos el semestre más reciente (asumido como el actual) para la facultad
+        semester = Semester.objects.filter(
+            faculty_id=faculty_id
+        ).order_by("-year", "-number").first()
+
+        if not semester:
+            return Response(
+                {"error": "No se encontró ningún semestre registrado para esta facultad"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = SemesterSerializer(semester)
+        return Response(serializer.data)
 
 
 class TeacherStatsDetailView(APIView):
@@ -211,6 +246,8 @@ class TeacherStatsDetailView(APIView):
 
 
 class TeacherStatsListView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Estadísticas de docentes por facultad",
         parameters=[
@@ -292,6 +329,8 @@ class TeacherStatsListView(APIView):
 
 
 class FacultyHistoricalView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Evolución histórica de docentes por facultad",
         parameters=[
@@ -350,6 +389,8 @@ class FacultyHistoricalView(APIView):
 
 
 class CourseSectionByFacultyView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Docentes asignados a cada sección por facultad y semestre",
         parameters=[
@@ -406,6 +447,8 @@ class CourseSectionByFacultyView(APIView):
 
 
 class TopCoursesByScoreView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Top 4 cursos con mejores punteos de control docente",
         parameters=[
