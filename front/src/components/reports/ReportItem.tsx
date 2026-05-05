@@ -1,4 +1,6 @@
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Loader2 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useState } from "react";
 
 type Props = {
   title: string;
@@ -18,10 +20,24 @@ export default function ReportItem({
   endpoint,
 }: Props) {
 
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+
   const descargar = async () => {
+    if (!user) {
+      console.error("Usuario no autenticado");
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const response = await fetch(
-        `http://localhost:8000/api/reports/${endpoint}/?faculty=7`
+        `http://localhost:8000/api/reports/${endpoint}/`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
       );
 
       if (!response.ok) throw new Error("Error al descargar");
@@ -37,6 +53,8 @@ export default function ReportItem({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,27 +87,41 @@ export default function ReportItem({
           <div className="text-[10px] text-gray-500 mt-2">
             {date} • {format}
           </div>
+
+          <p className="text-[10px] text-yellow-400 mt-1 uppercase">
+            Facultad: {user?.faculty_name || "N/A"}
+          </p>
         </div>
 
       </div>
 
       <button
         onClick={descargar}
-        className="
+        disabled={loading}
+        className={`
           flex items-center gap-2
-          bg-yellow-400
-          text-black
           px-4 py-2
           rounded-xl
           text-[11px]
           font-black
           uppercase
-          hover:bg-yellow-300
           transition-all
-        "
+          ${loading 
+            ? "bg-gray-400 cursor-not-allowed text-black" 
+            : "bg-yellow-400 text-black hover:bg-yellow-300"}
+        `}
       >
-        <Download size={14} />
-        Descargar
+        {loading ? (
+          <>
+            <Loader2 size={14} className="animate-spin" />
+            Generando...
+          </>
+        ) : (
+          <>
+            <Download size={14} />
+            Descargar
+          </>
+        )}
       </button>
 
     </div>
