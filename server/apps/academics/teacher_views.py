@@ -21,27 +21,19 @@ from .utils import get_historical_semesters
 class TeacherListCreateView(APIView):
     @extend_schema(
         summary="Listar docentes",
-        parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="Filtrar docentes por ID de facultad",
-                required=False,
-            )
-        ],
         responses={200: TeacherSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
-        if faculty_id:
-            teacher_ids = Contract.objects.filter(
-                faculty_id=faculty_id, is_active=True
-            ).values_list("teacher_id", flat=True)
-        else:
-            teacher_ids = Contract.objects.filter(is_active=True).values_list(
-                "teacher_id", flat=True
+        faculty_id = request.user.faculty_id_id
+        if not faculty_id:
+            return Response(
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
+        teacher_ids = Contract.objects.filter(
+            faculty_id=faculty_id, is_active=True
+        ).values_list("teacher_id", flat=True)
 
         teachers = Teacher.objects.filter(id__in=teacher_ids)
         serializer = TeacherSerializer(teachers, many=True)
@@ -63,22 +55,13 @@ class TeacherListCreateView(APIView):
 class TeacherHistoricalView(APIView):
     @extend_schema(
         summary="Evolución histórica de un docente",
-        parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad para obtener los semestres",
-                required=True,
-            )
-        ],
         responses={200: SemesterHistoricalSerializer(many=True)},
     )
     def get(self, request, pk):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -177,22 +160,13 @@ class TeacherCommentsDetailView(APIView):
 class TeacherWorkloadView(APIView):
     @extend_schema(
         summary="Carga y rendimiento de docentes por facultad",
-        parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad",
-                required=True,
-            )
-        ],
         responses={200: TeacherWorkloadSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -233,22 +207,13 @@ class TeacherWorkloadView(APIView):
 class FacultyHistoricalTrendView(APIView):
     @extend_schema(
         summary="Tendencia histórica de calificaciones de docentes por facultad",
-        parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad",
-                required=True,
-            )
-        ],
         responses={200: SemesterAvgSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

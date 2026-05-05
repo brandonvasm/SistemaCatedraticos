@@ -23,10 +23,10 @@ class TrainingHoursByFacultyView(APIView):
         responses={200: TrainingHoursSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

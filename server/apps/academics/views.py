@@ -1,10 +1,11 @@
+from collections import defaultdict
+
 from django.db.models import Avg, Count
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from collections import defaultdict
 
 from apps.evaluations.models import SectionControl, StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
@@ -107,7 +108,7 @@ class SemesterListCreateView(APIView):
     )
     def get(self, request):
         semesters = Semester.objects.all().order_by("-year", "-number")
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if faculty_id:
             semesters = semesters.filter(faculty_id=faculty_id)
         return Response(SemesterSerializer(semesters, many=True).data)
@@ -119,6 +120,10 @@ class SemesterListCreateView(APIView):
     )
     def post(self, request):
         serializer = SemesterSerializer(data=request.data)
+        # Asegurar que el semestre se cree para la facultad del usuario
+        if 'faculty' not in request.data and request.user.faculty_id_id:
+            request.data['faculty'] = request.user.faculty_id_id
+            
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -157,6 +162,7 @@ class TeacherStatsDetailView(APIView):
     )
     def get(self, request, pk):
         from django.shortcuts import get_object_or_404
+
         teacher = get_object_or_404(Teacher, pk=pk)
         secciones = CourseSection.objects.filter(teacher_id=pk).select_related("course")
         cursos = list(set([s.course.name for s in secciones if s.course]))
@@ -219,10 +225,10 @@ class TeacherStatsListView(APIView):
         responses={200: TeacherStatsSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -300,10 +306,10 @@ class FacultyHistoricalView(APIView):
         responses={200: SemesterHistoricalSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=400,
             )
 
@@ -348,13 +354,6 @@ class CourseSectionByFacultyView(APIView):
         summary="Docentes asignados a cada sección por facultad y semestre",
         parameters=[
             OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad",
-                required=True,
-            ),
-            OpenApiParameter(
                 name="semester",
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
@@ -365,12 +364,18 @@ class CourseSectionByFacultyView(APIView):
         responses={200: CourseSectionSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         semester_id = request.query_params.get("semester")
 
-        if not faculty_id or not semester_id:
+        if not faculty_id:
             return Response(
-                {"error": "Los parámetros faculty y semester son requeridos"},
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not semester_id:
+            return Response(
+                {"error": "El parámetro semester es requerido"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -405,13 +410,6 @@ class TopCoursesByScoreView(APIView):
         summary="Top 4 cursos con mejores punteos de control docente",
         parameters=[
             OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad",
-                required=True,
-            ),
-            OpenApiParameter(
                 name="semester",
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
@@ -422,12 +420,18 @@ class TopCoursesByScoreView(APIView):
         responses={200: TopCourseSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         semester_id = request.query_params.get("semester")
 
-        if not faculty_id or not semester_id:
+        if not faculty_id:
             return Response(
-                {"error": "Los parámetros faculty y semester son requeridos"},
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not semester_id:
+            return Response(
+                {"error": "El parámetro semester es requerido"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -436,7 +440,6 @@ class TopCoursesByScoreView(APIView):
             course_section__course__cost_center__faculty_id=faculty_id,
         ).select_related("course_section__course")
 
-        # Agrupar punteos por curso
         course_scores: dict[int, list[float]] = {}
         course_names: dict[int, str] = {}
 
@@ -471,24 +474,21 @@ class TopCoursesByScoreView(APIView):
 
         serializer = TopCourseSerializer(top4, many=True)
         return Response(serializer.data)
-    
+
 
 class TeacherCourseListView(APIView):
-    @extend_schema (
-            summary = "Cursos asignados por docente"
-            
-    )
+    @extend_schema(summary="Cursos asignados por docente")
     def get(self, request, pk):
         sections = CourseSection.objects.filter(teacher_id=pk).select_related("course")
-        
+
         courses_map = {}
         for s in sections:
             if s.course:
                 courses_map[s.course.id] = {
                     "id": s.course.id,
-                    "code": getattr(s.course, 'code', f"C-{s.course.id}"),
+                    "code": getattr(s.course, "code", f"C-{s.course.id}"),
                     "name": s.course.name,
-                    "credits": getattr(s.course, 'credits', 0)
+                    "credits": getattr(s.course, "credits", 0),
                 }
 
         course_ids = list(courses_map.keys())
@@ -504,8 +504,7 @@ class TeacherCourseListView(APIView):
             score = (total / high * 100) if high > 0 else 0.0
             scores_by_course[ctrl.course_section.course_id].append(score)
         histories = TeacherCourseHistory.objects.filter(
-            teacher_id=pk, 
-            course_id__in=course_ids
+            teacher_id=pk, course_id__in=course_ids
         ).order_by("course_id", "-semester_id")
 
         history_map = defaultdict(list)
@@ -515,22 +514,26 @@ class TeacherCourseListView(APIView):
         result = []
         for c_id, info in courses_map.items():
             course_scores = scores_by_course.get(c_id, [])
-            avg_score = sum(course_scores) / len(course_scores) if course_scores else 0.0
-            
+            avg_score = (
+                sum(course_scores) / len(course_scores) if course_scores else 0.0
+            )
+
             trend_str = "N/A"
             c_hist = history_map.get(c_id, [])
             if len(c_hist) >= 2 and c_hist[1] > 0:
                 diff = round(((c_hist[0] - c_hist[1]) / c_hist[1]) * 100, 2)
                 trend_str = f"{diff}%"
 
-            result.append({
-                "id": info["id"],
-                "code": info["code"],
-                "name": info["name"],
-                "credits": info["credits"],
-                "score": round(avg_score, 2),
-                "trend": trend_str
-            })
+            result.append(
+                {
+                    "id": info["id"],
+                    "code": info["code"],
+                    "name": info["name"],
+                    "credits": info["credits"],
+                    "score": round(avg_score, 2),
+                    "trend": trend_str,
+                }
+            )
 
         return Response({"total": len(result), "courses": result})
 
@@ -542,6 +545,7 @@ class CourseTeachersStatsView(APIView):
     )
     def get(self, request, pk):
         from django.shortcuts import get_object_or_404
+
         controls = SectionControl.objects.filter(
             course_section__course_id=pk
         ).select_related("course_section__teacher")
@@ -553,7 +557,7 @@ class CourseTeachersStatsView(APIView):
             teacher = control.course_section.teacher
             if not teacher:
                 continue
-                
+
             high = control.high_count
             mid = control.medium_count
             low = control.low_count
@@ -570,7 +574,7 @@ class CourseTeachersStatsView(APIView):
             {
                 "teacher_id": t_id,
                 "teacher_name": teacher_names[t_id],
-                "average_rating": round(sum(scores) / len(scores), 2)
+                "average_rating": round(sum(scores) / len(scores), 2),
             }
             for t_id, scores in teacher_scores.items()
         ]
