@@ -86,7 +86,7 @@ def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int)
                     teacher_id=analysis["teacher_id"],
                     semester_id=semester_id,
                     title=analysis["title"],
-                    profile_overview=analysis["profile_overview"],
+                    profile_overview=analysis["profile_recomendation"],
                     perception=analysis["perception"],
                     model_version=ai_client.model_version,
                 )

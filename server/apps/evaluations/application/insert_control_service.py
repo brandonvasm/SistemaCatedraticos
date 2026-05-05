@@ -158,7 +158,7 @@ def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -
                     course_id=analysis["course_id"],
                     semester_id=semester_id,
                     title=analysis["title"],
-                    course_overview=analysis["course_overview"],
+                    course_overview=analysis["course_recomendation"],
                     perception=analysis["perception"],
                     model_version=ai_client.model_version,
                 )

@@ -27,7 +27,7 @@ class GetTeacherCommentsAnalysisUseCase:
             analysis = TeacherCommentsAnalysisAI.objects.create(
                 teacher_id=teacher_id,
                 ai_score=analysis_result["ai_score"],
-                comment_overview=analysis_result["comment_overview"],
+                comment_overview=analysis_result["recomendation"],
                 comment=analysis_result["comment"],
                 model_version=ai_client.model_version,
                 perception=analysis_result["perception"],
