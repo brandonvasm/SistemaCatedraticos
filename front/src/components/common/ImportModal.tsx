@@ -24,6 +24,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadingStatus, setUploadingStatus] = useState<Record<string, boolean>>({});
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, boolean>>({});
+  const [uploadedFileNames, setUploadedFileNames] = useState<Record<string, string>>({});
   const [fileIds, setFileIds] = useState<Record<string, number>>({});
 
   if (!isOpen) return null;
@@ -38,6 +39,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
       const response = await fileService.uploadFile(file, id);
       setFileIds(prev => ({ ...prev, [id]: response.id }));
       setUploadedFiles(prev => ({ ...prev, [id]: true }));
+      setUploadedFileNames(prev => ({ ...prev, [id]: file.name }));
     } catch (err: any) {
       const msg = err.response?.data?.error || err.message || 'Error en carga';
       setError(`${id.toUpperCase()}: ${msg.toUpperCase()}`);
@@ -51,13 +53,19 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
     setError(null);
     
     try {
-      const idsToProcess = Object.values(fileIds);
-      for (const id of idsToProcess) {
-        await fileService.processFile(id);
+      const filesToProcess = FILE_REQUIREMENTS.filter(file => fileIds[file.id]);
+      for (const file of filesToProcess) {
+        try {
+          await fileService.processFile(fileIds[file.id]);
+        } catch (err: any) {
+          const responseData = err.response?.data;
+          const msg = responseData?.first_error || responseData?.error || err.message;
+          throw new Error(`${file.name}: ${msg}`);
+        }
       }
       onClose();
     } catch (err: any) {
-      setError("ERROR EN PROCESAMIENTO: " + (err.response?.data?.error || err.message));
+      setError("ERROR EN PROCESAMIENTO: " + err.message);
     } finally {
       setIsProcessing(false);
     }
@@ -119,6 +127,11 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                         <p className="text-[8px] font-bold text-gray-600 uppercase tracking-widest mt-1">
                           {uploadingStatus[file.id] ? 'Transfiriendo...' : uploadedFiles[file.id] ? 'Listo para Procesar' : 'Archivo Pendiente'}
                         </p>
+                        {uploadedFileNames[file.id] && (
+                          <p className="mt-2 max-w-[260px] truncate text-[9px] font-bold text-gray-400 normal-case tracking-normal">
+                            {uploadedFileNames[file.id]}
+                          </p>
+                        )}
                       </div>
                     </div>
                     {uploadingStatus[file.id] ? <Loader2 size={18} className="text-yellow-400 animate-spin" /> : uploadedFiles[file.id] ? <CheckCircle2 size={18} className="text-yellow-400 animate-in zoom-in" /> : <Upload className="text-gray-700 group-hover:text-yellow-400 transition-all cursor-pointer" size={18} />}

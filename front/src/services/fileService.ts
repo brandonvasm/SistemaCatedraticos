@@ -35,7 +35,9 @@ export const fileService = {
     if (userDataRaw) {
       try {
         const userData = JSON.parse(userDataRaw);
-        facultyId = userData.faculty || 1;
+        const rawFacultyId = userData.faculty_id ?? userData.faculty?.id ?? userData.faculty;
+        const parsedFacultyId = Number(rawFacultyId);
+        facultyId = Number.isFinite(parsedFacultyId) && parsedFacultyId > 0 ? parsedFacultyId : 1;
       } catch (e) {
         console.error(e);
       }

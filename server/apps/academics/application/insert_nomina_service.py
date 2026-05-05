@@ -1,4 +1,6 @@
 from datetime import date
+import re
+import unicodedata
 
 from apps.academics.models import Career, Contract, Course, CourseSection, Semester, Teacher
 
@@ -20,6 +22,61 @@ def _first_value(row: dict, *keys: str):
         if value not in (None, ""):
             return value
     return None
+
+
+def _career_key(value: str) -> str:
+    text = unicodedata.normalize("NFKD", value or "")
+    text = "".join(character for character in text if not unicodedata.combining(character))
+    text = re.sub(r"\s+", " ", text).strip()
+
+    if not text:
+        return ""
+
+    if " " not in text and len(text) <= 8:
+        return re.sub(r"\s+", "", text).upper()
+
+    ignored_words = {
+        "A",
+        "DE",
+        "DEL",
+        "E",
+        "EL",
+        "EN",
+        "LA",
+        "LAS",
+        "LOS",
+        "PARA",
+        "Y",
+    }
+    words = [word.upper() for word in re.findall(r"[A-Za-z0-9]+", text)]
+    return "".join(word[0] for word in words if word not in ignored_words)
+
+
+def _get_career(career_key: str, faculty_id: int) -> Career:
+    try:
+        return Career.objects.get(abbreviation=career_key, faculty_id=faculty_id)
+    except Career.DoesNotExist:
+        pass
+
+    try:
+        return Career.objects.get(code=career_key, faculty_id=faculty_id)
+    except Career.DoesNotExist:
+        pass
+
+    matching_careers = [
+        career
+        for career in Career.objects.filter(faculty_id=faculty_id)
+        if _career_key(career.name) == career_key
+    ]
+
+    if len(matching_careers) == 1:
+        career = matching_careers[0]
+        if not career.abbreviation:
+            career.abbreviation = career_key
+            career.save(update_fields=["abbreviation"])
+        return career
+
+    raise Career.DoesNotExist
 
 
 class InsertNominaService:
@@ -55,19 +112,13 @@ class InsertNominaService:
                     continue
 
                 try:
-                    career = Career.objects.get(
-                        abbreviation=career_key,
-                        faculty_id=faculty_id,
-                    )
+                    career = _get_career(career_key, faculty_id)
                 except Career.DoesNotExist:
-                    try:
-                        career = Career.objects.get(code=career_key, faculty_id=faculty_id)
-                    except Career.DoesNotExist:
-                        errors.append(
-                            f"Row {i}: career with key '{career_key}' not found in faculty {faculty_id}. "
-                            "Set the abbreviation or code on the career before uploading the nomina."
-                        )
-                        continue
+                    errors.append(
+                        f"Row {i}: career with key '{career_key}' not found in faculty {faculty_id}. "
+                        "Set the abbreviation, code, or matching name on the career before uploading the nomina."
+                    )
+                    continue
 
                 try:
                     course = Course.objects.get(name=course_name, faculty_id=faculty_id)

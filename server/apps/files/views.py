@@ -55,6 +55,9 @@ class FileView(viewsets.ModelViewSet):
                 file_record.save()
                 return Response(FileSerializer(file_record).data, status=status.HTTP_201_CREATED)
         
+        except ValueError as e:
+            self.storage_service.delete_file(cloud_url) if cloud_url != ""else None
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             self.storage_service.delete_file(cloud_url) if cloud_url != ""else None
             return Response({"error": "Error saving file record: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -104,6 +107,25 @@ class FileView(viewsets.ModelViewSet):
                     semester_id=file_record.semester_id,
                     faculty_id=file_record.faculty_id,
                 )
+
+                errors = insert_result.get("errors") or []
+                if errors:
+                    transaction.set_rollback(True)
+                    first_error = errors[0] if errors else ""
+                    return Response({
+                        "error": (
+                            f"Error processing '{file_record.name}': finished with "
+                            f"{len(errors)} row errors. No data was saved."
+                        ),
+                        "file_id": file_record.id,
+                        "file_name": file_record.name,
+                        "file_type": file_type,
+                        "first_error": first_error,
+                        "basic_info": basic_info,
+                        "records_count": len(records),
+                        "insert_result": insert_result,
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
                 file_record.processed = True
                 file_record.processed_at = timezone.now()
                 file_record.save()
@@ -114,4 +136,9 @@ class FileView(viewsets.ModelViewSet):
                     "insert_result": insert_result,
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": "Error processing file: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                "error": f"Error processing '{file_record.name}': {str(e)}",
+                "file_id": file_record.id,
+                "file_name": file_record.name,
+                "file_type": file_type,
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
