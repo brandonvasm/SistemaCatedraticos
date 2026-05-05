@@ -8,6 +8,7 @@ class CourseAnalysisResponse(BaseModel):
     perception: str
 
 class CourseAnalysisListResponse(BaseModel):
+    recomendations: List[str] = Field(max_length=3)
     analyses: List[CourseAnalysisResponse]
 
 class TeacherProfileAnalysisResponse(BaseModel):
@@ -17,6 +18,7 @@ class TeacherProfileAnalysisResponse(BaseModel):
     perception: str
 
 class TeacherProfileAnalysisListResponse(BaseModel):
+    recomendations: List[str] = Field(max_length=3)
     analyses: List[TeacherProfileAnalysisResponse]
 
 class TeacherCommentAnalysisResponse(BaseModel):

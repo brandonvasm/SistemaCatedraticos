@@ -40,33 +40,44 @@ class GeminiAIClient(AIClient):
             print(f"Error generating AI response: {e}")
             raise
 
-    def generate_course_analysis(self, courses_data: list[dict]) -> CourseAnalysisListResponse:
+    def generate_course_analysis(self, courses_data: list[dict]) -> dict | list:
+
+        if not courses_data:
+            raise ValueError("No course data provided for analysis")
+
         prompt = f"""
-        Analiza los datos de los cursos y brinda una recomendación por cada uno.
+        Analiza los datos de los cursos y brinda una recomendación crítica para mejorar por cada uno y 3 generales de la lista.
         El titulo no debe superar los 40 caracteres, la recomendación del curso no debe superar los 100 caracteres.
         La percepción puede ser: (positive, neutral, negative).
         Nota: El punteo del curso se basa en el promedio de los punteos de control de sus secciones y
         el punteo de control es el porcentaje de responsabilidades entregadas a tiempo por los docentes en el curso.
-        La tendencia del curso se basa en la evolución del punteo de control desde el semestre anterior: Es positiva si el punteo de control ha mejorado, negativa si ha empeorado.
+        La tendencia del curso se basa en la evolución del punteo de control desde el semestre anterior: Es positiva si el punteo de control ha mejorado, negativa si ha empeorado. Y puede ser nula.
         Cursos:
         {courses_data}
         """
         return self.generate_response(prompt, CourseAnalysisListResponse)
 
-    def generate_teacher_profile_analysis(self, teachers_data: list[dict]) -> TeacherProfileAnalysisListResponse:
+    def generate_teacher_profile_analysis(self, teachers_data: list[dict]) -> dict | list:
+        
+        if not teachers_data:
+            raise ValueError("No teacher data provided for analysis")
+
         prompt = f"""
-        Analiza los datos de los docentes y brinda una recomendación por cada uno.
+        Analiza los datos de los docentes y brinda una recomendación crítica para mejorar por cada uno y 3 generales de la lista.
         El titulo no debe superar los 40 caracteres, la recomendación del perfil no debe superar los 100 caracteres.
         La percepción puede ser: (positive, neutral, negative).
         Nota: El punteo del docente se basa en el promedio de los punteos en evaluaciones por parte de estudiantes.
-        La tendencia del docente se basa en la evolución del punteo desde el semestre anterior: Es positiva si el punteo ha mejorado, negativa si ha empeorado.
+        La tendencia del docente se basa en la evolución del punteo desde el semestre anterior: Es positiva si el punteo ha mejorado, negativa si ha empeorado. Y puede ser nula.
         Se envía la cantidad de creditos manejados. Representan la carga académica.
         Docentes:
         {teachers_data}
         """
         return self.generate_response(prompt, TeacherProfileAnalysisListResponse)
     
-    def generate_teacher_comment_analysis(self, comment_data: list[str]) -> TeacherCommentAnalysisResponse:
+    def generate_teacher_comment_analysis(self, comment_data: list[str]) -> dict | list:
+        if not comment_data:
+            raise ValueError("No comment data provided for analysis")
+
         prompt = f"""
         Analiza los comentarios del docente y brinda una recomendación.
         La recomendación del comentario no debe superar los 100 caracteres.
@@ -76,5 +87,4 @@ class GeminiAIClient(AIClient):
         Comentarios: 
         {comment_data}
         """
-        print(prompt)
         return self.generate_response(prompt, TeacherCommentAnalysisResponse)

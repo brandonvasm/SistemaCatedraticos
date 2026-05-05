@@ -36,3 +36,14 @@ class CourseAnalysisAI(models.Model):
     perception = models.CharField(max_length=20, choices=PerceptionChoices.choices, default="neutral")
     created_at = models.DateTimeField(auto_now_add=True)
     semester = models.ForeignKey("academics.Semester", on_delete=models.CASCADE)
+
+class TeacherGeneralRecomendationsAI(models.Model):
+    recomendation = models.TextField(blank=True, null=True, max_length=100)
+    model_version = models.CharField(max_length=50)
+    semester = models.ForeignKey("academics.Semester", on_delete=models.CASCADE)
+
+class CourseGeneralRecomendationsAI(models.Model):
+    recomendation = models.TextField(blank=True, null=True, max_length=100)
+    model_version = models.CharField(max_length=50)
+    semester = models.ForeignKey("academics.Semester", on_delete=models.CASCADE)
+    

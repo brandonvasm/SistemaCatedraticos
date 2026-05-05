@@ -1,79 +1,78 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .serializers import TeacherCommentsAnalysisAISerializer, CommentsRequestSerializer
-from .models import TeacherCommentsAnalysisAI
-from apps.academics.utils import get_historical_semesters
-from .infrastructure.gemini_ai_client import GeminiAIClient
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from urllib import response
 
-# Create your views here.
+from rest_framework.views import APIView
+from rest_framework.viewsets import ViewSet
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from drf_spectacular.utils import extend_schema
+
+from .serializers import (
+    TeacherCommentsAnalysisAISerializer,
+    CommentsRequestSerializer,
+    RecommendationsResponseSerializer,
+    TeacherProfileAnalysisAISerializer,
+    CourseAnalysisAISerializer,
+)
+from .application.get_teacher_comments_analysis_use_case import GetTeacherCommentsAnalysisUseCase
+from .application.get_course_analysis_use_case import GetCourseAnalysisUseCase
+from .application.get_course_recommendations_use_case import GetCourseRecommendationsUseCase
+from .application.get_teacher_profile_analysis_use_case import GetTeacherProfileAnalysisUseCase
+from .application.get_teacher_recommendations_use_case import GetTeacherRecommendationsUseCase
+from .test_ai import TestUC
+
+
 class TeacherCommentsAnalysisAIView(APIView):
     @extend_schema(
         request=CommentsRequestSerializer,
-        responses={200: TeacherCommentsAnalysisAISerializer}
+        responses={200: TeacherCommentsAnalysisAISerializer},
     )
     def post(self, request):
         serializer = CommentsRequestSerializer(data=request.data)
-
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
-        
-        teacher_id = serializer.validated_data["teacher_id"]
-        comments = serializer.validated_data["comments"]
 
-        print(request.user.faculty_id_id)
-        historical_semesters = get_historical_semesters(request.user.faculty_id_id)
-        
-        if len(historical_semesters) == 0:
-            return Response({"detail": "No historical semesters found for the user's faculty"}, status=400)
-        current_semester_id = historical_semesters[0].id
+        analysis = GetTeacherCommentsAnalysisUseCase().execute(
+            teacher_id=serializer.validated_data["teacher_id"],
+            comments=serializer.validated_data["comments"],
+            faculty_id=request.user.faculty_id_id,
+        )
+        return Response(TeacherCommentsAnalysisAISerializer(analysis).data)
 
-        analysis = TeacherCommentsAnalysisAI.objects.filter(
-            teacher_id=teacher_id, semester_id=current_semester_id
-        ).first()
-        if not analysis:
 
-            if len(comments) == 0:
-                return Response({"detail": "No comments provided"}, status=400)
-            
-            ai_client = GeminiAIClient()
-            analysis_result = ai_client.generate_teacher_comment_analysis(comments)
-            analysis = TeacherCommentsAnalysisAI.objects.create(
-                teacher_id=teacher_id,
-                ai_score=analysis_result["ai_score"],
-                comment_overview=analysis_result["comment_overview"],
-                comment=analysis_result["comment"],
-                model_version=ai_client.model_version,
-                perception=analysis_result["perception"],
-                positive_percentage=analysis_result["positive_percentage"],
-                negative_percentage=analysis_result["negative_percentage"],
-                neutral_percentage=analysis_result["neutral_percentage"],
-                semester_id=current_semester_id,
-            )
-        serializer = TeacherCommentsAnalysisAISerializer(analysis)
-        return Response(serializer.data)
+class CourseAnalysisAIView(ViewSet):
+    @extend_schema(responses={200: CourseAnalysisAISerializer()})
+    @action(detail=True, methods=["get"], url_path="course-analysis")
+    def course(self, request, pk=None):
+        analysis = GetCourseAnalysisUseCase().execute(
+            course_id=pk,
+            faculty_id=request.user.faculty_id_id, 
+        )
+        return Response(CourseAnalysisAISerializer(analysis).data)
 
-'''
-Example of expected input for the TeacherCommentsAnalysisAIView:
-{
-    "teacher_id": 1,
-    "comments": [
-            "El docente explica muy bien los temas y resuelve dudas con claridad",
-            "Las clases son interesantes, pero a veces va demasiado rápido",
-            "No responde correos ni mensajes",
-            "Buen dominio del tema, pero falta organización",
-            "Excelente profesor, uno de los mejores que he tenido",
-            "Las evaluaciones son confusas",
-            "Muy accesible y siempre dispuesto a ayudar",
-            "Regular, ni bueno ni malo",
-            "No se entiende su forma de explicar",
-            "Buen docente, aunque debería mejorar la puntualidad",
-            "Clases dinámicas y bien estructuradas",
-            "Demasiado estricto con las calificaciones",
-            "Explica con ejemplos prácticos, eso ayuda mucho",
-            "A veces parece desinteresado",
-            "Cumple con el contenido del curso correctamente"
-    ]
-}
-'''
+    @extend_schema(responses={200: RecommendationsResponseSerializer})
+    @action(detail=False, methods=["get"], url_path="general-recommendations")
+    def general_recommendations(self, request):
+        recommendations = GetCourseRecommendationsUseCase().execute(
+            faculty_id=request.user.faculty_id_id,
+        )
+        return Response(RecommendationsResponseSerializer({"recommendations": recommendations}).data)
+
+
+class TeacherProfileAnalysisAIView(ViewSet):
+    @extend_schema(responses={200: TeacherProfileAnalysisAISerializer})
+    @action(detail=True, methods=["get"], url_path="teacher-analysis")
+    def teacher(self, request, pk=None):
+        TestUC._trigger_teacher_ai_analysis(set(range(31, 50)), 1)
+        analysis = GetTeacherProfileAnalysisUseCase().execute(
+            teacher_id=pk,
+            faculty_id=request.user.faculty_id_id,
+        )
+        return Response(TeacherProfileAnalysisAISerializer(analysis).data)
+
+    @extend_schema(responses={200: RecommendationsResponseSerializer})
+    @action(detail=False, methods=["get"], url_path="general-recommendations")
+    def general_recommendations(self, request):
+        recommendations = GetTeacherRecommendationsUseCase().execute(
+            faculty_id=request.user.faculty_id_id,
+        )
+        return Response(RecommendationsResponseSerializer({"recommendations": recommendations}).data)

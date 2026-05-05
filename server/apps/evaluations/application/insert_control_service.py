@@ -2,7 +2,7 @@ from django.db.models import Avg, Count
 
 from apps.academics.models import Course, CourseSection, Semester
 from apps.analytics.infrastructure.gemini_ai_client import GeminiAIClient
-from apps.analytics.models import CourseAnalysisAI
+from apps.analytics.models import CourseAnalysisAI, CourseGeneralRecomendationsAI
 from apps.evaluations.models import SectionControl, StudentEvaluation
 from apps.historical.models import CourseHistory, SemesterHistory, TeacherCourseHistory
 
@@ -114,6 +114,10 @@ def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -
                 continue
 
             current_score = current_history.control_avg_score
+
+            if current_score > 85:
+                continue
+
             tendency = None
             if prev_semester:
                 prev_history = CourseHistory.objects.filter(
@@ -137,18 +141,29 @@ def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -
 
         ai_client = GeminiAIClient()
         response = ai_client.generate_course_analysis(courses_data)
-        for analysis in response.analyses:
+
+        for recomendation in response["recomendations"]:
             try:
-                CourseAnalysisAI.objects.create(
-                    course_id=analysis.course_id,
+                CourseGeneralRecomendationsAI.objects.create(
                     semester_id=semester_id,
-                    title=analysis.title,
-                    course_overview=analysis.course_overview,
-                    perception=analysis.perception,
+                    recomendation=recomendation,
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
-                errors.append(f"AI save for course {analysis.course_id}: {e}")
+                errors.append(f"AI save for general recommendation: {e}")
+
+        for analysis in response["analyses"]:
+            try:
+                CourseAnalysisAI.objects.create(
+                    course_id=analysis["course_id"],
+                    semester_id=semester_id,
+                    title=analysis["title"],
+                    course_overview=analysis["course_overview"],
+                    perception=analysis["perception"],
+                    model_version=ai_client.model_version,
+                )
+            except Exception as e:
+                errors.append(f"AI save for course {analysis['course_id']}: {e}")
     except Exception as e:
         errors.append(f"AI course analysis: {e}")
 

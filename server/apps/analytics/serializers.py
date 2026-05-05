@@ -23,3 +23,10 @@ class CommentsRequestSerializer(serializers.Serializer):
             child=serializers.CharField(),
             allow_empty=True
         )
+
+class RecommendationsResponseSerializer(serializers.Serializer):
+    recommendations = serializers.ListField(
+        child=serializers.CharField(),
+        allow_empty=True
+    )
+

@@ -2,7 +2,7 @@ from django.db.models import Avg
 
 from apps.academics.models import CourseSection, Semester, Teacher
 from apps.analytics.infrastructure.gemini_ai_client import GeminiAIClient
-from apps.analytics.models import TeacherProfileAnalysisAI
+from apps.analytics.models import TeacherProfileAnalysisAI, TeacherGeneralRecomendationsAI
 from apps.evaluations.models import StudentEvaluation
 from apps.historical.models import TeacherCourseHistory, TeacherLoadHistory
 
@@ -38,6 +38,10 @@ def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int)
                 continue
 
             current_score = round(current_avg, 2)
+
+            if current_score > 85:
+                continue
+
             tendency = None
             if prev_semester:
                 prev_avg = TeacherCourseHistory.objects.filter(
@@ -63,21 +67,31 @@ def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int)
 
         if not teachers_data:
             return errors
-
+        
         ai_client = GeminiAIClient()
         response = ai_client.generate_teacher_profile_analysis(teachers_data)
-        for analysis in response.analyses:
+        for recomendation in response["recomendations"]:
             try:
-                TeacherProfileAnalysisAI.objects.create(
-                    teacher_id=analysis.teacher_id,
+                TeacherGeneralRecomendationsAI.objects.create(
                     semester_id=semester_id,
-                    title=analysis.title,
-                    profile_overview=analysis.profile_overview,
-                    perception=analysis.perception,
+                    recomendation=recomendation,
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
-                errors.append(f"AI save for teacher {analysis.teacher_id}: {e}")
+                errors.append(f"AI save for general recommendation: {e}")
+
+        for analysis in response["analyses"]:
+            try:
+                TeacherProfileAnalysisAI.objects.create(
+                    teacher_id=analysis["teacher_id"],
+                    semester_id=semester_id,
+                    title=analysis["title"],
+                    profile_overview=analysis["profile_overview"],
+                    perception=analysis["perception"],
+                    model_version=ai_client.model_version,
+                )
+            except Exception as e:
+                errors.append(f"AI save for teacher {analysis['teacher_id']}: {e}")
     except Exception as e:
         errors.append(f"AI teacher analysis: {e}")
 
