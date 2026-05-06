@@ -13,6 +13,7 @@ import Recommendations from "../components/teacherDetail/Recommendations";
 import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
 import { teacherService } from "../services/teacherService";
 import type { Courses } from "../types/teacher";
+import { useAuth } from "../context/AuthContext";
 
 export default function TeacherDetail() {
   const { id } = useParams();
@@ -21,6 +22,8 @@ export default function TeacherDetail() {
   const [teacherAPI, setTeacherAPI] = useState<any>(null);
   const [courses, setCourses] = useState<Courses[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
+  const { user } = useAuth();
+  const facultyId = user?.faculty_id;
   
   const teacherLocal = teachers.find((t) => t.id === id);
 
@@ -77,7 +80,7 @@ export default function TeacherDetail() {
           <>
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="p-5 backdrop-blur-2xl">
-                <HistoryTrend />
+                <HistoryTrend facultyId={facultyId}/>
               </div>
               <div className="p-5 backdrop-blur-2xl">
                 <RadarChartComp />
@@ -102,7 +105,7 @@ export default function TeacherDetail() {
 
         {tab === "comentarios" && (
           <div className="bg-[#0f111a]/50 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-2xl">
-            <ComentariosTab />
+            <ComentariosTab teacherId={id}/>
           </div>
         )}
 

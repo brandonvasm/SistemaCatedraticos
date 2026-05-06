@@ -7,10 +7,10 @@ interface PerformancePieProps {
 
 export default function PerformancePie({ teachers }: PerformancePieProps) {
   const counts = {
-    excelente: teachers.filter(t => t.promedio_general > 4.25).length,
-    muyBueno: teachers.filter(t => t.promedio_general > 3.5 && t.promedio_general <= 4.25).length,
-    bueno: teachers.filter(t => t.promedio_general >= 3.0 && t.promedio_general <= 3.5).length,
-    atencion: teachers.filter(t => t.promedio_general > 0 && t.promedio_general < 3.0).length,
+    excelente: teachers.filter(t => t.promedio_general > 90).length,
+    muyBueno: teachers.filter(t => t.promedio_general > 75 && t.promedio_general <= 90).length,
+    bueno: teachers.filter(t => t.promedio_general >= 65 && t.promedio_general <= 75).length,
+    atencion: teachers.filter(t => t.promedio_general > 0 && t.promedio_general < 65).length,
   };
 
   const totalEvaluated = Object.values(counts).reduce((a, b) => a + b, 0);
@@ -22,7 +22,8 @@ export default function PerformancePie({ teachers }: PerformancePieProps) {
     { label: "Atención", value: counts.atencion, color: "#ef4444" },
   ].filter(s => s.value > 0);
 
-  let cumulativeAngle = -90;
+  let pathAngleAccumulator = -90;
+  let labelAngleAccumulator = -90;
 
   return (
     <div className="bg-[#1e2230]/60 border border-white/5 rounded-3xl p-6 h-full shadow-2xl relative overflow-hidden group">
@@ -30,7 +31,7 @@ export default function PerformancePie({ teachers }: PerformancePieProps) {
         <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-400">
           <PieIcon size={20} />
         </div>
-        <div>
+        <div className="text-left">
           <h3 className="text-lg font-bold text-white tracking-tight">Distribución</h3>
           <p className="text-xs text-gray-500 font-medium mt-0.5">Por nivel de desempeño</p>
         </div>
@@ -45,13 +46,13 @@ export default function PerformancePie({ teachers }: PerformancePieProps) {
                 
                 {stats.map((item, index) => {
                   const angle = (item.value / totalEvaluated) * 360;
-                  const startAngle = cumulativeAngle;
-                  cumulativeAngle += angle;
+                  const startAngle = pathAngleAccumulator;
+                  pathAngleAccumulator += angle;
 
                   const x1 = 50 + 48 * Math.cos((startAngle * Math.PI) / 180);
                   const y1 = 50 + 48 * Math.sin((startAngle * Math.PI) / 180);
-                  const x2 = 50 + 48 * Math.cos((cumulativeAngle * Math.PI) / 180);
-                  const y2 = 50 + 48 * Math.sin((cumulativeAngle * Math.PI) / 180);
+                  const x2 = 50 + 48 * Math.cos((pathAngleAccumulator * Math.PI) / 180);
+                  const y2 = 50 + 48 * Math.sin((pathAngleAccumulator * Math.PI) / 180);
                   const largeArcFlag = angle > 180 ? 1 : 0;
 
                   return (
@@ -69,10 +70,13 @@ export default function PerformancePie({ teachers }: PerformancePieProps) {
 
               <div className="absolute inset-0 pointer-events-none">
                 {stats.map((item, i) => {
+                  const sliceAngle = (item.value / totalEvaluated) * 360;
+                  const midAngle = labelAngleAccumulator + sliceAngle / 2;
+                  labelAngleAccumulator += sliceAngle; // Actualizar para el siguiente label
+
                   const percentage = Math.round((item.value / totalEvaluated) * 100);
-                  if (percentage < 5) return null;
+                  if (percentage < 5) return null; 
                   
-                  const midAngle = (cumulativeAngle - ((item.value / totalEvaluated) * 360) / 2);
                   return (
                     <div 
                       key={i} 
@@ -94,7 +98,7 @@ export default function PerformancePie({ teachers }: PerformancePieProps) {
               {stats.map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <div className="flex flex-col">
+                  <div className="flex flex-col text-left">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">{item.label}</span>
                     <span className="text-[9px] text-gray-600 font-medium mt-0.5">{item.value} Docentes</span>
                   </div>

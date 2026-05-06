@@ -29,7 +29,7 @@ export const courseService = {
   getCourseDetail: async (id: string | number) => {
     try {
       const response = await api.get(`/academics/courses/${id}/`);
-      return response.data; // 
+      return response.data; 
     } catch (error) {
       console.error("Error al obtener detalle del curso:", error);
       throw error;
