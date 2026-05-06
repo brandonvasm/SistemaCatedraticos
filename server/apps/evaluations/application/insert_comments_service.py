@@ -24,10 +24,11 @@ class InsertCommentsService:
                 course_name = str(row.get("Curso", "")).strip()
                 section_number = str(row.get("Sección", "")).strip()
                 shift = _normalize_shift(str(row.get("Jornada", "")))
+                teacher_name = str(row.get("Catedrático", "")).strip()
                 content = str(row.get("Comentario", "")).strip()
 
-                if not course_name or not section_number or not content:
-                    errors.append(f"Row {i}: Curso, Sección and Comentario are required")
+                if not course_name or not content:
+                    errors.append(f"Row {i}: Curso and Comentario are required")
                     continue
 
                 try:
@@ -39,20 +40,29 @@ class InsertCommentsService:
                     errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
                     continue
 
-                try:
-                    section = CourseSection.objects.get(
+                if section_number and shift:
+                    sections = CourseSection.objects.filter(
                         course=course,
+                        semester_id=semester_id,
                         section_number=section_number,
                         shift=shift,
                     )
-                except CourseSection.DoesNotExist:
+                else:
+                    sections = CourseSection.objects.filter(
+                        course=course,
+                        semester_id=semester_id,
+                        teacher__name=teacher_name,
+                    )
+
+                if not sections.exists():
                     errors.append(
-                        f"Row {i}: section {section_number}/{shift} for '{course_name}' not found"
+                        f"Row {i}: section for '{course_name}' not found"
                     )
                     continue
 
-                Comment.objects.create(course_section=section, content=content)
-                created += 1
+                for section in sections:
+                    Comment.objects.create(course_section=section, content=content)
+                    created += 1
 
             except Exception as e:
                 errors.append(f"Row {i}: {e}")
