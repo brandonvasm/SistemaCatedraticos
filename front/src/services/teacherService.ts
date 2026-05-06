@@ -43,7 +43,24 @@ export const teacherService = {
       console.error("Error en getTeacherHistorical:", error);
       throw error;
     }
-  }
+  },
+
+  getTeacherWorkload: async (facultyId: number) => {
+    try {
+      const response = await api.get(`/academics/teachers/workload/`, {
+        params: { faculty: facultyId }
+      });
+      return response.data; 
+    } catch (error) {
+      console.error("Error en getTeacherWorkload:", error);
+      throw error;
+    }
+  },
+
+  getTeacherComments: async (id: string) => {
+  const response = await api.get(`/academics/teachers/${id}/comments/`);
+  return response.data; 
+}
 
   
 
