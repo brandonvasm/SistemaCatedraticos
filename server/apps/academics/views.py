@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from django.db import transaction, connection
 from django.db.models import Avg, Count
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -8,7 +9,25 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.evaluations.models import SectionControl, StudentEvaluation
+# Intentamos importar el modelo de analítica si existe
+try:
+    from apps.analytics.models import (
+        CourseAnalysisAI,
+        CourseGeneralRecomendationsAI,
+        TeacherAnalysisAI,
+        TeacherCommentsAnalysisAI,
+        TeacherGeneralRecomendationsAI,
+        TeacherProfileAnalysisAI,
+    )
+except ImportError:
+    CourseAnalysisAI = None
+    CourseGeneralRecomendationsAI = None
+    TeacherAnalysisAI = None
+    TeacherCommentsAnalysisAI = None
+    TeacherGeneralRecomendationsAI = None
+    TeacherProfileAnalysisAI = None
+
+from apps.evaluations.models import Comment, SectionControl, StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
 
 from .models import Contract, CourseSection, Faculty, Semester, Teacher
@@ -188,6 +207,92 @@ class CurrentSemesterView(APIView):
 
         serializer = SemesterSerializer(semester)
         return Response(serializer.data)
+
+
+class CloseSemesterView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Cerrar el semestre actual",
+        description="Marca el semestre más reciente como 'ARCHIVED' y elimina Evaluaciones, SectionControl (Analytics) y Secciones asociadas.",
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+    )
+    def post(self, request):
+        faculty_id = request.user.faculty_id_id
+        if not faculty_id:
+            return Response(
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Identificamos el semestre actual (el más reciente)
+        semester = Semester.objects.filter(
+            faculty_id=faculty_id
+        ).order_by("-year", "-number").first()
+
+        if not semester:
+            return Response(
+                {"error": "No se encontró ningún semestre para cerrar"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if semester.status == "ARCHIVED":
+            return Response(
+                {"error": "El semestre actual ya se encuentra archivado"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            with transaction.atomic():
+                # 1. Cambiar estado a ARCHIVED
+                semester.status = "ARCHIVED"
+                semester.save()
+
+                # 2. Obtener secciones para eliminar datos relacionados
+                sections_qs = CourseSection.objects.filter(semester=semester)
+
+                # 3. Eliminar datos de Evaluaciones (incluyendo comentarios) y SectionControl
+                StudentEvaluation.objects.filter(course_section__in=sections_qs).delete()
+                SectionControl.objects.filter(course_section__in=sections_qs).delete()
+                Comment.objects.filter(course_section__in=sections_qs).delete()
+                
+                # 4. Eliminar análisis de IA asociados al semestre
+                # Listamos todos los modelos de analytics posibles según tu esquema
+                analytics_models = [
+                    (CourseAnalysisAI, "analytics_courseanalysisai"),
+                    (CourseGeneralRecomendationsAI, "analytics_coursegeneralrecomendationsai"),
+                    (TeacherCommentsAnalysisAI, "analytics_teachercommentsanalysisai"),
+                    (TeacherGeneralRecomendationsAI, "analytics_teachergeneralrecomendationsai"),
+                    (TeacherProfileAnalysisAI, "analytics_teacherprofileanalysisai"),
+                    (TeacherAnalysisAI, "analytics_teacheranalysisai"), # El que causaba el error
+                ]
+
+                existing_tables = connection.introspection.table_names()
+
+                for model, table_name in analytics_models:
+                    # Solo intentamos borrar si el modelo fue importado y la tabla existe en la DB
+                    if model and table_name in existing_tables:
+                        # Según tu esquema, estos modelos se relacionan directamente con el semestre
+                        model.objects.filter(semester=semester).delete()
+                
+                # 5. Finalmente, eliminar las CourseSections usando SQL crudo.
+                # Esto evita que el ORM de Django intente realizar un borrado en cascada
+                # hacia tablas que no existen físicamente en la BD (como analytics_teacheranalysisai).
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f'DELETE FROM "{CourseSection._meta.db_table}" WHERE "semester_id" = %s',
+                        [semester.id]
+                    )
+
+            return Response(
+                {"message": f"Semestre {semester.year}-{semester.number} cerrado y datos limpiados exitosamente."},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Error al procesar el cierre de semestre: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class TeacherStatsDetailView(APIView):

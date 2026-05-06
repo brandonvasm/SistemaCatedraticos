@@ -11,6 +11,7 @@ from .teacher_views import (
 from .courses_views import CourseListView, CourseDetailView
 
 from .views import (
+    CloseSemesterView,
     CourseSectionByFacultyView,
     CourseTeachersStatsView,
     FacultyCreateView,
@@ -30,6 +31,7 @@ urlpatterns = [
     path("faculties/<int:pk>/", FacultyDetailView.as_view(), name="faculty-detail"),
     path("semesters/", SemesterListCreateView.as_view(), name="semester-list-create"),
     path("semesters/current/", CurrentSemesterView.as_view(), name="semester-current"),
+    path("semesters/close/", CloseSemesterView.as_view(), name="semester-close"),
     path("semesters/<int:pk>/", SemesterDetailView.as_view(), name="semester-detail"),
     path("teachers/", TeacherListCreateView.as_view(), name="teacher-list"),
     path("teachers/stats/", TeacherStatsListView.as_view(), name="teacher-stats"),
