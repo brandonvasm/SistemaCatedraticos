@@ -19,6 +19,12 @@ class TeacherCommentsAnalysisAI(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     semester = models.ForeignKey("academics.Semester", on_delete=models.CASCADE)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['teacher', 'semester'], name='tcai_tchr_sem_idx'),
+        ]
+
+
 class TeacherProfileAnalysisAI(models.Model):
     teacher = models.ForeignKey("academics.Teacher", on_delete=models.CASCADE)
     title = models.CharField(max_length=40)
@@ -28,6 +34,11 @@ class TeacherProfileAnalysisAI(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     semester = models.ForeignKey("academics.Semester", on_delete=models.CASCADE)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['teacher', 'semester'], name='profile_teacher_semester_idx'),
+        ]
+
 class CourseAnalysisAI(models.Model):
     course = models.ForeignKey("academics.Course", on_delete=models.CASCADE)
     title = models.CharField(max_length=40)
@@ -36,6 +47,11 @@ class CourseAnalysisAI(models.Model):
     perception = models.CharField(max_length=20, choices=PerceptionChoices.choices, default="neutral")
     created_at = models.DateTimeField(auto_now_add=True)
     semester = models.ForeignKey("academics.Semester", on_delete=models.CASCADE)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['course', 'semester'], name='cai_crs_sem_idx'),
+        ]
 
 class TeacherGeneralRecomendationsAI(models.Model):
     recomendation = models.TextField(blank=True, null=True, max_length=100)
