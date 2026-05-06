@@ -85,8 +85,8 @@ class GeminiAIClient(AIClient):
         La recomendación del comentario no debe superar los 100 caracteres.
         La percepción puede ser: (positive, neutral, negative) en base a la totalidad de comentarios.
         El punteo debe ser de 0 a 100 segun la calidad de los comentarios.
-        En el response, el comment_overview es un titulo y comment es un texto explicativo.
         Comentarios: 
         {comment_data}
         """
         return self.generate_response(prompt, TeacherCommentAnalysisResponse)
+    

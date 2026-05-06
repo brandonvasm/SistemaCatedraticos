@@ -26,6 +26,6 @@ class TeacherCommentAnalysisResponse(BaseModel):
     positive_percentage: float
     negative_percentage: float
     neutral_percentage: float
-    recomendation: str = Field(max_length=40)
-    comment: str = Field(max_length=100)
+    title: str = Field(max_length=40)
+    recomendation: str = Field(max_length=100)
     perception: str
