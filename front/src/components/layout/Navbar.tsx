@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Download, Search, School } from "lucide-react";
+import { Bell, Download, Search, School, CalendarDays } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import ExportModal from "../common/ExportModal";
 import NotificationsDrawer from "../notifications/NotificationsDrawer";
@@ -11,6 +11,7 @@ export default function Navbar() {
 
   const currentFacultad = user?.faculty_name || "Sin Facultad";
   const userRole = user?.role || localStorage.getItem("user_role")?.toLowerCase().trim();
+  const currentSemestre = "2024-1";
 
   return (
     <>
@@ -32,6 +33,11 @@ export default function Navbar() {
           <div className="flex items-center gap-3 px-4 py-2.5 bg-white/[0.05] border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-xl shadow-xl">
             <School size={12} className="text-yellow-400" />
             <span>{currentFacultad}</span>
+          </div>
+
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-white/[0.05] border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-xl shadow-xl">
+            <CalendarDays size={12} className="text-yellow-400" />
+            <span>{currentSemestre}</span>
           </div>
 
           <button 

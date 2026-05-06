@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { renderStars } from "./renderStars";
+import { Eye } from "lucide-react";
 import type { TeacherStats } from "../../types/teacher"; 
 import {
   ArrowUpRight,
@@ -105,12 +106,16 @@ export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
         </span>
       </td>
 
-      <td className="px-6 py-5 text-right">
+
+      <td className="px-6 py-5 w-[120px] text-right">
         <button
           onClick={() => navigate(`/docentes/${teacher.teacher_id}`)}
-          className="px-6 py-3 bg-white/5 hover:bg-yellow-400/20 border border-white/5 hover:border-yellow-400/30 text-yellow-400 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-yellow-400 border border-white/5 hover:border-yellow-400 text-white hover:text-black rounded-xl transition-all duration-300 group/btn shadow-xl active:scale-95"
         >
-          Detalle
+          <Eye size={12} className="transition-transform group-hover/btn:scale-110" />
+          <span className="text-[9px] font-black uppercase tracking-widest">
+            Ver Detalle
+          </span>
         </button>
       </td>
     </>
