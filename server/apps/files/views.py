@@ -96,6 +96,8 @@ class FileView(viewsets.ModelViewSet):
                 file_record.processed = True
                 file_record.processed_at = timezone.now()
                 file_record.save()
+                request.user.evaluation_count += 1
+                request.user.save()
                 return Response({
                     "basic_info": basic_info,
                     "records": records

@@ -123,16 +123,16 @@ class InsertEvaluationServiceTest(TestCase):
         self.assertEqual(result["created"], 0)
         self.assertIn("99999", result["errors"][0])
 
-    def test_error_course_not_found(self):
+    def test_error_appointment_not_found(self):
         result = InsertEvaluationService.execute(
-            [self._row(Curso="Inexistente")], self.semester.id, self.faculty.id
+            [self._row(**{"No. Nombramiento": "000000"})], self.semester.id, self.faculty.id
         )
         self.assertEqual(result["created"], 0)
-        self.assertEqual(len(result["errors"]), 1)
+        self.assertIn("000000", result["errors"][0])
 
-    def test_error_section_not_found(self):
+    def test_error_missing_appointment_number(self):
         result = InsertEvaluationService.execute(
-            [self._row(Sección="99", Jornada="vespertina")], self.semester.id, self.faculty.id
+            [self._row(**{"No. Nombramiento": ""})], self.semester.id, self.faculty.id
         )
         self.assertEqual(result["created"], 0)
         self.assertEqual(len(result["errors"]), 1)
@@ -167,6 +167,8 @@ class InsertCommentsServiceTest(TestCase):
     def _row(self, **kwargs):
         base = {
             "Curso": "Álgebra Lineal",
+            "Sección": "01",
+            "Jornada": "Matutina",
             "Catedrático": "González, Freddy",
             "Comentario": "Excelente docente.",
         }
@@ -192,9 +194,10 @@ class InsertCommentsServiceTest(TestCase):
         self.assertEqual(result["created"], 0)
         self.assertEqual(len(result["errors"]), 1)
 
-    def test_error_no_section_for_teacher(self):
+    def test_error_section_not_found(self):
         result = InsertCommentsService.execute(
-            [self._row(Catedrático="Docente Fantasma")], self.semester.id, self.faculty.id
+            [self._row(**{"Sección": "99", "Jornada": "vespertina"})],
+            self.semester.id, self.faculty.id,
         )
         self.assertEqual(result["created"], 0)
         self.assertEqual(len(result["errors"]), 1)
@@ -206,12 +209,18 @@ class InsertCommentsServiceTest(TestCase):
         self.assertEqual(result["created"], 0)
         self.assertEqual(len(result["errors"]), 1)
 
-    def test_creates_comment_per_section_when_multiple(self):
-        # Teacher has two sections of the same course (different shift)
-        make_section(self.course, self.semester, teacher=self.teacher,
-                     section_number="02", shift="vespertina")
-        result = InsertCommentsService.execute([self._row()], self.semester.id, self.faculty.id)
+    def test_error_missing_section_number(self):
+        result = InsertCommentsService.execute(
+            [self._row(**{"Sección": ""})], self.semester.id, self.faculty.id
+        )
+        self.assertEqual(result["created"], 0)
+        self.assertEqual(len(result["errors"]), 1)
+
+    def test_multiple_comments_same_section(self):
+        rows = [self._row(Comentario="Comentario 1"), self._row(Comentario="Comentario 2")]
+        result = InsertCommentsService.execute(rows, self.semester.id, self.faculty.id)
         self.assertEqual(result["created"], 2)
+        self.assertEqual(Comment.objects.count(), 2)
 
 
 # ---------------------------------------------------------------------------
