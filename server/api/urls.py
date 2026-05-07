@@ -30,3 +30,4 @@ urlpatterns = [
     path("api/reports/", include("apps.reports.urls")),
     path("api/analytics/", include("apps.analytics.urls")),
 
+]
