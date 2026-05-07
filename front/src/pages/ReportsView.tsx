@@ -1,11 +1,14 @@
+import { useState } from "react";
+
 import ReportsHeader from "../components/reports/ReportsHeader";
 import QuickReports from "../components/reports/QuickReports";
-import CustomReport from "../components/reports/CustomReport";
 import ReportFilters from "../components/reports/ReportFilters";
 import ReportsList from "../components/reports/ReportsList";
 import ExportOptions from "../components/reports/ExportOptions";
 
 export default function ReportsView() {
+  const [filter, setFilter] = useState("general");
+
   return (
     <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
 
@@ -13,11 +16,9 @@ export default function ReportsView() {
 
       <QuickReports />
 
-      <CustomReport />
+      <ReportFilters filter={filter} setFilter={setFilter} />
 
-      <ReportFilters />
-
-      <ReportsList />
+      <ReportsList filter={filter} />
 
       <ExportOptions />
 

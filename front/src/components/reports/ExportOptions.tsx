@@ -1,4 +1,4 @@
-import { FileText, FileSpreadsheet, File } from "lucide-react";
+import {  FileSpreadsheet } from "lucide-react";
 
 export default function ExportOptions() {
   return (
@@ -37,46 +37,6 @@ export default function ExportOptions() {
             p-5
             rounded-[1.6rem]
             hover:bg-white/[0.05]
-            hover:border-yellow-400/30
-            hover:scale-[1.04]
-            transition-all
-            cursor-pointer
-          "
-        >
-          <div
-            className="
-              w-fit
-              p-3
-              rounded-2xl
-              mb-4
-              bg-yellow-400/10
-              border border-yellow-400/20
-              text-yellow-400
-              shadow-inner
-              group-hover:scale-110
-              transition
-            "
-          >
-            <FileText size={18} />
-          </div>
-
-          <p className="font-black text-white text-[11px] uppercase tracking-tight">
-            Formato PDF
-          </p>
-
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">
-            Para presentación
-          </p>
-        </div>
-
-        <div
-          className="
-            group
-            bg-white/[0.02]
-            border border-white/5
-            p-5
-            rounded-[1.6rem]
-            hover:bg-white/[0.05]
             hover:border-green-400/30
             hover:scale-[1.04]
             transition-all
@@ -106,46 +66,6 @@ export default function ExportOptions() {
 
           <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">
             Para análisis
-          </p>
-        </div>
-
-        <div
-          className="
-            group
-            bg-white/[0.02]
-            border border-white/5
-            p-5
-            rounded-[1.6rem]
-            hover:bg-white/[0.05]
-            hover:border-white/20
-            hover:scale-[1.04]
-            transition-all
-            cursor-pointer
-          "
-        >
-          <div
-            className="
-              w-fit
-              p-3
-              rounded-2xl
-              mb-4
-              bg-white/5
-              border border-white/10
-              text-gray-400
-              shadow-inner
-              group-hover:scale-110
-              transition
-            "
-          >
-            <File size={18} />
-          </div>
-
-          <p className="font-black text-white text-[11px] uppercase tracking-tight">
-            Formato CSV
-          </p>
-
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">
-            Compatible con sistemas
           </p>
         </div>
 

@@ -1,6 +1,48 @@
 import { FileText } from "lucide-react";
+import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ReportCard() {
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  const generarReporte = async () => {
+    if (!user?.faculty_id) {
+      console.error("Sin facultad");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        `http://localhost:8000/api/reports/general-reports/?faculty=${user.faculty_id}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al generar el reporte");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "reporte_general.xlsx";
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-secondary/40 border border-white/5 p-6 rounded-2xl backdrop-blur-md shadow-xl w-full md:w-[380px] relative overflow-hidden">
       
@@ -23,8 +65,16 @@ export default function ReportCard() {
         </span>
       </div>
 
-      <button className="px-5 py-2.5 bg-yellow-400 text-black rounded-xl text-[10px] font-bold tracking-widest uppercase hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20">
-        Generar reporte
+      <p className="text-[10px] text-yellow-400 mb-3 uppercase">
+        Facultad: {user?.faculty_name || "N/A"}
+      </p>
+
+      <button
+        onClick={generarReporte}
+        disabled={loading}
+        className="px-5 py-2.5 bg-yellow-400 text-black rounded-xl text-[10px] font-bold tracking-widest uppercase hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20 disabled:opacity-50"
+      >
+        {loading ? "GENERANDO..." : "GENERAR REPORTE"}
       </button>
     </div>
   );
