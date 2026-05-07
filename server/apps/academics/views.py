@@ -361,6 +361,7 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 class TeacherStatsListView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     @extend_schema(
         summary="Estadísticas de docentes por facultad",
@@ -383,7 +384,6 @@ class TeacherStatsListView(APIView):
                 {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        pagination_class = StandardResultsSetPagination
 
         cache_key = f"teacher_stats_fac_{faculty_id}_p{page_number}"
         cached_response = cache.get(cache_key)
