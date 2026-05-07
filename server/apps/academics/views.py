@@ -1,17 +1,37 @@
+from collections import defaultdict
+
+from django.db import transaction, connection
 
 from django.db.models import Avg, Count, OuterRef, Subquery, Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from django.db.models.functions import Coalesce
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from collections import defaultdict
-from django.db.models import Avg, Count
 from rest_framework.pagination import PageNumberPagination
 from django.core.cache import cache
 
-from apps.evaluations.models import SectionControl, StudentEvaluation
+# Intentamos importar el modelo de analítica si existe
+try:
+    from apps.analytics.models import (
+        CourseAnalysisAI,
+        CourseGeneralRecomendationsAI,
+        TeacherAnalysisAI,
+        TeacherCommentsAnalysisAI,
+        TeacherGeneralRecomendationsAI,
+        TeacherProfileAnalysisAI,
+    )
+except ImportError:
+    CourseAnalysisAI = None
+    CourseGeneralRecomendationsAI = None
+    TeacherAnalysisAI = None
+    TeacherCommentsAnalysisAI = None
+    TeacherGeneralRecomendationsAI = None
+    TeacherProfileAnalysisAI = None
+
+from apps.evaluations.models import Comment, SectionControl, StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
 
 from .models import Contract, CourseSection, Faculty, Semester, Teacher
@@ -97,6 +117,8 @@ class FacultyDetailView(APIView):
 
 
 class SemesterListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Listar semestres",
         parameters=[
@@ -112,7 +134,7 @@ class SemesterListCreateView(APIView):
     )
     def get(self, request):
         semesters = Semester.objects.all().order_by("-year", "-number")
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if faculty_id:
             semesters = semesters.filter(faculty_id=faculty_id)
         return Response(SemesterSerializer(semesters, many=True).data)
@@ -124,6 +146,10 @@ class SemesterListCreateView(APIView):
     )
     def post(self, request):
         serializer = SemesterSerializer(data=request.data)
+        # Asegurar que el semestre se cree para la facultad del usuario
+        if 'faculty' not in request.data and request.user.faculty_id_id:
+            request.data['faculty'] = request.user.faculty_id_id
+            
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -131,6 +157,8 @@ class SemesterListCreateView(APIView):
 
 
 class SemesterDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get_object(self, pk):
         try:
             return Semester.objects.get(pk=pk)
@@ -155,6 +183,122 @@ class SemesterDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class CurrentSemesterView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Obtener el semestre actual de la facultad del usuario",
+        responses={200: SemesterSerializer},
+    )
+    def get(self, request):
+        faculty_id = request.user.faculty_id_id
+        if not faculty_id:
+            return Response(
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Buscamos el semestre más reciente (asumido como el actual) para la facultad
+        semester = Semester.objects.filter(
+            faculty_id=faculty_id
+        ).order_by("-year", "-number").first()
+
+        if not semester:
+            return Response(
+                {"error": "No se encontró ningún semestre registrado para esta facultad"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = SemesterSerializer(semester)
+        return Response(serializer.data)
+
+
+class CloseSemesterView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Cerrar el semestre actual",
+        description="Marca el semestre más reciente como 'ARCHIVED' y elimina Evaluaciones, SectionControl (Analytics) y Secciones asociadas.",
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+    )
+    def post(self, request):
+        faculty_id = request.user.faculty_id_id
+        if not faculty_id:
+            return Response(
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Identificamos el semestre actual (el más reciente)
+        semester = Semester.objects.filter(
+            faculty_id=faculty_id
+        ).order_by("-year", "-number").first()
+
+        if not semester:
+            return Response(
+                {"error": "No se encontró ningún semestre para cerrar"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if semester.status == "ARCHIVED":
+            return Response(
+                {"error": "El semestre actual ya se encuentra archivado"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            with transaction.atomic():
+                # 1. Cambiar estado a ARCHIVED
+                semester.status = "ARCHIVED"
+                semester.save()
+
+                # 2. Obtener secciones para eliminar datos relacionados
+                sections_qs = CourseSection.objects.filter(semester=semester)
+
+                # 3. Eliminar datos de Evaluaciones (incluyendo comentarios) y SectionControl
+                StudentEvaluation.objects.filter(course_section__in=sections_qs).delete()
+                SectionControl.objects.filter(course_section__in=sections_qs).delete()
+                Comment.objects.filter(course_section__in=sections_qs).delete()
+                
+                # 4. Eliminar análisis de IA asociados al semestre
+                # Listamos todos los modelos de analytics posibles según tu esquema
+                analytics_models = [
+                    (CourseAnalysisAI, "analytics_courseanalysisai"),
+                    (CourseGeneralRecomendationsAI, "analytics_coursegeneralrecomendationsai"),
+                    (TeacherCommentsAnalysisAI, "analytics_teachercommentsanalysisai"),
+                    (TeacherGeneralRecomendationsAI, "analytics_teachergeneralrecomendationsai"),
+                    (TeacherProfileAnalysisAI, "analytics_teacherprofileanalysisai"),
+                    (TeacherAnalysisAI, "analytics_teacheranalysisai"), # El que causaba el error
+                ]
+
+                existing_tables = connection.introspection.table_names()
+
+                for model, table_name in analytics_models:
+                    # Solo intentamos borrar si el modelo fue importado y la tabla existe en la DB
+                    if model and table_name in existing_tables:
+                        # Según tu esquema, estos modelos se relacionan directamente con el semestre
+                        model.objects.filter(semester=semester).delete()
+                
+                # 5. Finalmente, eliminar las CourseSections usando SQL crudo.
+                # Esto evita que el ORM de Django intente realizar un borrado en cascada
+                # hacia tablas que no existen físicamente en la BD (como analytics_teacheranalysisai).
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f'DELETE FROM "{CourseSection._meta.db_table}" WHERE "semester_id" = %s',
+                        [semester.id]
+                    )
+
+            return Response(
+                {"message": f"Semestre {semester.year}-{semester.number} cerrado y datos limpiados exitosamente."},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Error al procesar el cierre de semestre: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 class TeacherStatsDetailView(APIView):
     @extend_schema(
         summary="Estadísticas de un docente",
@@ -162,6 +306,7 @@ class TeacherStatsDetailView(APIView):
     )
     def get(self, request, pk):
         from django.shortcuts import get_object_or_404
+
         teacher = get_object_or_404(Teacher, pk=pk)
         secciones = CourseSection.objects.filter(teacher_id=pk).select_related("course")
         cursos = list(set([s.course.name for s in secciones if s.course]))
@@ -215,14 +360,30 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 class TeacherStatsListView(APIView):
-    pagination_class = StandardResultsSetPagination
+    permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Estadísticas de docentes por facultad",
+        parameters=[
+            OpenApiParameter(
+                name="faculty",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="ID de la facultad para filtrar docentes",
+                required=True,
+            )
+        ],
+        responses={200: TeacherStatsSerializer(many=True)},
+    )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         page_number = request.query_params.get("page", 1)
-        
         if not faculty_id:
-            return Response({"error": "Faculty id requerido"}, status=400)
+            return Response(
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        pagination_class = StandardResultsSetPagination
 
         cache_key = f"teacher_stats_fac_{faculty_id}_p{page_number}"
         cached_response = cache.get(cache_key)
@@ -307,6 +468,8 @@ class TeacherStatsListView(APIView):
         return Response(response_data)
       
 class FacultyHistoricalView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Evolución histórica de docentes por facultad",
         parameters=[
@@ -321,10 +484,10 @@ class FacultyHistoricalView(APIView):
         responses={200: SemesterHistoricalSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=400,
             )
 
@@ -365,16 +528,11 @@ class FacultyHistoricalView(APIView):
 
 
 class CourseSectionByFacultyView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Docentes asignados a cada sección por facultad y semestre",
         parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad",
-                required=True,
-            ),
             OpenApiParameter(
                 name="semester",
                 type=OpenApiTypes.INT,
@@ -386,12 +544,18 @@ class CourseSectionByFacultyView(APIView):
         responses={200: CourseSectionSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         semester_id = request.query_params.get("semester")
 
-        if not faculty_id or not semester_id:
+        if not faculty_id:
             return Response(
-                {"error": "Los parámetros faculty y semester son requeridos"},
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not semester_id:
+            return Response(
+                {"error": "El parámetro semester es requerido"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -422,16 +586,11 @@ class CourseSectionByFacultyView(APIView):
 
 
 class TopCoursesByScoreView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="Top 4 cursos con mejores punteos de control docente",
         parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad",
-                required=True,
-            ),
             OpenApiParameter(
                 name="semester",
                 type=OpenApiTypes.INT,
@@ -443,12 +602,18 @@ class TopCoursesByScoreView(APIView):
         responses={200: TopCourseSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         semester_id = request.query_params.get("semester")
 
-        if not faculty_id or not semester_id:
+        if not faculty_id:
             return Response(
-                {"error": "Los parámetros faculty y semester son requeridos"},
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not semester_id:
+            return Response(
+                {"error": "El parámetro semester es requerido"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -482,24 +647,21 @@ class TopCoursesByScoreView(APIView):
 
         serializer = TopCourseSerializer(top4, many=True)
         return Response(serializer.data)
-    
+
 
 class TeacherCourseListView(APIView):
-    @extend_schema (
-            summary = "Cursos asignados por docente"
-            
-    )
+    @extend_schema(summary="Cursos asignados por docente")
     def get(self, request, pk):
         sections = CourseSection.objects.filter(teacher_id=pk).select_related("course")
-        
+
         courses_map = {}
         for s in sections:
             if s.course:
                 courses_map[s.course.id] = {
                     "id": s.course.id,
-                    "code": getattr(s.course, 'code', f"C-{s.course.id}"),
+                    "code": getattr(s.course, "code", f"C-{s.course.id}"),
                     "name": s.course.name,
-                    "credits": getattr(s.course, 'credits', 0)
+                    "credits": getattr(s.course, "credits", 0),
                 }
 
         course_ids = list(courses_map.keys())
@@ -515,8 +677,7 @@ class TeacherCourseListView(APIView):
             score = (total / high * 100) if high > 0 else 0.0
             scores_by_course[ctrl.course_section.course_id].append(score)
         histories = TeacherCourseHistory.objects.filter(
-            teacher_id=pk, 
-            course_id__in=course_ids
+            teacher_id=pk, course_id__in=course_ids
         ).order_by("course_id", "-semester_id")
 
         history_map = defaultdict(list)
@@ -526,22 +687,26 @@ class TeacherCourseListView(APIView):
         result = []
         for c_id, info in courses_map.items():
             course_scores = scores_by_course.get(c_id, [])
-            avg_score = sum(course_scores) / len(course_scores) if course_scores else 0.0
-            
+            avg_score = (
+                sum(course_scores) / len(course_scores) if course_scores else 0.0
+            )
+
             trend_str = "N/A"
             c_hist = history_map.get(c_id, [])
             if len(c_hist) >= 2 and c_hist[1] > 0:
                 diff = round(((c_hist[0] - c_hist[1]) / c_hist[1]) * 100, 2)
                 trend_str = f"{diff}%"
 
-            result.append({
-                "id": info["id"],
-                "code": info["code"],
-                "name": info["name"],
-                "credits": info["credits"],
-                "score": round(avg_score, 2),
-                "trend": trend_str
-            })
+            result.append(
+                {
+                    "id": info["id"],
+                    "code": info["code"],
+                    "name": info["name"],
+                    "credits": info["credits"],
+                    "score": round(avg_score, 2),
+                    "trend": trend_str,
+                }
+            )
 
         return Response({"total": len(result), "courses": result})
 
@@ -553,6 +718,7 @@ class CourseTeachersStatsView(APIView):
     )
     def get(self, request, pk):
         from django.shortcuts import get_object_or_404
+
         controls = SectionControl.objects.filter(
             course_section__course_id=pk
         ).select_related("course_section__teacher")
@@ -564,7 +730,7 @@ class CourseTeachersStatsView(APIView):
             teacher = control.course_section.teacher
             if not teacher:
                 continue
-                
+
             high = control.high_count
             mid = control.medium_count
             low = control.low_count
@@ -581,7 +747,7 @@ class CourseTeachersStatsView(APIView):
             {
                 "teacher_id": t_id,
                 "teacher_name": teacher_names[t_id],
-                "average_rating": round(sum(scores) / len(scores), 2)
+                "average_rating": round(sum(scores) / len(scores), 2),
             }
             for t_id, scores in teacher_scores.items()
         ]

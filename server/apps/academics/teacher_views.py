@@ -21,26 +21,21 @@ from .utils import get_historical_semesters
 class TeacherListCreateView(APIView):
     @extend_schema(
         summary="Listar docentes",
-        parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="Filtrar docentes por ID de facultad",
-                required=False,
-            )
-        ],
         responses={200: TeacherSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
-        if faculty_id:
-            teacher_ids = Contract.objects.filter(
-                faculty_id=faculty_id, is_active=True
-            ).values_list("teacher_id", flat=True)
-            teachers = Teacher.objects.filter(id__in=teacher_ids)
-        else:
-            teachers = Teacher.objects.all()
+        faculty_id = request.user.faculty_id_id
+        if not faculty_id:
+            return Response(
+                {"error": "El usuario no tiene facultad asignada"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        teacher_ids = Contract.objects.filter(
+            faculty_id=faculty_id, is_active=True
+        ).values_list("teacher_id", flat=True)
+
+        teachers = Teacher.objects.filter(id__in=teacher_ids)
         serializer = TeacherSerializer(teachers, many=True)
         return Response(serializer.data)
 
@@ -60,22 +55,13 @@ class TeacherListCreateView(APIView):
 class TeacherHistoricalView(APIView):
     @extend_schema(
         summary="Evolución histórica de un docente",
-        parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad para obtener los semestres",
-                required=True,
-            )
-        ],
         responses={200: SemesterHistoricalSerializer(many=True)},
     )
     def get(self, request, pk):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -158,38 +144,29 @@ class TeacherCommentsDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        comments = (
-            Comment.objects.filter(course_section__teacher_id=teacher.id)
-            .order_by("-created_at")
-        )
+        comments = Comment.objects.filter(
+            course_section__teacher_id=teacher.id
+        ).order_by("-created_at")
         teacher_comments = [comment.content for comment in comments]
 
-        return Response({
-            "docente": teacher.name,
-            "comentarios": teacher_comments,
-        })
-# ── Nuevas views ──────────────────────────────────────────────────────────────
+        return Response(
+            {
+                "docente": teacher.name,
+                "comentarios": teacher_comments,
+            }
+        )
 
 
 class TeacherWorkloadView(APIView):
     @extend_schema(
         summary="Carga y rendimiento de docentes por facultad",
-        parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad",
-                required=True,
-            )
-        ],
         responses={200: TeacherWorkloadSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -201,7 +178,6 @@ class TeacherWorkloadView(APIView):
 
         result = []
         for teacher in teachers:
-            # Créditos totales: suma de créditos de todas las secciones asignadas
             total_credits = (
                 CourseSection.objects.filter(
                     teacher_id=teacher.id,
@@ -210,7 +186,6 @@ class TeacherWorkloadView(APIView):
                 or 0
             )
 
-            # Promedio histórico de calificaciones de estudiantes
             avg_score = TeacherCourseHistory.objects.filter(
                 teacher_id=teacher.id,
                 student_score__isnull=False,
@@ -232,26 +207,16 @@ class TeacherWorkloadView(APIView):
 class FacultyHistoricalTrendView(APIView):
     @extend_schema(
         summary="Tendencia histórica de calificaciones de docentes por facultad",
-        parameters=[
-            OpenApiParameter(
-                name="faculty",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                description="ID de la facultad",
-                required=True,
-            )
-        ],
         responses={200: SemesterAvgSerializer(many=True)},
     )
     def get(self, request):
-        faculty_id = request.query_params.get("faculty")
+        faculty_id = request.user.faculty_id_id
         if not faculty_id:
             return Response(
-                {"error": "El parámetro faculty es requerido"},
+                {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Semestre actual + 3 anteriores = 4 en total
         semesters = get_historical_semesters(faculty_id, limit=4)
         if not semesters:
             return Response([])
