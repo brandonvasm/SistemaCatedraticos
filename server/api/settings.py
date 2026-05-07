@@ -25,7 +25,7 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-klvu!7e+=e&l3n*lo1dkd$uo*2vv7gil+v0v_nd*m+b&x^9y@x"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -108,6 +108,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET_NAME")
 
+# AI settings
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 # Authentication model
 AUTH_USER_MODEL = "users.User"
 
@@ -184,3 +187,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+IS_PRODUCTION = os.environ.get('RENDER', False)
+
+if IS_PRODUCTION:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'production-unique-cache',
+        }
+    }
+else:
+   
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'dev-cache',
+        }
+    }

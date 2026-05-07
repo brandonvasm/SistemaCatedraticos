@@ -32,4 +32,7 @@ urlpatterns = [
     path("api/files/", include("apps.files.urls")),
     path("api/historical/", include("apps.historical.urls")),
     path("api/evaluations/", include("apps.evaluations.urls")),
+    path("api/reports/", include("apps.reports.urls")),
+    path("api/analytics/", include("apps.analytics.urls")),
+
 ]

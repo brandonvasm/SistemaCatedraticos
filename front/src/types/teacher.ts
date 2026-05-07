@@ -9,6 +9,20 @@ export interface TeacherStats {
   faculty_id: number;
 }
 
+export interface PaginatedTeacherStats {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: TeacherStats[];
+}
+
+export interface TeacherStatsResponse {
+  count: number;
+  teachers: TeacherStats[];          
+  teachers_paginated: TeacherStats[]; 
+  promedio_global_facultad: number;   
+}
+
 export interface TeacherRowProps {
   teacher: TeacherStats;
 }
@@ -21,4 +35,27 @@ export interface Courses {
   score: number;      
   trend: string | null; 
   category?: string;
+}
+
+export interface CommentData {
+  id: number;
+  text: string;
+  rating: number;
+  sentiment: "good" | "bad" | "neutral";
+  date: string;
+}
+
+export interface TeacherProfileAnalysis {
+  id: number;
+  ai_score: number; 
+  comment_overview: string; 
+  comment?: string; 
+  model_version: string;
+  perception: "positive" | "negative" | "neutral" | string;
+  positive_percentage: number; 
+  negative_percentage: number; 
+  neutral_percentage: number;  
+  created_at: string;
+  teacher: number;
+  semester: number;
 }

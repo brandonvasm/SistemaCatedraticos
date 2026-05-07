@@ -80,6 +80,13 @@ class NominaValidator(BaseExcelValidator):
             if self.is_blank(record.get("Curso")):
                 continue
 
+            course_value = self.normalize_course(record.get("Curso"))
+            semester_value = self.normalize_academic_text(record.get("Semestre"))
+            if course_value.upper() in {"NOMBRE_CURSO", "NOMBRE CURSO"}:
+                continue
+            if semester_value.upper() in {"NOMBRE_PERIODO", "NOMBRE PERIODO"}:
+                continue
+
             if not self.is_blank(record.get("Título académico")):
                 current_title = self.normalize_title_case(
                     record.get("Título académico")

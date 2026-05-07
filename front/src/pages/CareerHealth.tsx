@@ -16,17 +16,16 @@ const SaludCarrera: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const facultyId = user?.faculty_id;
-  const currentSemesterId = 1;
 
-  useEffect(() => {
+ useEffect(() => {
     if (facultyId) {
       setLoading(true);
       Promise.all([
-        teacherService.getTeachersStats(facultyId),
-        courseService.getTopCourses(facultyId, currentSemesterId)
+        teacherService.getTeachersStats(facultyId, 1),
+        courseService.getTopCourses(facultyId, user.semester_id)
       ])
         .then(([teachersData, coursesData]) => {
-          setTeachers(teachersData || []);
+          setTeachers(teachersData?.teachers || []);
           setCourses(coursesData || []);
         })
         .catch((err) => console.error("Error cargando salud de carrera:", err))
@@ -35,10 +34,10 @@ const SaludCarrera: React.FC = () => {
   }, [facultyId]);
 
   const stats = useMemo(() => {
-    const excellentCourses = courses.filter(c => (parseFloat(c.average_rating) || 0) >= 85).length;
+    const excellentCourses = courses.filter(c => (parseFloat(c.average_rating) || 0) >= 65).length;
     const coursePerc = courses.length > 0 ? Math.round((excellentCourses / courses.length) * 100) : 0;
     const evaluatedTeachers = teachers.filter(t => (t.promedio_general || 0) > 0);
-    const excellentTeachersCount = evaluatedTeachers.filter(t => t.promedio_general >= 85).length;
+    const excellentTeachersCount = evaluatedTeachers.filter(t => t.promedio_general >= 65).length;
     const teacherPerc = evaluatedTeachers.length > 0 ? Math.round((excellentTeachersCount / evaluatedTeachers.length) * 100) : 0;
 
     return {
@@ -93,7 +92,7 @@ const SaludCarrera: React.FC = () => {
                 Indicadores de desempeño
               </h2>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">
-                Calidad académica global de la facultad
+                Calidad académica global de la facultad, mayor a 65
               </p>
             </div>
           </div>

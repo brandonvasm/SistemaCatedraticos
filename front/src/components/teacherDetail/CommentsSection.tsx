@@ -1,170 +1,138 @@
-import { ThumbsUp, ThumbsDown, Star } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
+import { Loader2, Sparkles } from "lucide-react";
+import { teacherService } from "../../services/teacherService";
+import type { CommentData, TeacherProfileAnalysis } from "../../types/teacher";
 
-const comments = [
-  {
-    course: "Cálculo I",
-    text: "Excelente profesor, explica muy bien los conceptos difíciles y siempre está dispuesto a ayudar.",
-    likes: 23,
-    rating: 5,
-    date: "2026-01-28",
-    sentiment: "good",
-  },
-  {
-    course: "Análisis Numérico",
-    text: "Su metodología es muy efectiva, los ejemplos ayudan mucho.",
-    likes: 18,
-    rating: 5,
-    date: "2026-01-25",
-    sentiment: "good",
-  },
-  {
-    course: "Cálculo II",
-    text: "A veces va muy rápido y cuesta seguirle el ritmo.",
-    likes: 5,
-    rating: 3,
-    date: "2026-01-20",
-    sentiment: "bad",
-  },
-];
+export default function CommentsSection({ teacherId }: { teacherId: string | undefined }) {
+  const [comments, setComments] = useState<CommentData[]>([]);
+  const [analysis, setAnalysis] = useState<TeacherProfileAnalysis | null>(null);
+  
+  const [loadingComments, setLoadingComments] = useState(true);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
-export default function CommentsSection() {
+  useEffect(() => {
+    async function processData() {
+      if (!teacherId) return;
+      
+      try {
+        setLoadingComments(true);
+        const resComments = await teacherService.getTeacherComments(teacherId);
+        const rawTexts: string[] = resComments.comentarios || [];
+        
+        const formatted: CommentData[] = rawTexts.map((text, i) => ({
+          id: i,
+          text,
+          rating: 0, 
+          sentiment: "neutral",
+          date: new Date().toISOString()
+        }));
+        
+        setComments(formatted);
+        setLoadingComments(false);
 
-  const total = comments.length;
-  const good = comments.filter(c => c.sentiment === "good").length;
-  const bad = comments.filter(c => c.sentiment === "bad").length;
+        if (rawTexts.length > 0) {
+          setLoadingAnalysis(true);
+          const resAnalysis = await teacherService.analyzeComments(
+            parseInt(teacherId), 
+            rawTexts
+          );
+          setAnalysis(resAnalysis);
+          setLoadingAnalysis(false);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        setLoadingComments(false);
+        setLoadingAnalysis(false);
+      }
+    }
 
-  const goodPercent = Math.round((good / total) * 100);
-  const badPercent = Math.round((bad / total) * 100);
+    processData();
+  }, [teacherId]);
+
+  const stats = useMemo(() => {
+    if (analysis) {
+      return {
+        goodPercent: Math.round(analysis.positive_percentage || 0),
+        badPercent: Math.round(analysis.negative_percentage || 0),
+      };
+    }
+    return { goodPercent: 0, badPercent: 0 };
+  }, [analysis]);
+
+  if (loadingComments) return (
+    <div className="flex flex-col items-center justify-center p-20">
+      <Loader2 className="w-8 h-8 animate-spin text-yellow-400 opacity-20" />
+    </div>
+  );
 
   return (
-    <div
-      className="
-        p-8
-        rounded-[2.5rem]
-        backdrop-blur-2xl
-        shadow-xl
-      "
-    >
-
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8">
-        <div>
-          <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
-            COMENTARIOS DE ESTUDIANTES
-          </h2>
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
-            {comments.length} COMENTARIOS REGISTRADOS
-          </p>
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <div className="flex justify-between text-[11px] font-black text-gray-400 tracking-widest uppercase">
+          <span className="text-emerald-400">Positivo {stats.goodPercent}%</span>
+          <span className="text-red-400">Crítico {stats.badPercent}%</span>
         </div>
-
-        <button
-          className="
-            bg-white/5
-            hover:bg-white/10
-            border border-white/10
-            px-6 py-3
-            rounded-2xl
-            text-[11px]
-            font-black
-            uppercase
-            tracking-widest
-            text-gray-400
-            hover:text-white
-            transition-all
-            active:scale-95
-          "
-        >
-          Filtrar por Curso
-        </button>
-      </div>
-
-      <div className="mb-8">
-
-        <div className="flex justify-between text-[11px] mb-3 font-bold uppercase tracking-widest">
-
-          <span className="flex items-center gap-2 text-emerald-400">
-            <ThumbsUp size={14} /> {goodPercent}% POSITIVO
-          </span>
-
-          <span className="flex items-center gap-2 text-red-400">
-            <ThumbsDown size={14} /> {badPercent}% NEGATIVO
-          </span>
-
-        </div>
-
-        <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden flex">
-          <div
-            className="bg-emerald-400 h-full"
-            style={{ width: `${goodPercent}%` }}
+        
+        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden flex">
+          <motion.div 
+            initial={{ width: 0 }} 
+            animate={{ width: `${stats.goodPercent}%` }} 
+            className="bg-emerald-400 h-full" 
           />
-          <div
-            className="bg-red-400 h-full"
-            style={{ width: `${badPercent}%` }}
+          <motion.div 
+            initial={{ width: 0 }} 
+            animate={{ width: `${stats.badPercent}%` }} 
+            className="bg-red-400 h-full" 
           />
         </div>
 
-      </div>
 
-      <div className="space-y-5">
-
-        {comments.map((c, i) => (
-          <div
-            key={i}
-            className="
-              bg-[#0f111a]/50
-              border border-white/10
-              p-5 rounded-2xl
-              hover:bg-white/[0.05]
-              hover:border-white/20
-              transition-all
-            "
-          >
-
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
-
-              <div className="flex items-center gap-3 flex-wrap">
-
-                <span
-                  className="
-                    bg-blue-500/10
-                    text-blue-400
-                    px-3 py-1.5
-                    text-[10px]
-                    font-bold
-                    uppercase
-                    tracking-widest
-                    rounded-xl
-                    border border-blue-500/20
-                  "
-                >
-                  {c.course}
-                </span>
-
-                <div className="flex text-yellow-400">
-                  {Array.from({ length: c.rating }).map((_, i) => (
-                    <Star key={i} size={14} fill="currentColor" />
-                  ))}
-                </div>
-
-              </div>
-
-              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                {c.date}
-              </span>
-
-            </div>
-
-            <p className="text-[13px] text-gray-200 leading-relaxed mb-4">
-              {c.text}
-            </p>
-
-            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-2">
-              <ThumbsUp size={12} />
-              {c.likes} PERSONAS ENCONTRARON ESTO ÚTIL
-            </div>
-
+        {loadingAnalysis ? (
+          <div className="flex items-center gap-3 p-4 bg-yellow-400/5 border border-yellow-400/10 rounded-2xl animate-pulse">
+            <Sparkles className="text-yellow-400" size={14} />
+            <span className="text-[10px] text-yellow-400/70 font-black uppercase tracking-widest">
+              Analizando comentarios... esto tomará unos segundos
+            </span>
           </div>
-        ))}
+        ) : analysis?.comment && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-white/5 rounded-2xl border border-white/5"
+          >
+            <p className="text-[10px] text-gray-400 leading-relaxed uppercase tracking-widest font-bold mb-1">
+              Resumen de la IA
+            </p>
+            <p className="text-[11px] text-gray-500 leading-relaxed italic">
+              {analysis.comment}
+            </p>
+          </motion.div>
+        )}
+      </div>
 
+      <div className="grid gap-4">
+        {comments.length > 0 ? (
+          comments.map((c, i) => (
+            <motion.div
+              key={c.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-[#0f111a]/50 border border-white/10 p-6 rounded-[2rem] hover:border-white/20 transition-all"
+            >
+              <p className="text-[13px] text-gray-300 leading-relaxed font-medium">
+                {c.text}
+              </p>
+            </motion.div>
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center p-16 bg-[#0f111a]/30 border border-dashed border-white/5 rounded-[3rem]">
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">
+              Sin comentarios
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ def get_historical_semesters(faculty_id, limit: int = 3):
       - 3 (default): current + 2 anteriores  → usado por views existentes
       - 4           : current + 3 anteriores  → usado por TendenciaHistorica
     """
-    semesters = Semester.objects.filter(faculty_id=faculty_id).order_by("-id")
+    semesters = Semester.objects.filter(faculty_id=faculty_id).order_by("-year", "-number")
 
     if not semesters.exists():
         return []

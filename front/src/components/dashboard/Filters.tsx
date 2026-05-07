@@ -3,7 +3,7 @@ type Props = {
   setActive: (value: string) => void;
 };
 
-const filters = ["Todos", "Excelente", "Bueno", "Bajo"];
+const filters = ["Todos", "Excelente (>= 65)", "Bajo"];
 
 export const Filters = ({ active, setActive }: Props) => {
   return (

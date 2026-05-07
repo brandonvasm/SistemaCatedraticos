@@ -3,6 +3,7 @@ export interface User {
   username: string;
   email: string;
   role: string;
+  semester_id: number;
   faculty_name: string;         
   faculty_id: number;    
   pensum_loaded: boolean;  
@@ -18,5 +19,6 @@ export interface LoginResponse {
   message: string;
   user_id: number;
   user: User;
-  role: string
+  role: string;
+  semester_id: number;
 }
