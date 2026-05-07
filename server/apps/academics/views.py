@@ -1,3 +1,4 @@
+
 from django.db.models import Avg, Count, OuterRef, Subquery, Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -228,7 +229,6 @@ class TeacherStatsListView(APIView):
         if cached_response:
             return Response(cached_response)
 
-      
         promedio_global_facultad = StudentEvaluation.objects.filter(
             course_section__semester__faculty_id=faculty_id
         ).aggregate(m=Avg("score"))["m"] or 0.0
@@ -237,6 +237,7 @@ class TeacherStatsListView(APIView):
             contract__faculty_id=faculty_id,
             contract__is_active=True
         ).distinct().order_by('id')
+
 
         eval_subquery = StudentEvaluation.objects.filter(
             course_section__teacher_id=OuterRef("pk"),
@@ -251,6 +252,7 @@ class TeacherStatsListView(APIView):
             total_evals=Coalesce(Subquery(eval_subquery.values("total")[:1]), 0),
         )
 
+   
         cursos_qs = CourseSection.objects.select_related("course").filter(
             semester__faculty_id=faculty_id
         ).values("teacher_id", "course__name").distinct()
@@ -276,7 +278,6 @@ class TeacherStatsListView(APIView):
             if len(historico) == 2 and historico[1]["avg_score"] > 0:
                 tendencia = ((historico[0]["avg_score"] - historico[1]["avg_score"]) / historico[1]["avg_score"]) * 100
 
-            
             recomendado = 0.0
             if promedio_global_facultad > 0 and teacher.promedio > 0:
                 recomendado = ((teacher.promedio - promedio_global_facultad) / promedio_global_facultad) * 100
@@ -291,7 +292,7 @@ class TeacherStatsListView(APIView):
                 "recomendado_vs_otros": f"{round(recomendado, 2)}%" if teacher.promedio > 0 else "Sin datos"
             })
 
-
+       
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(all_teachers_data, request)
         
@@ -304,7 +305,7 @@ class TeacherStatsListView(APIView):
 
         cache.set(cache_key, response_data, 600) 
         return Response(response_data)
-
+      
 class FacultyHistoricalView(APIView):
     @extend_schema(
         summary="Evolución histórica de docentes por facultad",
@@ -451,31 +452,21 @@ class TopCoursesByScoreView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        controls = SectionControl.objects.filter(
-            course_section__semester_id=semester_id,
-            course_section__course__cost_center__faculty_id=faculty_id,
-        ).select_related("course_section__course")
+        sections = CourseSection.objects.filter(
+            semester_id=semester_id,
+            course__cost_center__faculty_id=faculty_id,
+            control_score__isnull=False,
+        ).select_related("course")
 
-        # Agrupar punteos por curso
         course_scores: dict[int, list[float]] = {}
         course_names: dict[int, str] = {}
 
-        for control in controls:
-            course = control.course_section.course
-            high = control.high_count
-            mid = control.medium_count
-            low = control.low_count
-
-            if high == 0:
-                punteo = 0.0
-            else:
-                punteo = ((high + mid + low) / high) * 100
-
+        for section in sections:
+            course = section.course
             if course.id not in course_scores:
                 course_scores[course.id] = []
                 course_names[course.id] = course.name
-
-            course_scores[course.id].append(punteo)
+            course_scores[course.id].append(section.control_score)
 
         result = [
             {

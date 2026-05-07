@@ -12,6 +12,11 @@ class Career(models.Model):
     pensum_loaded = models.BooleanField(default=False)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['faculty', 'abbreviation'], name='career_faculty_abbr_idx'),
+        ]
+
 
 class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
@@ -19,6 +24,11 @@ class Course(models.Model):
     credits = models.IntegerField(default=0)
     cost_center = models.ForeignKey(Career, on_delete=models.CASCADE)
     faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['faculty', 'name'], name='course_faculty_name_idx'),
+        ]
 
 
 class Teacher(models.Model):
@@ -47,6 +57,11 @@ class Semester(models.Model):
         Faculty, on_delete=models.SET_NULL, null=True, blank=True
     )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['faculty', 'year', 'number'], name='sem_fac_yr_num_idx'),
+        ]
+
 
 class CourseSection(models.Model):
     SHIFT_CHOICES = [
@@ -67,6 +82,10 @@ class CourseSection(models.Model):
 
     class Meta:
         unique_together = (('course', 'section_number', 'shift'),)
+        indexes = [
+            models.Index(fields=['course', 'semester'], name='cs_crs_sem_idx'),
+            models.Index(fields=['appointment_number'], name='coursesection_appointment_idx'),
+        ]
 
 
 class Contract(models.Model):
@@ -74,3 +93,9 @@ class Contract(models.Model):
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
     created_at = models.DateField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['teacher', 'faculty'], name='contract_teacher_faculty_idx'),
+            models.Index(fields=['faculty', 'is_active'], name='contract_faculty_active_idx'),
+        ]
