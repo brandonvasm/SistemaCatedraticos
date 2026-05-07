@@ -13,12 +13,12 @@ export const userService = {
     return response.data;
   },
 
-  createUser: async (data: Partial<UserData>): Promise<UserData> => {
+  createUser: async (data: Partial<UserData & { faculty_id?: number | null; password?: string }>): Promise<UserData> => {
     const response = await api.post<UserData>("/users/management/", data);
     return response.data;
   },
 
-  updateUser: async (id: number, data: Partial<UserData>): Promise<UserData> => {
+  updateUser: async (id: number, data: Partial<UserData & { faculty_id?: number | null }>): Promise<UserData> => {
     const response = await api.patch<UserData>(`/users/management/${id}/`, data);
     return response.data;
   },

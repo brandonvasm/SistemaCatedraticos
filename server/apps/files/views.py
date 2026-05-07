@@ -16,6 +16,7 @@ from .infrastructure.supabase_storage import SupabaseStorageService
 from .application.save_file_use_case import SaveFileUseCase
 from .application.validate_request_file import ValidateFileRequestUseCase
 from .application.process_excel import ProcessExcelUseCase
+from .application.insert_processed_file import InsertProcessedFileUseCase
 
 # Create your views here.
 
@@ -54,6 +55,9 @@ class FileView(viewsets.ModelViewSet):
                 file_record.save()
                 return Response(FileSerializer(file_record).data, status=status.HTTP_201_CREATED)
         
+        except ValueError as e:
+            self.storage_service.delete_file(cloud_url) if cloud_url != ""else None
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             self.storage_service.delete_file(cloud_url) if cloud_url != ""else None
             return Response({"error": "Error saving file record: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -89,16 +93,54 @@ class FileView(viewsets.ModelViewSet):
         file_path = file_record.url
         file_download_url = self.storage_service.get_download_url(file_path, file_record.name)
 
-        use_case = ProcessExcelUseCase()
+        process_use_case = ProcessExcelUseCase()
+        insert_use_case = InsertProcessedFileUseCase()
         try:
             with transaction.atomic():
-                basic_info, records = use_case.execute(file_path=file_download_url, file_type=file_type)
+                basic_info, records = process_use_case.execute(
+                    file_path=file_download_url,
+                    file_type=file_type,
+                )
+                insert_result = insert_use_case.execute(
+                    file_type=file_type,
+                    records=records,
+                    semester_id=file_record.semester_id,
+                    faculty_id=file_record.faculty_id,
+                )
+
+                errors = insert_result.get("errors") or []
+                if errors:
+                    transaction.set_rollback(True)
+                    first_error = errors[0] if errors else ""
+                    return Response({
+                        "error": (
+                            f"Error processing '{file_record.name}': finished with "
+                            f"{len(errors)} row errors. No data was saved."
+                        ),
+                        "file_id": file_record.id,
+                        "file_name": file_record.name,
+                        "file_type": file_type,
+                        "first_error": first_error,
+                        "basic_info": basic_info,
+                        "records_count": len(records),
+                        "insert_result": insert_result,
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
                 file_record.processed = True
                 file_record.processed_at = timezone.now()
                 file_record.save()
+                request.user.evaluation_count += 1
+                request.user.save()
                 return Response({
                     "basic_info": basic_info,
-                    "records": records
+                    "records_count": len(records),
+                    "records": records,
+                    "insert_result": insert_result,
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": "Error processing file: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                "error": f"Error processing '{file_record.name}': {str(e)}",
+                "file_id": file_record.id,
+                "file_name": file_record.name,
+                "file_type": file_type,
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

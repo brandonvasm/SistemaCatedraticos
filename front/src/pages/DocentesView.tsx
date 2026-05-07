@@ -32,7 +32,7 @@ export default function DocentesViews() {
           <TeachersTable filter={activeFilter} facultyId={facultyId} />
         ) : (
           <div className="py-20 text-center text-gray-500 font-black uppercase text-[10px] tracking-[0.5em]">
-            Obteniendo credenciales de facultad...
+            Obteniendo datos  de facultad...
           </div>
         )}
       </div>

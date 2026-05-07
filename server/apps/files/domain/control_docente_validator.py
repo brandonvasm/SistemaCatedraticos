@@ -1,4 +1,5 @@
 from typing import Any
+import re
 
 import pandas as pd
 
@@ -13,16 +14,27 @@ class ControlDocenteValidator(BaseExcelValidator):
         "Curso",
         "Jornada",
         "Sección",
-        "Asistencia reunón facultad 19 junio",
-        "Programa actualizado 8 de julio",
-        "Configuración de notas 8 de julio",
+        "Asistencia reunón facultad",
+        "Programa actualizado",
+        "Configuración de notas",
         "Asistencia actualizada por sesión en el portal",
         "Uso del portal académico",
-        "Zonas al 20% 23 de agosto",
-        "Zonas al 30% 17 de septiembre",
-        "Zonas al 40% 27 de septiembre",
-        "Zonas al 60% 24 de octubre",
+        "Zonas al 20%",
+        "Zonas al 30%",
+        "Zonas al 40%",
+        "Zonas al 60%",
     ]
+
+    @classmethod
+    def normalize_control_header(cls, value: object, index: int) -> str:
+        header = cls.normalize_header(value, index)
+        header = re.sub(
+            r"\s+\d{1,2}(?:\s+de)?\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:\s+\d{4})?$",
+            "",
+            header,
+        )
+        header = re.sub(r"\s+\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?$", "", header)
+        return header.strip()
 
     def validate_and_transform(
         self,
@@ -34,7 +46,7 @@ class ControlDocenteValidator(BaseExcelValidator):
         # Normalizar encabezados
         header_row = dataframe.iloc[0].tolist()
         headers = [
-            self.normalize_header(value, index)
+            self.normalize_control_header(value, index)
             for index, value in enumerate(header_row, start=1)
         ]
 
@@ -53,8 +65,8 @@ class ControlDocenteValidator(BaseExcelValidator):
         records: list[dict[str, Any]] = []
 
         # Definir rango de evaluación
-        start_column = "Asistencia reunón facultad 19 junio"
-        end_column = "Zonas al 30% 17 de septiembre"
+        start_column = "Asistencia reunón facultad"
+        end_column = "Zonas al 30%"
 
         start_idx = headers.index(start_column)
         end_idx = headers.index(end_column)

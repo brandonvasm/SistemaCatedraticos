@@ -1,4 +1,5 @@
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -226,32 +227,58 @@ class TeacherStatsListView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        teacher_ids = Contract.objects.filter(
-            faculty_id=faculty_id, is_active=True
-        ).values_list("teacher_id", flat=True)
+        promedio_global = (
+            StudentEvaluation.objects.filter(
+                course_section__semester__faculty_id=faculty_id
+            ).aggregate(m=Avg("score"))["m"] or 0.0
+        )
 
-        teachers = Teacher.objects.filter(id__in=teacher_ids)
+        teachers = Teacher.objects.filter(
+            contract__faculty_id=faculty_id,
+            contract__is_active=True
+        ).distinct()
+
+        eval_subquery = StudentEvaluation.objects.filter(
+            course_section__teacher_id=OuterRef("pk"),
+            course_section__semester__faculty_id=faculty_id
+        ).values(
+            "course_section__teacher_id"
+        ).annotate(
+            avg_score=Avg("score"),
+            total=Count("id")
+        )
+
+        teachers = teachers.annotate(
+            promedio=Coalesce(Subquery(eval_subquery.values("avg_score")[:1]), 0.0),
+            total=Coalesce(Subquery(eval_subquery.values("total")[:1]), 0),
+        )
+
+        cursos_qs = CourseSection.objects.select_related("course").filter(
+            semester__faculty_id=faculty_id
+        ).values(
+            "teacher_id", "course__name"
+        ).distinct()
+
+        cursos_map = {}
+        for c in cursos_qs:
+            cursos_map.setdefault(c["teacher_id"], []).append(c["course__name"])
+
+        history_qs = TeacherCourseHistory.objects.filter(
+            semester__faculty_id=faculty_id
+        ).values(
+            "teacher_id", "semester_id"
+        ).annotate(
+            avg_score=Avg("student_score")
+        ).order_by("teacher_id", "-semester_id")
+
+        history_map = {}
+        for h in history_qs:
+            history_map.setdefault(h["teacher_id"], []).append(h)
 
         result = []
         for teacher in teachers:
-            secciones = CourseSection.objects.filter(
-                teacher_id=teacher.id
-            ).select_related("course")
-            cursos = list(set([s.course.name for s in secciones if s.course]))
+            historico = history_map.get(teacher.id, [])[:2]
 
-            stats = StudentEvaluation.objects.filter(
-                course_section__teacher_id=teacher.id
-            ).aggregate(promedio=Avg("score"), total=Count("id"))
-
-            promedio = stats["promedio"] or 0.0
-            total = stats["total"] or 0
-
-            historico = (
-                TeacherCourseHistory.objects.filter(teacher_id=teacher.id)
-                .values("semester_id")
-                .annotate(avg_score=Avg("student_score"))
-                .order_by("-semester_id")[:2]
-            )
             tendencia = 0.0
             if len(historico) == 2 and historico[1]["avg_score"] > 0:
                 tendencia = (
@@ -259,28 +286,24 @@ class TeacherStatsListView(APIView):
                     / historico[1]["avg_score"]
                 ) * 100
 
-            promedio_global = (
-                StudentEvaluation.objects.aggregate(m=Avg("score"))["m"] or 0.0
-            )
             recomendado = (
-                ((promedio - promedio_global) / promedio_global * 100)
-                if promedio_global > 0 and promedio > 0
+                ((teacher.promedio - promedio_global) / promedio_global * 100)
+                if promedio_global > 0 and teacher.promedio > 0
                 else 0.0
             )
 
-            result.append(
-                {
-                    "teacher_id": teacher.id,
-                    "teacher_name": teacher.name,
-                    "cursos_impartidos": cursos,
-                    "promedio_general": round(promedio, 2),
-                    "tendencia_mejora": f"{round(tendencia, 2)}%",
-                    "evaluaciones_total": total,
-                    "recomendado_vs_otros": f"{round(recomendado, 2)}%"
-                    if promedio > 0
-                    else "Sin datos",
-                }
-            )
+            result.append({
+                "teacher_id": teacher.id,
+                "teacher_name": teacher.name,
+                "cursos_impartidos": cursos_map.get(teacher.id, []),
+                "promedio_general": round(teacher.promedio, 2),
+                "tendencia_mejora": f"{round(tendencia, 2)}%",
+                "evaluaciones_total": teacher.total,
+                "recomendado_vs_otros": (
+                    f"{round(recomendado, 2)}%"
+                    if teacher.promedio > 0 else "Sin datos"
+                ),
+            })
 
         return Response(result)
 
@@ -431,31 +454,21 @@ class TopCoursesByScoreView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        controls = SectionControl.objects.filter(
-            course_section__semester_id=semester_id,
-            course_section__course__cost_center__faculty_id=faculty_id,
-        ).select_related("course_section__course")
+        sections = CourseSection.objects.filter(
+            semester_id=semester_id,
+            course__cost_center__faculty_id=faculty_id,
+            control_score__isnull=False,
+        ).select_related("course")
 
-        # Agrupar punteos por curso
         course_scores: dict[int, list[float]] = {}
         course_names: dict[int, str] = {}
 
-        for control in controls:
-            course = control.course_section.course
-            high = control.high_count
-            mid = control.medium_count
-            low = control.low_count
-
-            if high == 0:
-                punteo = 0.0
-            else:
-                punteo = ((high + mid + low) / high) * 100
-
+        for section in sections:
+            course = section.course
             if course.id not in course_scores:
                 course_scores[course.id] = []
                 course_names[course.id] = course.name
-
-            course_scores[course.id].append(punteo)
+            course_scores[course.id].append(section.control_score)
 
         result = [
             {

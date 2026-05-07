@@ -47,7 +47,24 @@ export const chartService = {
       }
       throw error;
     }
-  }
+  },
+
+  getHistoricalTrend: async (facultyId: number) => {
+    try {
+      const response = await api.get(`/academics/teachers/historical-trend/`, {
+        params: { faculty: facultyId }
+      });
+      return response.data; 
+    } catch (error) {
+      console.error("Error cargando tendencia histórica:", error);
+      return [];
+    }
+  },
+
+
+
+
+  
 
 
 };

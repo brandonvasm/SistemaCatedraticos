@@ -1,4 +1,6 @@
 from datetime import date
+import re
+import unicodedata
 
 from apps.academics.models import Career, Contract, Course, CourseSection, Semester, Teacher
 
@@ -14,6 +16,69 @@ def _normalize_shift(raw: str) -> str:
     return _SHIFT_MAP.get(raw.strip().lower(), raw.strip().lower())
 
 
+def _first_value(row: dict, *keys: str):
+    for key in keys:
+        value = row.get(key)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def _career_key(value: str) -> str:
+    text = unicodedata.normalize("NFKD", value or "")
+    text = "".join(character for character in text if not unicodedata.combining(character))
+    text = re.sub(r"\s+", " ", text).strip()
+
+    if not text:
+        return ""
+
+    if " " not in text and len(text) <= 8:
+        return re.sub(r"\s+", "", text).upper()
+
+    ignored_words = {
+        "A",
+        "DE",
+        "DEL",
+        "E",
+        "EL",
+        "EN",
+        "LA",
+        "LAS",
+        "LOS",
+        "PARA",
+        "Y",
+    }
+    words = [word.upper() for word in re.findall(r"[A-Za-z0-9]+", text)]
+    return "".join(word[0] for word in words if word not in ignored_words)
+
+
+def _get_career(career_key: str, faculty_id: int) -> Career:
+    try:
+        return Career.objects.get(abbreviation=career_key, faculty_id=faculty_id)
+    except Career.DoesNotExist:
+        pass
+
+    try:
+        return Career.objects.get(code=career_key, faculty_id=faculty_id)
+    except Career.DoesNotExist:
+        pass
+
+    matching_careers = [
+        career
+        for career in Career.objects.filter(faculty_id=faculty_id)
+        if _career_key(career.name) == career_key
+    ]
+
+    if len(matching_careers) == 1:
+        career = matching_careers[0]
+        if not career.abbreviation:
+            career.abbreviation = career_key
+            career.save(update_fields=["abbreviation"])
+        return career
+
+    raise Career.DoesNotExist
+
+
 class InsertNominaService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
@@ -25,13 +90,21 @@ class InsertNominaService:
         for i, row in enumerate(rows):
             try:
                 teacher_name = str(row.get("Docente", "")).strip()
-                teacher_code = str(row.get("Código  docente", "")).strip()
+                teacher_code = str(
+                    _first_value(row, "Código docente", "Código  docente") or ""
+                ).strip()
                 appointment_number = str(row.get("Nombramiento", "")).strip()
-                career_abbr = str(row.get("Carrera", "")).strip()
+                career_key = str(
+                    _first_value(row, "Clave Carrera", "Carrera") or ""
+                ).strip()
                 course_name = str(row.get("Curso", "")).strip()
                 section_number = str(row.get("Sección", "")).strip()
                 shift = _normalize_shift(str(row.get("Jornada", "")))
-                credits_raw = row.get("Total de Creditos")
+                credits_raw = _first_value(
+                    row,
+                    "Total de créditos",
+                    "Total de Creditos",
+                )
                 credits = int(credits_raw) if credits_raw is not None else None
 
                 if not teacher_code or not course_name or not section_number:
@@ -39,11 +112,11 @@ class InsertNominaService:
                     continue
 
                 try:
-                    career = Career.objects.get(abbreviation=career_abbr, faculty_id=faculty_id)
+                    career = _get_career(career_key, faculty_id)
                 except Career.DoesNotExist:
                     errors.append(
-                        f"Row {i}: career with abbreviation '{career_abbr}' not found in faculty {faculty_id}. "
-                        "Set the abbreviation on the career before uploading the nomina."
+                        f"Row {i}: career with key '{career_key}' not found in faculty {faculty_id}. "
+                        "Set the abbreviation, code, or matching name on the career before uploading the nomina."
                     )
                     continue
 

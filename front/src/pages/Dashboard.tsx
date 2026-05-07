@@ -63,7 +63,7 @@ export default function Dashboard() {
   };
 
   const topTeachers = [...teachers]
-    .filter(t => t.promedio_general > 0)
+    .filter(t => t.promedio_general > 65)
     .sort((a, b) => b.promedio_general - a.promedio_general)
     .slice(0, 3)
     .map(t => ({ 
@@ -73,7 +73,7 @@ export default function Dashboard() {
     }));
 
   const alertTeachers = [...teachers]
-    .filter(t => t.promedio_general > 0)
+    .filter(t => t.promedio_general > 0 && t.promedio_general <= 65)
     .sort((a, b) => a.promedio_general - b.promedio_general)
     .slice(0, 3)
     .map(t => ({ 
@@ -162,7 +162,16 @@ export default function Dashboard() {
       {visible.charts && (
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-2">
-            <PerformanceScatter />
+            {facultyId ? (
+              <PerformanceScatter facultyId={facultyId} />
+            ) : (
+              <div className="bg-[#1e2230]/60 border border-white/5 rounded-3xl p-8 h-[450px] flex flex-col items-center justify-center space-y-4">
+                <div className="w-10 h-10 border-4 border-yellow-400/20 border-t-yellow-400 rounded-full animate-spin" />
+                <p className="text-gray-500 font-black text-[10px] uppercase tracking-[0.3em]">
+                  Cargando indicadores de desempeño...
+                </p>
+              </div>
+            )}
           </div>
           <div>
             <EfficiencyPanel />
@@ -179,7 +188,7 @@ export default function Dashboard() {
             <p className="text-gray-500 font-medium mt-1">Métricas históricas y por asignatura</p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <HistoryTrend />
+            <HistoryTrend facultyId={facultyId} />
             <PerformancePie teachers={teachers}/>
           </div>
           <CourseBarChart courses={topCourses} />

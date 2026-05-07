@@ -45,7 +45,8 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
           username: selectedUser.username,
           email: selectedUser.email,
           role: selectedUser.role,
-          password: ""
+          password: "",
+          faculty_id: selectedUser.faculty_id
         });
       } else {
         setFormData({
@@ -63,37 +64,29 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!selectedUser) {
-      if ((formData.password?.length || 0) < 6) {
-        setError("LA CONTRASEÑA DEBE TENER AL MENOS 6 CARACTERES");
-        return;
-      }
-      if (!formData.faculty_id) {
-        setError("DEBE SELECCIONAR UNA FACULTAD");
-        return;
-      }
-
-      const selectedFac = faculties.find(f => f.id === formData.faculty_id);
-      if (selectedFac && !selectedFac.pensum_loaded && (selectedFac.users_count || 0) > 0) {
-        setError(`LA FACULTAD ${selectedFac.name} YA TIENE UN COORDINADOR PENDIENTE`);
-        return;
-      }
-    }
-
     setLoading(true);
-    setError(null);
 
     try {
+      const dataToSend = selectedUser 
+        ? { role: formData.role }
+        : {
+            username: formData.username,
+            email: formData.email,
+            role: formData.role,
+            password: formData.password || undefined,
+            faculty_id: formData.faculty_id ? Number(formData.faculty_id) : undefined
+          };
+
       if (selectedUser) {
-        await userService.updateUser(selectedUser.id, { role: formData.role });
+        await userService.updateUser(selectedUser.id, dataToSend as any);
       } else {
-        await userService.createUser(formData);
+        await userService.createUser(dataToSend as any);
       }
+      
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "ERROR AL PROCESAR");
+      setError(err.response?.data?.detail || "ERROR AL GUARDAR");
     } finally {
       setLoading(false);
     }
@@ -113,8 +106,9 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
           <h2 className="text-3xl font-black text-white uppercase tracking-tight">
             {selectedUser ? "Editar Usuario" : "Nuevo Usuario"}
           </h2>
+          <p className="text-[10px] text-yellow-400/50 font-black uppercase tracking-[0.3em] mt-2">Gestión de Personal Académico</p>
           {error && (
-            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-[10px] font-bold uppercase tracking-widest">
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-[10px] font-bold uppercase tracking-widest animate-shake">
                {error}
             </div>
           )}
@@ -126,11 +120,11 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
               <input 
+                disabled={!!selectedUser}
                 required
-                readOnly={!!selectedUser}
                 value={formData.username}
                 onChange={e => setFormData({...formData, username: e.target.value})}
-                className={`w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40 ${selectedUser ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none transition-all ${selectedUser ? 'opacity-50 cursor-not-allowed border-none' : 'focus:border-yellow-400/40'}`}
               />
             </div>
           </div>
@@ -140,21 +134,20 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
               <input 
+                disabled={!!selectedUser}
                 required
                 type="email"
-                readOnly={!!selectedUser}
                 value={formData.email}
                 onChange={e => setFormData({...formData, email: e.target.value})}
-                className={`w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40 ${selectedUser ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none transition-all ${selectedUser ? 'opacity-50 cursor-not-allowed border-none' : 'focus:border-yellow-400/40'}`}
               />
             </div>
           </div>
 
-          {!selectedUser && (
-            <>
-              <div className="space-y-2">
-                <div className="flex justify-between items-end mb-1">
-                    <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Facultad</label>
+          <div className="space-y-2">
+            <div className="flex justify-between items-end mb-1">
+                <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Facultad</label>
+                {!selectedUser && (
                     <button 
                         type="button"
                         onClick={() => setIsFacultyModalOpen(true)}
@@ -162,53 +155,55 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
                     >
                         <Plus size={12}/> Nueva Facultad
                     </button>
-                </div>
-                <div className="relative">
-                  <School className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
-                  <select 
-                    required
-                    value={formData.faculty_id || ""}
-                    onChange={e => setFormData({...formData, faculty_id: Number(e.target.value)})}
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-gray-300 outline-none appearance-none focus:border-yellow-400/40"
-                  >
-                    <option value="">Seleccionar Facultad</option>
-                    {faculties.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name} {f.pensum_loaded ? "✓" : " (PENDIENTE)"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                )}
+            </div>
+            <div className="relative">
+              <School className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
+              <select 
+                disabled={!!selectedUser}
+                required
+                value={formData.faculty_id || ""}
+                onChange={e => setFormData({...formData, faculty_id: e.target.value ? Number(e.target.value) : undefined})}
+                className={`w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-10 py-4 text-gray-300 outline-none appearance-none transition-all font-bold text-[12px] ${selectedUser ? 'opacity-50 cursor-not-allowed border-none' : 'focus:border-yellow-400/40'}`}
+              >
+                <option value="">Seleccionar Facultad</option>
+                {faculties.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Contraseña</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
-                  <input 
-                    required
-                    type="password"
-                    value={formData.password}
-                    onChange={e => setFormData({...formData, password: e.target.value})}
-                    className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40"
-                    placeholder="Min. 6 caracteres"
-                  />
-                </div>
+          {!selectedUser && (
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Contraseña</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
+                <input 
+                  required
+                  type="password"
+                  value={formData.password}
+                  onChange={e => setFormData({...formData, password: e.target.value})}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40 transition-all"
+                  placeholder="Min. 6 caracteres"
+                />
               </div>
-            </>
+            </div>
           )}
 
           <div className="space-y-2">
-            <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Rol</label>
-            <div className="relative">
-              <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18}/>
+            <label className="text-[10px] uppercase font-bold text-gray-500 ml-1 tracking-widest">Rol del Sistema</label>
+            <div className="relative border-2 border-yellow-400/20 rounded-2xl">
+              <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-400" size={18}/>
               <select 
                 value={formData.role}
                 onChange={e => setFormData({...formData, role: e.target.value as UserRole})}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-gray-300 outline-none appearance-none"
+                className="w-full bg-yellow-400/5 rounded-2xl pl-12 pr-10 py-4 text-white outline-none appearance-none font-bold text-[12px] focus:border-yellow-400/40"
               >
-                <option value="admin">Admin</option>
                 <option value="coordinator">Coordinador</option>
+                <option value="admin">Administrador</option>
               </select>
             </div>
           </div>
@@ -216,7 +211,7 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
           <button 
             type="submit"
             disabled={loading}
-            className="w-full mt-4 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-800 text-black font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all active:scale-[0.97] uppercase tracking-widest"
+            className="w-full mt-4 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-800 disabled:text-gray-500 text-black font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all active:scale-[0.97] uppercase tracking-widest shadow-xl shadow-yellow-400/10"
           >
             {loading ? <div className="w-6 h-6 border-4 border-black/20 border-t-black rounded-full animate-spin" /> : <><Save size={20}/> CONFIRMAR {selectedUser ? "CAMBIOS" : "REGISTRO"}</>}
           </button>

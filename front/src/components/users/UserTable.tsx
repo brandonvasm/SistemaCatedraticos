@@ -51,7 +51,7 @@ export default function UserTable({ users, loading, onEdit, onDelete }: Props) {
                 <div className="flex items-center gap-2 text-gray-300">
                   <School size={14} className="text-yellow-400/50" />
                   <span className="text-[11px] font-bold uppercase tracking-wider">
-                    {user.faculty || "N/A"}
+                    {user.faculty_name || "N/A"}
                   </span>
                 </div>
               </td>

@@ -70,6 +70,19 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
+
+    def get_queryset(self):
+        
+        user = self.request.user
+
+        if user.role == 'admin':
+            return User.objects.filter(faculty_id=user.faculty_id)
+
+        return User.objects.none()
+
+
+
     def get_permissions(self):
 
         if self.action in ["create", "destroy", "list"]:
@@ -82,7 +95,14 @@ class UserViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
+        f_id = request.data.get('faculty_id')
+
         user = CreateUserUseCase.execute(serializer.validated_data)
+
+        if f_id:
+            user.faculty_id_id = f_id
+            user.save()
 
         return Response(
             {'message': 'User successfully created', 'user_id': user.id},
