@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from apps.academics.models import Semester
 
 User = get_user_model()
 
@@ -7,6 +8,8 @@ class UserSerializer(serializers.ModelSerializer):
     faculty_name = serializers.CharField(source='faculty_id.name', read_only=True)
     faculty_id = serializers.CharField(source='faculty_id.id', read_only=True)
     pensum_loaded = serializers.ReadOnlyField(source='faculty_id.pensum_loaded')
+    semester_id = serializers.SerializerMethodField()
+    faculty_name = serializers.CharField(source='faculty_id.name', read_only=True)
 
     class Meta:
         model = User
@@ -15,6 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'role',
+            'semester_id',
             'faculty_name',
             'faculty_id',
             'is_active',
@@ -45,4 +49,12 @@ class UserSerializer(serializers.ModelSerializer):
             validated_data.pop("role", None)
 
         return super().update(instance, validated_data)
+    
+    def get_semester_id(self, obj):
+ 
+        if obj.faculty_id:
+            semester = Semester.objects.filter(faculty=obj.faculty_id).order_by('-year', '-number').first()
+            if semester:
+                return semester.id
+        return 0 
     

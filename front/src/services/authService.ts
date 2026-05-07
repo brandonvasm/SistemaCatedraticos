@@ -12,6 +12,7 @@ export const loginUser = async (data: LoginRequest): Promise<User> => {
       username: rawUser.username || "",
       email: rawUser.email || "",
       role: resData.role || rawUser.role || "ADMIN",
+      semester_id: resData.semester_id || rawUser.semester_id || 0,
       faculty_name: rawUser.faculty_name|| (resData as any).faculty || "",
       faculty_id : rawUser.faculty_id,
       evaluation_count: rawUser.evaluation_count || 0,

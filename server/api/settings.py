@@ -187,3 +187,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+IS_PRODUCTION = os.environ.get('RENDER', False)
+
+if IS_PRODUCTION:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'production-unique-cache',
+        }
+    }
+else:
+   
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'dev-cache',
+        }
+    }
