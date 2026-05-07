@@ -150,7 +150,7 @@ def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
-                errors.append(f"AI save for general recommendation: {e}")
+                errors.append(f"No se pudo guardar la recomendación general generada por IA: {e}")
 
         for analysis in response["analyses"]:
             try:
@@ -163,9 +163,9 @@ def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
-                errors.append(f"AI save for course {analysis['course_id']}: {e}")
+                errors.append(f"No se pudo guardar el análisis de IA del curso {analysis['course_id']}: {e}")
     except Exception as e:
-        errors.append(f"AI course analysis: {e}")
+        errors.append(f"No se pudo generar el análisis de cursos con IA: {e}")
 
     return errors
 
@@ -188,16 +188,16 @@ class InsertControlService:
                 low = int(row.get("cantidad_0") or 0)
 
                 if not course_name or not section_number:
-                    errors.append(f"Row {i}: Curso and Sección are required")
+                    errors.append(f"Fila {i}: Curso y Sección son obligatorios.")
                     continue
 
                 try:
                     course = Course.objects.get(name=course_name, faculty_id=faculty_id)
                 except Course.DoesNotExist:
-                    errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
+                    errors.append(f"Fila {i}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
                     continue
                 except Course.MultipleObjectsReturned:
-                    errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
+                    errors.append(f"Fila {i}: hay varios cursos llamados '{course_name}' en la facultad {faculty_id}.")
                     continue
 
                 try:
@@ -208,7 +208,7 @@ class InsertControlService:
                     )
                 except CourseSection.DoesNotExist:
                     errors.append(
-                        f"Row {i}: section {section_number}/{shift} for '{course_name}' not found"
+                        f"Fila {i}: no se encontró la sección {section_number}/{shift} para el curso '{course_name}'."
                     )
                     continue
 
@@ -230,20 +230,20 @@ class InsertControlService:
                 processed_courses.add(course.id)
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {i}: {e}")
 
         for course_id in processed_courses:
             try:
                 course = Course.objects.get(id=course_id)
                 _update_course_history(course, semester_id)
             except Exception as e:
-                errors.append(f"CourseHistory update for course {course_id}: {e}")
+                errors.append(f"No se pudo actualizar el historial del curso {course_id}: {e}")
 
         if processed_courses:
             try:
                 _update_semester_history(semester_id)
             except Exception as e:
-                errors.append(f"SemesterHistory update: {e}")
+                errors.append(f"No se pudo actualizar el historial del semestre: {e}")
 
         Semester.objects.filter(id=semester_id).update(control_loaded=True)
 

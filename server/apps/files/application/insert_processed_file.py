@@ -38,6 +38,6 @@ class InsertProcessedFileUseCase:
 
         service = services.get(file_type)
         if service is None:
-            raise ValueError(f"Unsupported file type: {file_type}")
+            raise ValueError(f"Tipo de archivo no soportado: {file_type}")
 
         return service.execute(records, semester_id, faculty_id)

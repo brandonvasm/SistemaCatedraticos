@@ -29,7 +29,7 @@ class InsertCeatService:
                 complementary = int(row.get(_COMPLEMENTARY) or 0)
 
                 if not teacher_code:
-                    errors.append(f"Row {i}: Código Docente is required")
+                    errors.append(f"Fila {i}: Código Docente es obligatorio.")
                     continue
 
                 teacher, _ = Teacher.objects.get_or_create(
@@ -74,7 +74,7 @@ class InsertCeatService:
                 )
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {i}: {e}")
 
         Semester.objects.filter(id=semester_id).update(ceat_loaded=True)
 

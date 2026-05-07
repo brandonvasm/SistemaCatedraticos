@@ -45,7 +45,7 @@ class PensumValidator(BaseExcelValidator):
 
         if missing_headers:
             raise ValueError(
-                f"Missing required headers: {', '.join(missing_headers)}"
+                f"Faltan columnas obligatorias en el archivo: {', '.join(missing_headers)}"
             )
 
     def validate_and_transform(

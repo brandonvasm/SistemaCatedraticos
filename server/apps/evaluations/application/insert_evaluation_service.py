@@ -89,7 +89,7 @@ def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int)
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
-                errors.append(f"AI save for general recommendation: {e}")
+                errors.append(f"No se pudo guardar la recomendación general generada por IA: {e}")
 
         for analysis in response["analyses"]:
             try:
@@ -102,9 +102,9 @@ def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int)
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
-                errors.append(f"AI save for teacher {analysis['teacher_id']}: {e}")
+                errors.append(f"No se pudo guardar el análisis de IA del docente {analysis['teacher_id']}: {e}")
     except Exception as e:
-        errors.append(f"AI teacher analysis: {e}")
+        errors.append(f"No se pudo generar el análisis de docentes con IA: {e}")
 
     return errors
 
@@ -128,7 +128,7 @@ class InsertEvaluationService:
                 assigned_raw = row.get("Estudiantes Asignados")
 
                 if not teacher_code or not appointment_number:
-                    errors.append(f"Row {i}: Código and No. Nombramiento are required")
+                    errors.append(f"Fila {i}: Código y No. Nombramiento son obligatorios.")
                     continue
 
                 score = float(score_raw) if score_raw is not None else 0.0
@@ -138,7 +138,7 @@ class InsertEvaluationService:
                 try:
                     teacher = Teacher.objects.get(identity_code=teacher_code)
                 except Teacher.DoesNotExist:
-                    errors.append(f"Row {i}: teacher '{teacher_code}' not found — upload nomina first")
+                    errors.append(f"Fila {i}: no se encontró el docente con código '{teacher_code}'. Cargue la nómina antes de procesar evaluaciones.")
                     continue
 
                 section_filters = {
@@ -161,12 +161,12 @@ class InsertEvaluationService:
                     section = CourseSection.objects.get(**section_filters)
                 except CourseSection.DoesNotExist:
                     errors.append(
-                        f"Row {i}: section for appointment '{appointment_number}' not found — upload nomina first"
+                        f"Fila {i}: no se encontró una sección para el nombramiento '{appointment_number}'. Cargue la nómina antes de procesar evaluaciones."
                     )
                     continue
                 except CourseSection.MultipleObjectsReturned:
                     errors.append(
-                        f"Row {i}: multiple sections for appointment '{appointment_number}'"
+                        f"Fila {i}: hay varias secciones para el nombramiento '{appointment_number}'. Revise la nómina para evitar duplicados."
                     )
                     continue
 
@@ -188,7 +188,7 @@ class InsertEvaluationService:
                 processed_teachers.add(teacher.id)
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {i}: {e}")
 
         Semester.objects.filter(id=semester_id).update(evaluation_loaded=True)
 

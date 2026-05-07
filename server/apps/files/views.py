@@ -34,10 +34,10 @@ class FileView(viewsets.ModelViewSet):
         str_data = request.POST.get("data")
 
         if not file_obj:
-            return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "No se adjuntó ningún archivo. Seleccione un archivo de Excel para continuar."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not str_data or str_data.strip() == "":
-            return Response({"error": "No metadata provided"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "No se recibió la información del archivo. Envíe los datos requeridos junto con el archivo."}, status=status.HTTP_400_BAD_REQUEST)
 
         processor = ValidateFileRequestUseCase(file_obj)
         saver = SaveFileUseCase()
@@ -60,7 +60,7 @@ class FileView(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             self.storage_service.delete_file(cloud_url) if cloud_url != ""else None
-            return Response({"error": "Error saving file record: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "No se pudo guardar el registro del archivo: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def destroy(self, request, *args, **kwargs):
@@ -71,7 +71,7 @@ class FileView(viewsets.ModelViewSet):
                 instance.delete()
                 self.storage_service.delete_file(blob_path)
         except Exception as e:
-            return Response({"error": "Error deleting file from storage: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "No se pudo eliminar el archivo del almacenamiento: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
     @action(detail=True, methods=['get'], url_path='download')
@@ -84,7 +84,7 @@ class FileView(viewsets.ModelViewSet):
             download_url = self.storage_service.get_download_url(file_path, file_name)
             return Response({"download_url": download_url}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": "Error generating download URL: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "No se pudo generar el enlace de descarga: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=True, methods=['post'], url_path='process')
     def process_file(self, request, pk=None):
@@ -114,8 +114,8 @@ class FileView(viewsets.ModelViewSet):
                     first_error = errors[0] if errors else ""
                     return Response({
                         "error": (
-                            f"Error processing '{file_record.name}': finished with "
-                            f"{len(errors)} row errors. No data was saved."
+                            f"No se pudo procesar '{file_record.name}': se encontraron "
+                            f"{len(errors)} errores en las filas. No se guardó ningún dato."
                         ),
                         "file_id": file_record.id,
                         "file_name": file_record.name,
@@ -141,7 +141,7 @@ class FileView(viewsets.ModelViewSet):
             self.storage_service.delete_file(file_path)
             File.objects.filter(id=file_record.id).delete()
             return Response({
-                "error": f"Error processing '{file_record.name}': {str(e)}",
+                "error": f"No se pudo procesar '{file_record.name}': {str(e)}",
                 "file_id": file_record.id,
                 "file_name": file_record.name,
                 "file_type": file_type,

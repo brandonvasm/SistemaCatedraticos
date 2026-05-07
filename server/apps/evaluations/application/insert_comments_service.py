@@ -28,16 +28,16 @@ class InsertCommentsService:
                 content = str(row.get("Comentario", "")).strip()
 
                 if not course_name or not content:
-                    errors.append(f"Row {i}: Curso and Comentario are required")
+                    errors.append(f"Fila {i}: Curso y Comentario son obligatorios.")
                     continue
 
                 try:
                     course = Course.objects.get(name=course_name, faculty_id=faculty_id)
                 except Course.DoesNotExist:
-                    errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
+                    errors.append(f"Fila {i}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
                     continue
                 except Course.MultipleObjectsReturned:
-                    errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
+                    errors.append(f"Fila {i}: hay varios cursos llamados '{course_name}' en la facultad {faculty_id}.")
                     continue
 
                 if section_number and shift:
@@ -56,7 +56,7 @@ class InsertCommentsService:
 
                 if not sections.exists():
                     errors.append(
-                        f"Row {i}: section for '{course_name}' not found"
+                        f"Fila {i}: no se encontró una sección para el curso '{course_name}'."
                     )
                     continue
 
@@ -65,7 +65,7 @@ class InsertCommentsService:
                     created += 1
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {i}: {e}")
 
         Semester.objects.filter(id=semester_id).update(comments_loaded=True)
 

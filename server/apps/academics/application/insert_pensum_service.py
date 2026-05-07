@@ -54,7 +54,7 @@ class InsertPensumService:
                 credits = cred_teo + cred_pra
 
                 if not career_code or not course_code:
-                    errors.append(f"Row {i}: No_Carrera and No_Curso are required")
+                    errors.append(f"Fila {i}: No_Carrera y No_Curso son obligatorios.")
                     continue
 
                 career, _ = Career.objects.get_or_create(
@@ -84,7 +84,7 @@ class InsertPensumService:
                     updated += 1
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {i}: {e}")
 
         if processed_career_codes:
             Career.objects.filter(

@@ -52,16 +52,16 @@ class InsertNominaService:
                 credits = int(credits_raw) if credits_raw is not None else None
 
                 if not teacher_code or not course_name or not section_number:
-                    errors.append(f"Row {i}: Docente, Curso and Sección are required")
+                    errors.append(f"Fila {i}: Docente, Curso y Sección son obligatorios.")
                     continue
 
                 try:
                     course = Course.objects.get(name=course_name, faculty_id=faculty_id)
                 except Course.DoesNotExist:
-                    errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
+                    errors.append(f"Fila {i}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
                     continue
                 except Course.MultipleObjectsReturned:
-                    errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
+                    errors.append(f"Fila {i}: hay varios cursos llamados '{course_name}' en la facultad {faculty_id}.")
                     continue
 
                 career = course.careers.filter(abbreviation=career_abbr).first()
@@ -105,7 +105,7 @@ class InsertNominaService:
                     updated += 1
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {i}: {e}")
 
         if active_teacher_codes:
             Contract.objects.filter(
