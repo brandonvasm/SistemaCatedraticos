@@ -1,17 +1,17 @@
 import api from "../api/axios";
-import type { Courses, TeacherStats } from "../types/teacher";
+import type { Courses, TeacherStatsResponse, TeacherProfileAnalysis } from "../types/teacher";
 
 
 export const teacherService = {
-  getTeachersStats: async (facultyId: number): Promise<TeacherStats[]> => {
-    try {
-      const response = await api.get(`/academics/teachers/stats/?faculty=${facultyId}`);
-      return response.data;
-    } catch (error) {
-      console.error("Error al obtener estadísticas de docentes:", error);
-      return [];
+  getTeachersStats: async (facultyId: number, page: number): Promise<TeacherStatsResponse> => {
+  const response = await api.get(`/academics/teachers/stats/`, {
+    params: { 
+      faculty: facultyId, 
+      page: page 
     }
-  },
+  });
+  return response.data;
+},
 
   getTeacherStats: async (id: string | number) => {
     try {
@@ -60,7 +60,32 @@ export const teacherService = {
   getTeacherComments: async (id: string) => {
   const response = await api.get(`/academics/teachers/${id}/comments/`);
   return response.data; 
-}
+},
+
+  getTeacherProfileAnalysis: async (id: string, semesterId: number): Promise<TeacherProfileAnalysis> => {
+    const response = await api.get(`/analytics/teacher-profile-analysis/${id}/`, {
+        params: {
+            semester: semesterId
+        }
+    });
+    return response.data;
+},
+
+  analyzeComments: async (teacherId: number, commentTexts: string[]): Promise<TeacherProfileAnalysis> => {
+      const response = await api.post(`/analytics/teacher-comments-analysis/`, {
+        teacher_id: teacherId,
+        comments: commentTexts
+      });
+      return response.data;
+},
+
+
+  getGeneralRecommendations: async (): Promise<{ recommendations: string[] }> => {
+    const response = await api.get(`/analytics/general-teacher-recommendations/`);
+    return response.data;
+  }
+
+
 
   
 

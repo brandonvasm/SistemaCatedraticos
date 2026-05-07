@@ -90,17 +90,17 @@ export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
       <td className="px-6 py-5">
         <span
           className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest w-fit border ${
-            teacher.promedio_general >= 4.5
+            teacher.promedio_general >= 80
               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-              : teacher.promedio_general >= 4
+              : teacher.promedio_general >= 65
               ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
               : "bg-red-500/10 text-red-400 border-red-500/20"
           }`}
         >
           <CheckCircle size={12} />
-          {teacher.promedio_general >= 4.5
+          {teacher.promedio_general >= 80
             ? "Excelente"
-            : teacher.promedio_general >= 4
+            : teacher.promedio_general >= 65
             ? "Bueno"
             : "Bajo"}
         </span>
