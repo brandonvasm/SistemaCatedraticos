@@ -22,7 +22,8 @@ class CourseListView(APIView):
         responses={200: CourseListResponseSerializer},
     )
     def get(self, request):
-        courses = list(Course.objects.filter(cost_center__faculty=request.user.faculty_id))
+        courses = list(Course.objects.filter(cost_center__faculty=request.user.faculty_id)
+                       .select_related('cost_center'))
         course_ids = [c.id for c in courses]
 
         sections = CourseSection.objects.filter(
@@ -59,6 +60,8 @@ class CourseListView(APIView):
                     "code": course.code,
                     "name": course.name,
                     "credits": course.credits,
+                    "cost_center_id": course.cost_center.id,
+                    "cost_center_name": course.cost_center.name,
                     "score": course_score,
                     "trend": trend,
                 }
@@ -82,7 +85,7 @@ class CourseDetailView(APIView):
         )
 
         sections = CourseSection.objects.filter(
-            course_id=course.id, 
+            course_id=course.id,
             control_score__isnull=False
         ).values("control_score")
 
@@ -110,6 +113,8 @@ class CourseDetailView(APIView):
             "code": course.code,
             "name": course.name,
             "credits": course.credits,
+            "cost_center_id": course.cost_center.id,
+            "cost_center_name": course.cost_center.name,
             "score": course_score,
             "trend": trend,
         })

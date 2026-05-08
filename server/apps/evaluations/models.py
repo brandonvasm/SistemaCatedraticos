@@ -35,4 +35,5 @@ class TrainingHours(models.Model):
     transition_count = models.IntegerField()
     autonomy_count = models.IntegerField()
     complementary_count = models.IntegerField()
+    semester = models.ForeignKey("academics.Semester", on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
