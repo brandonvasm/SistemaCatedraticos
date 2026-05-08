@@ -18,20 +18,37 @@ export default function CoursesChart() {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const colors = ["#facc15", "#ef4444", "#3b82f6", "#10b981", "#a855f7", "#ec4899"];
+  const colors = ["#facc15", "#ef4444", "#3b82f6", "#10b981", "#a855f7", "#ec4899", "#fb923c", "#22d3ee"];
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await chartService.getCoursesEvolution();
-      setData(res);
-      if (res.length > 0) {
-        const names = Object.keys(res[0]).filter(key => key !== 'name' && key !== 'sortKey');
-        setAvailableCourses(names);
-        setSelectedCourses(names);
+      try {
+        const res = await chartService.getCoursesEvolution();
+        if (!res || !Array.isArray(res)) return;
+
+
+        const allCourseNames = new Set<string>();
+        res.forEach(semester => {
+          Object.keys(semester).forEach(key => {
+            if (key !== 'name' && key !== 'sortKey') {
+              allCourseNames.add(key);
+            }
+          });
+        });
+
+        const namesArray = Array.from(allCourseNames);
+        setAvailableCourses(namesArray);
+        setSelectedCourses(namesArray);
+
+        const sortedData = [...res].sort((a, b) => (a.sortKey || 0) - (b.sortKey || 0));
+        setData(sortedData);
+        
+      } catch (error) {
+        console.error("Error cargando evolución de cursos:", error);
       }
     };
-    fetchData();
 
+    fetchData();
 
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -76,10 +93,10 @@ export default function CoursesChart() {
           {showMenu && (
             <div className="absolute right-0 mt-3 w-64 bg-[#0f111a] border border-white/10 rounded-[1.5rem] shadow-2xl p-4 backdrop-blur-xl z-50 animate-in fade-in zoom-in duration-200">
               <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-3 px-2">Seleccionar Cursos</p>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 max-h-60 overflow-y-auto custom-scrollbar">
                 {availableCourses.map((course, idx) => (
                   <label
-                    key={course}
+                    key={`filter-${course}`}
                     className="flex items-center justify-between p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-3">
@@ -115,9 +132,9 @@ export default function CoursesChart() {
         </div>
       </div>
 
-      <div className="relative z-10">
-        <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={data}>
+      <div className="h-[320px] w-full relative z-10">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis
               dataKey="name"
@@ -141,20 +158,23 @@ export default function CoursesChart() {
                 borderRadius: "16px",
                 backdropFilter: "blur(10px)",
               }}
+              itemStyle={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', color: '#fff' }}
             />
-            {availableCourses.map((name, index) => (
-              selectedCourses.includes(name) && (
+            {availableCourses
+              .filter(name => selectedCourses.includes(name))
+              .map((name, _) => (
                 <Line
-                  key={name}
+                  key={`line-${name}`}
                   type="monotone"
                   dataKey={name}
-                  stroke={colors[index % colors.length]}
+                  stroke={colors[availableCourses.indexOf(name) % colors.length]}
                   strokeWidth={3}
-                  dot={{ r: 4, fill: colors[index % colors.length], strokeWidth: 0 }}
+                  dot={{ r: 4, fill: colors[availableCourses.indexOf(name) % colors.length], strokeWidth: 0 }}
                   activeDot={{ r: 6, strokeWidth: 0 }}
+                  connectNulls
+                  animationDuration={1000}
                 />
-              )
-            ))}
+              ))}
           </LineChart>
         </ResponsiveContainer>
       </div>

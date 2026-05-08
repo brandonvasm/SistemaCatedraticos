@@ -1,80 +1,119 @@
-import { useState } from "react";
-import { Search, Target } from "lucide-react";
-import { CourseCard } from "../components/recommendations/CourseCard";
-import { TeacherMatchCard } from "../components/recommendations/TeacherMatchCard";
+import { useState, useEffect } from "react";
+import { Loader2, Inbox, Sparkles } from "lucide-react";
+import { Card } from "../components/recommendations/Card";
+import { recommendationService } from "../services/recommendationService";
+import { RecomendacionDetalleCard } from "../components/recommendations/RecomendacionDetalleCard";
 
-const COURSES = [
-  { id: 1, name: "Cálculo I"},
-  { id: 2, name: "Cálculo II",},
-  { id: 3, name: "Ecuaciones Diferenciales"},
-  { id: 4, name: "Cálculo III"},
-  { id: 5, name: "Ingeniería de Software"},
+const CATEGORIAS = [
+  { id: 1, name: "Cursos" },
+  { id: 2, name: "Docentes" }
 ];
 
-const TEACHER_DATA = {
-  name: "Ing. Ana Patricia Rodríguez Santos",
-  initials: "AR",
-  match: 98,
-  specialty: "Análisis Matemático",
-  experience: "12 años",
-  rating: 4.7,
-  currentCourses: ["Ecuaciones Diferenciales", "Cálculo III"],
-  strengths: ["Experiencia directa en la materia", "Excelente evaluación histórica"],
-  reason: "Ya imparte este curso con excelentes resultados. Su dominio del tema y disponibilidad horaria la convierten en la opción ideal."
-};
-
 export default function Recommendations() {
-  const [selectedId, setSelectedId] = useState(3);
+  const [categoriaId, setCategoriaId] = useState(1);
+  const [data, setData] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = categoriaId === 1 
+          ? await recommendationService.getCourseRecommendations() 
+          : await recommendationService.getGeneralRecommendations();
+        setData(res.recommendations || []);
+      } catch (e) {
+        console.error("Error cargando recomendaciones:", e);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [categoriaId]);
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
-      <header className="flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="w-full md:w-auto">
-          <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">
-            RECOMENDACIONES
-          </h1>
-          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mt-4 ml-1">
-            ANÁLISIS INTELIGENTE · ASIGNACIÓN DOCENTE
-          </p>
-        </div>
-        
-        <div className="relative group w-full md:w-72">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-yellow-400 transition-colors" size={18} />
-          <input 
-            className="w-full bg-white/[0.02] border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-[10px] font-bold text-white outline-none focus:border-yellow-400/20 backdrop-blur-md transition-all uppercase tracking-widest placeholder:text-gray-600" 
-            placeholder="BUSCAR CURSO..." 
-          />
-        </div>
+    <div className="space-y-12 pb-20 animate-in fade-in duration-700">
+      <header>
+        <h1 className="text-6xl font-black text-white tracking-tighter uppercase leading-none">
+          RECOMENDACIONES
+        </h1>
+        <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.5em] mt-3 ml-1">
+          Generales · 3 RECOMENDACIONES
+        </p>
       </header>
 
-      <div className="space-y-5">
-        <div className="flex items-center gap-3 text-yellow-500 font-black text-[10px] uppercase tracking-[0.3em] ml-2">
-          <Target size={16} />
-          <span>Selecciona un curso para analizar</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {COURSES.map(course => (
-            <CourseCard 
-              key={course.id}
-              name={course.name}
-              isSelected={selectedId === course.id}
-              onClick={() => setSelectedId(course.id)}
-            />
-          ))}
-        </div>
+      <div className="flex gap-6 max-w-sm">
+        {CATEGORIAS.map(cat => (
+          <Card 
+            key={cat.id} 
+            name={cat.name} 
+            isSelected={categoriaId === cat.id} 
+            onClick={() => setCategoriaId(cat.id)} 
+          />
+        ))}
       </div>
 
-      
+      <div className="glass-card rounded-[3rem] overflow-hidden flex flex-col lg:flex-row min-h-[580px] transition-all duration-500">
+        
+        <div className="w-full lg:w-[35%] border-r border-white/5 p-10 space-y-10 bg-white/[0.01]">
+          <div className="flex items-center gap-3 text-yellow-400/40 font-black text-[9px] uppercase tracking-[0.4em]">
+            <Sparkles size={14} />
+            <span>Recomendaciones</span>
+          </div>
 
-      <div className="space-y-8 pb-20">
-        <div className="flex items-center gap-4 ml-2">
-           <div className="h-px w-8 bg-yellow-400/30" />
-           <h2 className="text-xl font-black text-white uppercase tracking-tighter">Análisis de Perfil</h2>
+          {loading ? (
+            <div className="flex justify-center p-20"><Loader2 className="animate-spin text-yellow-400" /></div>
+          ) : data.length > 0 ? (
+            <div className="space-y-8">
+              {data.map((nombre, idx) => (
+                <div key={idx} className="group animate-in slide-in-from-left-4 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
+                  <p className="text-[12px] font-black text-gray-400 uppercase tracking-widest leading-relaxed group-hover:text-white transition-colors cursor-default">
+                    {nombre}
+                  </p>
+                  <div className="h-px w-8 bg-white/5 mt-6 group-hover:w-full group-hover:bg-yellow-400/30 transition-all duration-500" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
+              <Inbox size={40} />
+              <p className="text-[10px] font-black uppercase tracking-widest">Sin recomendaciones</p>
+            </div>
+          )}
         </div>
-        <TeacherMatchCard teacher={TEACHER_DATA} />
-      </div>
 
+        <div className="flex-1 p-12 space-y-12 bg-gradient-to-br from-transparent to-white/[0.02]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-px w-8 bg-yellow-400/30" />
+              <h2 className="text-sm font-black text-white uppercase tracking-[0.3em]">Detalle de Recomendaciones</h2>
+            </div>
+            {data.length > 0 && (
+                <div className="px-3 py-1 bg-yellow-400/10 border border-yellow-400/20 rounded-full">
+                    <span className="text-[9px] font-black text-yellow-400 uppercase tracking-widest">{data.length} Recomendaciones</span>
+                </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            {data.length > 0 ? (
+              data.map((item, idx) => (
+                <RecomendacionDetalleCard 
+                  key={idx}
+                  tipo={categoriaId === 1 ? 'curso' : 'docente'}
+                  titulo={item}
+                />
+              ))
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center opacity-20 border border-white/5 border-dashed rounded-[3rem]">
+                <p className="text-[10px] font-black uppercase tracking-[0.4em]">Esperando recomendaciones...</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

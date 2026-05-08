@@ -4,7 +4,7 @@ export default function Tabs({ tab, setTab }: any) {
     { id: "resumen", label: "Resumen General" },
     { id: "semestres", label: "Calificación por Semestre" },
     { id: "comentarios", label: "Comentarios Estudiantes" },
-    { id: "acciones", label: "Acciones Recomendadas" },
+    { id: "acciones", label: "Analisis de perfil" },
   ];
 
   return (
