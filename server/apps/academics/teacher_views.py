@@ -159,48 +159,45 @@ class TeacherCommentsDetailView(APIView):
 
 class TeacherWorkloadView(APIView):
     @extend_schema(
-        summary="Carga y rendimiento de docentes por facultad",
+        summary="Carga y rendimiento de un docente en específico",
         responses={200: TeacherWorkloadSerializer(many=True)},
     )
     def get(self, request):
         faculty_id = request.user.faculty_id_id
+        teacher_id = request.query_params.get("teacher_id")
         if not faculty_id:
             return Response(
                 {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        teacher_ids = Contract.objects.filter(
-            faculty_id=faculty_id, is_active=True
-        ).values_list("teacher_id", flat=True)
+        teacher_contract = Contract.objects.filter(
+            faculty_id=faculty_id, is_active=True, teacher_id=teacher_id
+        ).values("teacher_id").first()
 
-        teachers = Teacher.objects.filter(id__in=teacher_ids)
+        teacher = Teacher.objects.filter(id=teacher_contract["teacher_id"]).first()
 
-        result = []
-        for teacher in teachers:
-            total_credits = (
-                CourseSection.objects.filter(
-                    teacher_id=teacher.id,
-                    credits__isnull=False,
-                ).aggregate(total=Sum("credits"))["total"]
-                or 0
-            )
-
-            avg_score = TeacherCourseHistory.objects.filter(
+        total_credits = (
+            CourseSection.objects.filter(
                 teacher_id=teacher.id,
-                student_score__isnull=False,
-            ).aggregate(avg=Avg("student_score"))["avg"]
+                credits__isnull=False,
+            ).aggregate(total=Sum("credits"))["total"]
+            or 0
+        )
 
-            result.append(
-                {
-                    "teacher_id": teacher.id,
-                    "teacher_name": teacher.name,
-                    "total_credits": total_credits,
-                    "avg_score": round(avg_score, 2) if avg_score is not None else None,
-                }
-            )
+        avg_score = TeacherCourseHistory.objects.filter(
+            teacher_id=teacher.id,
+            student_score__isnull=False,
+        ).aggregate(avg=Avg("student_score"))["avg"]
 
-        serializer = TeacherWorkloadSerializer(result, many=True)
+        result = {
+                "teacher_id": teacher.id,
+                "teacher_name": teacher.name,
+                "total_credits": total_credits,
+                "avg_score": round(avg_score, 2) if avg_score is not None else None,
+            }
+
+        serializer = TeacherWorkloadSerializer(result)
         return Response(serializer.data)
 
 

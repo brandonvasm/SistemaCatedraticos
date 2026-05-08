@@ -9,6 +9,7 @@ from .teacher_views import (
     TeacherWorkloadView,
 )
 from .courses_views import CourseListView, CourseDetailView
+from .career_views import CareerListView
 
 from .views import (
     CloseSemesterView,
@@ -67,7 +68,6 @@ urlpatterns = [
     path("courses/", CourseListView.as_view(), name="course-list"),
     path('courses/<int:pk>/', CourseDetailView.as_view(), name='course-detail'),
     path('courses/<int:pk>/teachers-stats/', CourseTeachersStatsView.as_view(), name='course-teachers-stats'),
-    path('teachers/<int:pk>/courses/', TeacherCourseListView.as_view(), name='teacher-courses-list')
-    
-    
+    path('teachers/<int:pk>/courses/', TeacherCourseListView.as_view(), name='teacher-courses-list'),
+    path('careers/', CareerListView.as_view(), name='career-list'),
 ]
