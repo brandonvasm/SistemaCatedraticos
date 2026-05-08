@@ -31,7 +31,7 @@ except ImportError:
     TeacherGeneralRecomendationsAI = None
     TeacherProfileAnalysisAI = None
 
-from apps.evaluations.models import Comment, SectionControl, StudentEvaluation
+from apps.evaluations.models import Comment, SectionControl, StudentEvaluation, TrainingHours
 from apps.historical.models import TeacherCourseHistory
 
 from .models import Contract, CourseSection, Faculty, Semester, Teacher
@@ -240,7 +240,7 @@ class CloseSemesterView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if semester.status == "ARCHIVED":
+        if semester.status == "archived":
             return Response(
                 {"error": "El semestre actual ya se encuentra archivado"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -248,20 +248,17 @@ class CloseSemesterView(APIView):
 
         try:
             with transaction.atomic():
-                # 1. Cambiar estado a ARCHIVED
-                semester.status = "ARCHIVED"
+                semester.status = "archived"
                 semester.save()
 
-                # 2. Obtener secciones para eliminar datos relacionados
                 sections_qs = CourseSection.objects.filter(semester=semester)
 
-                # 3. Eliminar datos de Evaluaciones (incluyendo comentarios) y SectionControl
                 StudentEvaluation.objects.filter(course_section__in=sections_qs).delete()
                 SectionControl.objects.filter(course_section__in=sections_qs).delete()
                 Comment.objects.filter(course_section__in=sections_qs).delete()
-                
-                # 4. Eliminar análisis de IA asociados al semestre
-                # Listamos todos los modelos de analytics posibles según tu esquema
+                TrainingHours.objects.filter(semester=semester).delete()
+
+                # 5. Eliminar análisis de IA asociados al semestre
                 analytics_models = [
                     (CourseAnalysisAI, "analytics_courseanalysisai"),
                     (CourseGeneralRecomendationsAI, "analytics_coursegeneralrecomendationsai"),
@@ -274,14 +271,9 @@ class CloseSemesterView(APIView):
                 existing_tables = connection.introspection.table_names()
 
                 for model, table_name in analytics_models:
-                    # Solo intentamos borrar si el modelo fue importado y la tabla existe en la DB
                     if model and table_name in existing_tables:
-                        # Según tu esquema, estos modelos se relacionan directamente con el semestre
                         model.objects.filter(semester=semester).delete()
                 
-                # 5. Finalmente, eliminar las CourseSections usando SQL crudo.
-                # Esto evita que el ORM de Django intente realizar un borrado en cascada
-                # hacia tablas que no existen físicamente en la BD (como analytics_teacheranalysisai).
                 with connection.cursor() as cursor:
                     cursor.execute(
                         f'DELETE FROM "{CourseSection._meta.db_table}" WHERE "semester_id" = %s',

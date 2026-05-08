@@ -50,6 +50,7 @@ class InsertCeatService:
                     transition_count=level2,
                     autonomy_count=level3,
                     complementary_count=complementary,
+                    semester_id=semester_id,
                 )
                 created += 1
 

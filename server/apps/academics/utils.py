@@ -14,8 +14,7 @@ def get_historical_semesters(faculty_id, limit: int = 3):
     if not semesters.exists():
         return []
 
-    # Híbrido: busca processed primero, fallback al id más alto
-    current = semesters.filter(status="processed").first() or semesters.first()
+    current = semesters.first()
 
     # Los (limit-1) anteriores excluyendo el actual
     previous = list(semesters.exclude(id=current.id)[: limit - 1])

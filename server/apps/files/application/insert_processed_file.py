@@ -2,6 +2,7 @@ from typing import Any
 
 from apps.academics.application.insert_nomina_service import InsertNominaService
 from apps.academics.application.insert_pensum_service import InsertPensumService
+from apps.academics.models import Semester
 from apps.evaluations.application.insert_ceat_service import InsertCeatService
 from apps.evaluations.application.insert_comments_service import InsertCommentsService
 from apps.evaluations.application.insert_control_service import InsertControlService
@@ -21,6 +22,11 @@ class InsertProcessedFileUseCase:
 
         if semester_id is None:
             raise ValueError(f"semester_id is required for file type: {file_type}")
+        
+        semester = Semester.objects.filter(id=semester_id).first()
+        
+        if semester.status == "archived":
+            raise ValueError(f"Cannot process file for archived semester: {semester.year} - {semester.number}")
 
         services = {
             "roster": InsertNominaService,
