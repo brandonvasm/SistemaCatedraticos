@@ -5,10 +5,6 @@ import TeachersGrid from "../components/dashboard/stats/TeachersGrid"
 import RankingCard from "../components/dashboard/stats/RankingCard";
 import ThresholdCard from "../components/dashboard/stats/ThresholdCard";
 import PerformanceScatter from "../components/dashboard/charts/PerformanceScatter";
-import EfficiencyPanel from "../components/dashboard/insights/EfficiencyPanel";
-import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
-import PerformancePie from "../components/dashboard/charts/PerformancePie";
-import CourseBarChart from "../components/dashboard/courses/CourseBarChart"; 
 import ImportModal from "../components/common/ImportModal";
 import { useAuth } from "../context/AuthContext";
 import { teacherService } from "../services/teacherService";
@@ -25,7 +21,6 @@ export default function Dashboard() {
   const [teachersGrid, setTeachersGrid] = useState<TeacherStats[]>([]);
   const [totalDocentes, setTotalDocentes] = useState(0);
   const [loading, setLoading] = useState(true); 
-  const [topCourses, setTopCourses] = useState([]);
 
   const facultyId = user?.faculty_id;
 
@@ -36,11 +31,11 @@ export default function Dashboard() {
         teacherService.getTeachersStats(facultyId, 1),
         courseService.getTopCourses(facultyId, user.semester_id)
       ])
-        .then(([teachersData, coursesData]) => {
+        .then(([teachersData]) => {
           setTeachers(teachersData.teachers || []);           
           setTeachersGrid(teachersData.teachers_paginated || []);
           setTotalDocentes(teachersData.count || 0);
-          setTopCourses(coursesData || []);
+         
         })
         .catch(err => console.error("Error en dashboard:", err))
         .finally(() => setLoading(false));
@@ -144,23 +139,6 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-        <div>
-          <EfficiencyPanel />
-        </div>
-      </section>
-
-      <section className="pt-10 border-t border-white/5 space-y-10 pb-20">
-        <div>
-          <h2 className="text-xl font-bold text-gray-200 tracking-tight uppercase">
-            Análisis de Tendencia y Rendimiento
-          </h2>
-          <p className="text-gray-500 font-medium mt-1">Métricas históricas y por asignatura</p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <HistoryTrend facultyId={facultyId} />
-          <PerformancePie teachers={teachers}/>
-        </div>
-        <CourseBarChart courses={topCourses} />
       </section>
 
       <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />

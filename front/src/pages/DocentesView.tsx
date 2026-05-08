@@ -1,13 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Filters } from "../components/dashboard/Filters";
 import { TeachersTable } from "../components/dashboard/TeachersTable";
 import { useAuth } from "../context/AuthContext";
+import CourseBarChart from "../components/dashboard/courses/CourseBarChart";
+import PerformancePie from "../components/dashboard/charts/PerformancePie";
+import { teacherService } from "../services/teacherService";
+import { courseService } from "../services/courseService"; 
+import type { TeacherStats } from "../types/teacher";
 
 export default function DocentesViews() {
   const [activeFilter, setActiveFilter] = useState("Todos");
+  const [teachersData, setTeachersData] = useState<TeacherStats[]>([]);
+  const [topCourses, setTopCourses] = useState([]);
   const { user } = useAuth();
 
   const facultyId = user?.faculty_id;
+  const semesterId = user?.semester_id;
+
+  useEffect(() => {
+    if (facultyId) {
+      Promise.all([
+        teacherService.getTeachersStats(facultyId, 1),
+        courseService.getTopCourses(facultyId, semesterId!)
+      ])
+        .then(([teachersRes, coursesRes]) => {
+          setTeachersData(teachersRes.teachers || []);
+          setTopCourses(coursesRes || []);
+        })
+        .catch(err => console.error("Error cargando analítica:", err));
+    }
+  }, [facultyId, semesterId]);
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -24,6 +46,15 @@ export default function DocentesViews() {
         </div>
       </header>
 
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
+
+          <CourseBarChart courses={topCourses} />
+
+
+          <PerformancePie teachers={teachersData} />
+
+      </div>
+
       <Filters active={activeFilter} setActive={setActiveFilter} />
 
       <div className="glass-card overflow-hidden relative border-white/5 bg-white/[0.01]">
@@ -32,7 +63,7 @@ export default function DocentesViews() {
           <TeachersTable filter={activeFilter} facultyId={facultyId} />
         ) : (
           <div className="py-20 text-center text-gray-500 font-black uppercase text-[10px] tracking-[0.5em]">
-            Obteniendo datos  de facultad...
+            Obteniendo datos de facultad...
           </div>
         )}
       </div>

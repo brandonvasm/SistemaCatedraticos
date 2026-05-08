@@ -83,7 +83,13 @@ export const teacherService = {
   getGeneralRecommendations: async (): Promise<{ recommendations: string[] }> => {
     const response = await api.get(`/analytics/general-teacher-recommendations/`);
     return response.data;
-  }
+},
+
+ 
+  getTeacherAnalysis: async (id: number) => {
+  const response = await api.get(`/analytics/teacher-profile-analysis/${id}/`);
+  return response.data;
+}
 
 
 

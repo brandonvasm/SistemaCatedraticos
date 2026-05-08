@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import StatCard from '../components/ui/StatCard';
 import PerformanceBar from '../components/ui/PerformanceBar';
 import CourseBarChart from '../components/dashboard/courses/CourseBarChart';
-import StudentGradeLineChart from '../components/health/StudentGradeLineChart';
-import HealthLegend from '../components/health/HealthLegend';
+import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
 import { AlertOctagon, Users, Percent} from 'lucide-react';
 import { teacherService } from "../services/teacherService"; 
 import { courseService } from "../services/courseService";
@@ -16,13 +15,15 @@ const SaludCarrera: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const facultyId = user?.faculty_id;
+  const semesterId = user?.semester_id;
 
- useEffect(() => {
-    if (facultyId) {
+  useEffect(() => {
+    // Usamos semesterId! para evitar el error de TypeScript
+    if (facultyId && semesterId) {
       setLoading(true);
       Promise.all([
         teacherService.getTeachersStats(facultyId, 1),
-        courseService.getTopCourses(facultyId, user.semester_id)
+        courseService.getTopCourses(facultyId, semesterId)
       ])
         .then(([teachersData, coursesData]) => {
           setTeachers(teachersData?.teachers || []);
@@ -31,7 +32,7 @@ const SaludCarrera: React.FC = () => {
         .catch((err) => console.error("Error cargando salud de carrera:", err))
         .finally(() => setLoading(false));
     }
-  }, [facultyId]);
+  }, [facultyId, semesterId]);
 
   const stats = useMemo(() => {
     const excellentCourses = courses.filter(c => (parseFloat(c.average_rating) || 0) >= 65).length;
@@ -55,7 +56,7 @@ const SaludCarrera: React.FC = () => {
         <h1 className="text-5xl font-black text-white tracking-tighter uppercase">
           Salud de la carrera
         </h1>
-        <p className="text-gray-500 font-medium mt-1 uppercase text-[10px] tracking-widest">
+        <p className="text-gray-500 font-bold mt-4 uppercase text-[10px] tracking-[0.4em] ml-1">
           Estado Académico — {user?.faculty_name || "Facultad"}
         </p>
       </header>
@@ -64,7 +65,7 @@ const SaludCarrera: React.FC = () => {
         <StatCard 
           title="Excelencia" 
           value={`${stats.teacherPerc}%`} 
-          description="sobre 85 pts"
+          description="sobre 65 pts"
           icon={<Percent size={20} className="text-yellow-400" />} 
         />
         <StatCard 
@@ -81,54 +82,47 @@ const SaludCarrera: React.FC = () => {
         />
       </div>
 
-      <section className="glass-card p-8 relative overflow-hidden group">
+      <section className="bg-[#11141d]/50 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-xl relative overflow-hidden group">
         <div className="absolute top-0 left-0 w-64 h-64 bg-yellow-400/[0.02] blur-[100px] rounded-full -ml-32 -mt-32 pointer-events-none" />
 
         <div className="relative z-10 flex justify-between items-center mb-10">
           <div className="flex items-center gap-4">
-            <div className="w-1.5 h-8 bg-yellow-400 rounded-full" />
+            <div className="w-1.5 h-8 bg-yellow-400 rounded-full shadow-[0_0_15px_rgba(250,204,21,0.3)]" />
             <div>
               <h2 className="text-lg font-black text-white tracking-tight uppercase">
                 Indicadores de desempeño
               </h2>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">
-                Calidad académica global de la facultad, mayor a 65
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">
+                Calidad académica global de la facultad
               </p>
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 px-5 py-2 rounded-full text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+          <div className="bg-yellow-400/10 border border-yellow-400/20 px-5 py-2 rounded-full text-[10px] font-black text-yellow-400 uppercase tracking-[0.2em]">
             {loading ? "Sincronizando..." : "Métricas Actualizadas"}
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
           <PerformanceBar 
-            label="Excelencia Docente " 
+            label="Excelencia Docente" 
             percentage={stats.teacherPerc} 
           />
         </div>
       </section>
 
+      
       <div className="grid grid-cols-1 gap-8">
+     
         <div className="bg-[#11141d]/50 border border-white/5 p-0 rounded-[2.5rem] overflow-hidden">
           {!loading && <CourseBarChart courses={courses} />}
         </div>
 
-        <div className="bg-[#11141d]/50 border border-white/5 p-8 rounded-[2.5rem]">
-          <h3 className="text-sm font-black text-gray-500 tracking-widest mb-8 text-center uppercase">
-            Calificación promedio histórica
-          </h3>
-          <StudentGradeLineChart />
-        </div>
+          
+          <HistoryTrend facultyId={facultyId} />
+
       </div>
 
-      <footer className="pt-10 border-t border-white/5">
-        <div className="bg-[#11141d]/50 border border-white/5 p-8 rounded-[2.5rem]">
-            <h2 className="text-lg font-bold text-white tracking-tight mb-6 uppercase">Recomendaciones y acciones </h2>
-          <HealthLegend />
-        </div>
-      </footer>
     </div>
   );
 };
