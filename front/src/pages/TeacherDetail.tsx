@@ -3,16 +3,15 @@ import teachers from "../data/teachers";
 import Header from "../components/teacherDetail/Header";
 import StatsCards from "../components/teacherDetail/StatsCards";
 import Tabs from "../components/teacherDetail/Tabs";
-import RadarChartComp from "../components/teacherDetail/charts/RadarChart";
+import TrainingRadarChart from "../components/teacherDetail/charts/RadarChart";
 import SemesterRatings from "../components/teacherDetail/SemesterRatings";
 import CoursesList from "../components/teacherDetail/CoursesList";
 import { useState, useEffect } from "react";
 import ComentariosTab from "../components/teacherDetail/CommentsSection";
 import Recommendations from "../components/teacherDetail/Recommendations";
-import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
+import PerformanceScatter from "../components/dashboard/charts/PerformanceScatter";
 import { teacherService } from "../services/teacherService";
 import type { Courses } from "../types/teacher";
-import { useAuth } from "../context/AuthContext";
 import { Loader2 } from "lucide-react";
 
 export default function TeacherDetail() {
@@ -22,8 +21,8 @@ export default function TeacherDetail() {
   const [teacherAPI, setTeacherAPI] = useState<any>(null);
   const [courses, setCourses] = useState<Courses[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const facultyId = user?.faculty_id;
+
+
   
   const teacherLocal = teachers.find((t) => t.id === id);
 
@@ -98,9 +97,9 @@ export default function TeacherDetail() {
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="grid lg:grid-cols-2 gap-6">
               
-                <HistoryTrend facultyId={facultyId}/>
+                <PerformanceScatter teacherId={id!}/>
               
-                <RadarChartComp />
+                <TrainingRadarChart teacherId={id!} />
             
             </div>
 

@@ -59,3 +59,10 @@ export interface TeacherProfileAnalysis {
   teacher: number;
   semester: number;
 }
+
+export interface TeacherWorkload {
+  teacher_id: number;
+  teacher_name: string;
+  total_credits: number;
+  avg_score: number | null;
+}

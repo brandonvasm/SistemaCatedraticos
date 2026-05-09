@@ -8,13 +8,13 @@ import CoursesView from "../pages/CoursesView";
 import CourseDetailView from "../pages/CourseDetailView";
 import { ProtectedRoute } from "../ProtectedRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import SaludCarrera from "../pages/CareerHealth";
 import Settings from "../pages/Settings";
 import Recommendations from "../pages/Recommendations";
 import GlobalActionsView from "../pages/GlobalActionsView";
 import ReportsView from "../pages/ReportsView";
 import NotificationsView from "../pages/NotificationsView"
 import DataHistory from "../pages/DataHistory";
+import SaludFacultad from "../pages/FacultyHealth";
 
 export default function AppRouter() {
   return (
@@ -40,7 +40,7 @@ export default function AppRouter() {
             <Route path="/cursos" element={<CoursesView />} />
             <Route path="/cursos/:id" element={<CourseDetailView />} />
 
-            <Route path="/salud" element={<SaludCarrera />} />
+            <Route path="/salud" element={<SaludFacultad />} />
 
             <Route path="/recomendaciones" element={<Recommendations />} />
 

@@ -37,7 +37,7 @@ const menu = [
     path: "/cursos" 
   },
   {
-    name: "Salud de la carrera",
+    name: "Salud de la Facultad",
     icon: Activity,
     path: "/salud" 
   },

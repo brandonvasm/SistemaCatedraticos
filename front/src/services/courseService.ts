@@ -16,15 +16,21 @@ export const courseService = {
     }
   },
 
-  getCourses: async () => {
-    try {
-      const response = await api.get(`/academics/courses/`);
-      return response.data.courses; 
-    } catch (error) {
-      console.error("Error fetching courses list:", error);
-      return [];
-    }
-  },
+  getCourses: async (page = 1, pageSize = 8) => {
+  try {
+    const response = await api.get(`/academics/courses/`, {
+      params: { 
+        page,
+        page_size: pageSize 
+      }
+    });
+    
+    return response.data; 
+  } catch (error) {
+    console.error("Error fetching courses list:", error);
+    return { count: 0, results: [] };
+  }
+},
 
   getCourseDetail: async (id: string | number) => {
     try {

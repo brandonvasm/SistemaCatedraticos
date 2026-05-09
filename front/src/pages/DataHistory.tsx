@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, Calendar, AlertCircle, Search, Loader2, RefreshCw, Trash2, PlayCircle } from 'lucide-react';
 import { fileService } from '../services/fileService';
+import { useAuth } from '../context/AuthContext'; 
 import ConfirmDeleteModal from '../components/common/ConfirmDelete';
 import type { UploadedFile } from '../types/files';
 
 export default function DataHistory() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,10 +17,18 @@ export default function DataHistory() {
   const [showConfirm, setShowConfirm] = useState<{ id: number, name: string } | null>(null);
 
   const fetchFiles = useCallback(async (showFullLoader = true) => {
+    if (!user) return;
+
     try {
       if (showFullLoader) setIsLoading(true);
       else setIsRefreshing(true);
-      const data = await fileService.getAllFiles();
+
+      const filters = {
+         semester: user.semester_id,
+        
+      };
+
+      const data = await fileService.getAllFiles(filters);
       setFiles(data);
     } catch (error) {
       console.error(error);
@@ -26,7 +36,7 @@ export default function DataHistory() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [user]); 
 
   useEffect(() => {
     fetchFiles();
@@ -102,9 +112,11 @@ export default function DataHistory() {
           <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none ">
             HISTORIAL DE DATOS
           </h1>
-          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mt-4 ml-1">
-            REGISTRO DE EXCEL 
-          </p>
+          <div className="flex items-center gap-3 mt-4 ml-1">
+            <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em]">
+                REGISTROS DE ARCHIVOS 
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -192,7 +204,6 @@ export default function DataHistory() {
                     </td>
                     <td className="p-8">
                       <div className="flex items-center justify-end gap-3">
-                        {/* BOTÓN DE PROCESAR: Solo si no está procesado */}
                         {!file.processed && (
                           <button 
                             onClick={() => handleProcess(file.id)}

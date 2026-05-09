@@ -4,12 +4,12 @@ import StatsSection from "../components/dashboard/stats/StatsSection"
 import TeachersGrid from "../components/dashboard/stats/TeachersGrid"
 import RankingCard from "../components/dashboard/stats/RankingCard";
 import ThresholdCard from "../components/dashboard/stats/ThresholdCard";
-import PerformanceScatter from "../components/dashboard/charts/PerformanceScatter";
 import ImportModal from "../components/common/ImportModal";
+import SuccessNotification from "../components/common/SuccessNotification"; 
 import { useAuth } from "../context/AuthContext";
 import { teacherService } from "../services/teacherService";
 import { courseService } from "../services/courseService"; 
-import { Award, AlertCircle, FileUp, ArrowRight, Loader2 } from "lucide-react"; 
+import { Award, AlertCircle, FileUp, ArrowRight} from "lucide-react"; 
 import type { TeacherStats } from "../types/teacher";
 
 export default function Dashboard() {
@@ -35,7 +35,6 @@ export default function Dashboard() {
           setTeachers(teachersData.teachers || []);           
           setTeachersGrid(teachersData.teachers_paginated || []);
           setTotalDocentes(teachersData.count || 0);
-         
         })
         .catch(err => console.error("Error en dashboard:", err))
         .finally(() => setLoading(false));
@@ -65,6 +64,8 @@ export default function Dashboard() {
   return (
     <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
       
+      <SuccessNotification />
+
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-tight">Dashboard General</h1>
@@ -124,21 +125,6 @@ export default function Dashboard() {
         <RankingCard title="Mejores Valorados" icon={Award} color="green" teachers={topTeachers} />
         <ThresholdCard teachers={teachers}/>
         <RankingCard title="Requieren Atención" icon={AlertCircle} color="red" teachers={alertTeachers} />
-      </section>
-
-      <section className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-2">
-          {!loading && facultyId ? (
-            <PerformanceScatter facultyId={facultyId} />
-          ) : (
-            <div className="bg-[#1e2230]/60 border border-white/5 rounded-[2.5rem] p-8 h-[450px] flex flex-col items-center justify-center space-y-4">
-              <Loader2 className="w-10 h-10 text-yellow-400 animate-spin" />
-              <p className="text-gray-500 font-black text-[10px] uppercase tracking-[0.3em]">
-                Cargando indicadores de desempeño...
-              </p>
-            </div>
-          )}
-        </div>
       </section>
 
       <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
