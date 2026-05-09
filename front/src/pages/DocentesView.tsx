@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Filters } from "../components/dashboard/Filters";
 import { TeachersTable } from "../components/dashboard/TeachersTable";
 import { useAuth } from "../context/AuthContext";
-import CourseBarChart from "../components/dashboard/courses/CourseBarChart";
 import PerformancePie from "../components/dashboard/charts/PerformancePie";
 import { teacherService } from "../services/teacherService";
 import { courseService } from "../services/courseService"; 
@@ -11,7 +10,6 @@ import type { TeacherStats } from "../types/teacher";
 export default function DocentesViews() {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [teachersData, setTeachersData] = useState<TeacherStats[]>([]);
-  const [topCourses, setTopCourses] = useState([]);
   const { user } = useAuth();
 
   const facultyId = user?.faculty_id;
@@ -23,9 +21,9 @@ export default function DocentesViews() {
         teacherService.getTeachersStats(facultyId, 1),
         courseService.getTopCourses(facultyId, semesterId!)
       ])
-        .then(([teachersRes, coursesRes]) => {
+        .then(([teachersRes]) => {
           setTeachersData(teachersRes.teachers || []);
-          setTopCourses(coursesRes || []);
+  
         })
         .catch(err => console.error("Error cargando analítica:", err));
     }
@@ -46,10 +44,7 @@ export default function DocentesViews() {
         </div>
       </header>
 
-      <div className="grid grid-cols-2 lg:grid-cols-2 gap-8">
-
-          <CourseBarChart courses={topCourses} />
-
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
 
           <PerformancePie teachers={teachersData} />
 

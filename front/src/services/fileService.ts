@@ -2,11 +2,18 @@ import api from '../api/axios';
 import type { UploadedFile, DownloadResponse } from '../types/files';
 
 export const fileService = {
-  getAllFiles: async (): Promise<UploadedFile[]> => {
-    const response = await api.get<UploadedFile[]>('/files/');
+  getAllFiles: async (filters?: { 
+    faculty?: number; 
+    format?: string; 
+    semester?: number; 
+    user?: number 
+  }): Promise<UploadedFile[]> => {
+    const response = await api.get<UploadedFile[]>('/files/', { 
+      params: filters 
+    });
     return Array.isArray(response.data) ? response.data : [];
   },
-
+  
   getDownloadUrl: async (fileId: number): Promise<string> => {
     const response = await api.get<DownloadResponse>(`/files/${fileId}/download/`);
     return response.data.download_url;
@@ -26,37 +33,27 @@ export const fileService = {
     });
   },
 
-  uploadFile: async (file: File, format: string): Promise<UploadedFile> => {
+  uploadFile: async (
+    file: File, 
+    format: string, 
+    semesterId: number, 
+    userId: number,
+    facultyId: number
+  ): Promise<UploadedFile> => {
     const formData = new FormData();
-    const userId = localStorage.getItem("user_id");
-    const userDataRaw = localStorage.getItem("user_data");
-    
-    let facultyId = 1;
-    if (userDataRaw) {
-      try {
-        const userData = JSON.parse(userDataRaw);
-        const rawFacultyId = userData.faculty_id ?? userData.faculty?.id ?? userData.faculty;
-        const parsedFacultyId = Number(rawFacultyId);
-        facultyId = Number.isFinite(parsedFacultyId) && parsedFacultyId > 0 ? parsedFacultyId : 1;
-      } catch (e) {
-        console.error(e);
-      }
-    }
 
     const metadata = JSON.stringify({
       format: format,
-      semester: 1,
+      semester: semesterId,
       faculty: facultyId,
-      user: userId ? parseInt(userId) : null
+      user: userId
     });
 
     formData.append("file", file);
     formData.append("data", metadata);
 
     const response = await api.post<UploadedFile>('/files/', formData, {
-      headers: { 
-        'Content-Type': 'multipart/form-data'
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
       withCredentials: true
     });
 

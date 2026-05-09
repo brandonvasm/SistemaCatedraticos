@@ -370,94 +370,102 @@ class TeacherStatsListView(APIView):
     )
     def get(self, request):
         faculty_id = request.user.faculty_id_id
-        page_number = request.query_params.get("page", 1)
         if not faculty_id:
             return Response(
                 {"error": "El usuario no tiene facultad asignada"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        cache_key = f"teacher_stats_fac_{faculty_id}_p{page_number}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
-            return Response(cached_response)
+    
+        cache_key = f"teacher_stats_full_data_fac_{faculty_id}"
+        cached_data = cache.get(cache_key)
 
-        promedio_global_facultad = StudentEvaluation.objects.filter(
-            course_section__semester__faculty_id=faculty_id
-        ).aggregate(m=Avg("score"))["m"] or 0.0
+        if not cached_data:
+            promedio_global_facultad = StudentEvaluation.objects.filter(
+                course_section__semester__faculty_id=faculty_id
+            ).aggregate(m=Avg("score"))["m"] or 0.0
 
-        teachers_qs = Teacher.objects.filter(
-            contract__faculty_id=faculty_id,
-            contract__is_active=True
-        ).distinct().order_by('id')
+            teachers_qs = Teacher.objects.filter(
+                contract__faculty_id=faculty_id,
+                contract__is_active=True
+            ).distinct().order_by('id')
 
+            eval_subquery = StudentEvaluation.objects.filter(
+                course_section__teacher_id=OuterRef("pk"),
+                course_section__semester__faculty_id=faculty_id
+            ).values("course_section__teacher_id").annotate(
+                avg_score=Avg("score"),
+                total=Count("id")
+            )
 
-        eval_subquery = StudentEvaluation.objects.filter(
-            course_section__teacher_id=OuterRef("pk"),
-            course_section__semester__faculty_id=faculty_id
-        ).values("course_section__teacher_id").annotate(
-            avg_score=Avg("score"),
-            total=Count("id")
-        )
+            teachers_annotated = teachers_qs.annotate(
+                promedio=Coalesce(Subquery(eval_subquery.values("avg_score")[:1]), 0.0),
+                total_evals=Coalesce(Subquery(eval_subquery.values("total")[:1]), 0),
+            )
 
-        teachers_annotated = teachers_qs.annotate(
-            promedio=Coalesce(Subquery(eval_subquery.values("avg_score")[:1]), 0.0),
-            total_evals=Coalesce(Subquery(eval_subquery.values("total")[:1]), 0),
-        )
+            cursos_qs = CourseSection.objects.select_related("course").filter(
+                semester__faculty_id=faculty_id
+            ).values("teacher_id", "course__name").distinct()
+            
+            cursos_map = {}
+            for c in cursos_qs:
+                cursos_map.setdefault(c["teacher_id"], []).append(c["course__name"])
 
-   
-        cursos_qs = CourseSection.objects.select_related("course").filter(
-            semester__faculty_id=faculty_id
-        ).values("teacher_id", "course__name").distinct()
+            history_qs = TeacherCourseHistory.objects.filter(
+                semester__faculty_id=faculty_id
+            ).values("teacher_id", "semester_id").annotate(
+                avg_score=Avg("student_score")
+            ).order_by("teacher_id", "-semester_id")
+
+            history_map = {}
+            for h in history_qs:
+                history_map.setdefault(h["teacher_id"], []).append(h)
+
+            all_teachers_data = []
+            for teacher in teachers_annotated:
+                historico = history_map.get(teacher.id, [])[:2]
+                tendencia = 0.0
+                if len(historico) == 2 and historico[1]["avg_score"] > 0:
+                    tendencia = ((historico[0]["avg_score"] - historico[1]["avg_score"]) / historico[1]["avg_score"]) * 100
+
+                recomendado = 0.0
+                if promedio_global_facultad > 0 and teacher.promedio > 0:
+                    recomendado = ((teacher.promedio - promedio_global_facultad) / promedio_global_facultad) * 100
+
+                all_teachers_data.append({
+                    "teacher_id": teacher.id,
+                    "teacher_name": teacher.name,
+                    "cursos_impartidos": cursos_map.get(teacher.id, []),
+                    "promedio_general": round(teacher.promedio, 2),
+                    "tendencia_mejora": f"{round(tendencia, 2)}%",
+                    "evaluaciones_total": teacher.total_evals,
+                    "recomendado_vs_otros": f"{round(recomendado, 2)}%" if teacher.promedio > 0 else "Sin datos"
+                })
+
+            cached_data = {
+                "all_teachers_data": all_teachers_data,
+                "promedio_global": promedio_global_facultad
+            }
+            cache.set(cache_key, cached_data, 600) 
         
-        cursos_map = {}
-        for c in cursos_qs:
-            cursos_map.setdefault(c["teacher_id"], []).append(c["course__name"])
+        all_teachers_data = cached_data["all_teachers_data"]
+        promedio_global_facultad = cached_data["promedio_global"]
 
-        history_qs = TeacherCourseHistory.objects.filter(
-            semester__faculty_id=faculty_id
-        ).values("teacher_id", "semester_id").annotate(
-            avg_score=Avg("student_score")
-        ).order_by("teacher_id", "-semester_id")
-
-        history_map = {}
-        for h in history_qs:
-            history_map.setdefault(h["teacher_id"], []).append(h)
-
-        all_teachers_data = []
-        for teacher in teachers_annotated:
-            historico = history_map.get(teacher.id, [])[:2]
-            tendencia = 0.0
-            if len(historico) == 2 and historico[1]["avg_score"] > 0:
-                tendencia = ((historico[0]["avg_score"] - historico[1]["avg_score"]) / historico[1]["avg_score"]) * 100
-
-            recomendado = 0.0
-            if promedio_global_facultad > 0 and teacher.promedio > 0:
-                recomendado = ((teacher.promedio - promedio_global_facultad) / promedio_global_facultad) * 100
-
-            all_teachers_data.append({
-                "teacher_id": teacher.id,
-                "teacher_name": teacher.name,
-                "cursos_impartidos": cursos_map.get(teacher.id, []),
-                "promedio_general": round(teacher.promedio, 2),
-                "tendencia_mejora": f"{round(tendencia, 2)}%",
-                "evaluaciones_total": teacher.total_evals,
-                "recomendado_vs_otros": f"{round(recomendado, 2)}%" if teacher.promedio > 0 else "Sin datos"
-            })
-
-       
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(all_teachers_data, request)
         
-        response_data = {
-            "count": len(all_teachers_data),
+        response = paginator.get_paginated_response(page)
+
+        final_data = {
+            "count": response.data["count"],
+            "next": response.data["next"],
+            "previous": response.data["previous"],
             "teachers": all_teachers_data, 
-            "teachers_paginated": page if page is not None else all_teachers_data[:8],
+            "teachers_paginated": response.data["results"], 
             "promedio_global_facultad": round(promedio_global_facultad, 2)
         }
 
-        cache.set(cache_key, response_data, 600) 
-        return Response(response_data)
+        return Response(final_data)
       
 class FacultyHistoricalView(APIView):
     permission_classes = [IsAuthenticated]

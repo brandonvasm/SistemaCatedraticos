@@ -1,17 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Download, Search, School, CalendarDays } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { semesterService } from "../../services/semesterService";
 import ExportModal from "../common/ExportModal";
 import NotificationsDrawer from "../notifications/NotificationsDrawer";
+import CloseSemesterModal from "../common/CloseSemesterModal";
 
 export default function Navbar() {
   const { user } = useAuth();
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [semester, setSemester] = useState<any>(null);
+
+  useEffect(() => {
+    semesterService.getCurrentSemester()
+      .then(setSemester)
+      .catch(err => console.error("Error cargando semestre", err));
+  }, []);
 
   const currentFacultad = user?.faculty_name || "Sin Facultad";
-  const userRole = user?.role || localStorage.getItem("user_role")?.toLowerCase().trim();
-  const currentSemestre = "2024-1";
+  const userRole = user?.role || "Personal";
 
   return (
     <>
@@ -30,39 +39,47 @@ export default function Navbar() {
 
         <div className="flex items-center gap-6">
           
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-white/[0.05] border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-xl shadow-xl">
+          <div className="hidden lg:flex items-center gap-3 px-4 py-2.5 bg-white/[0.05] border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-xl">
             <School size={12} className="text-yellow-400" />
             <span>{currentFacultad}</span>
           </div>
 
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-white/[0.05] border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-xl shadow-xl">
-            <CalendarDays size={12} className="text-yellow-400" />
-            <span>{currentSemestre}</span>
-          </div>
+          <button 
+            onClick={() => setIsCloseModalOpen(true)}
+            className="group relative flex items-center gap-4 px-5 py-2 bg-white/[0.03] border border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white backdrop-blur-xl hover:border-red-500/30 transition-all active:scale-95"
+          >
+            <div className="flex flex-col items-start leading-none gap-1">
+              <span className="text-[7px] text-gray-500 group-hover:text-red-400 transition-colors">SEMESTRE ACTUAL</span>
+              <span className="flex items-center gap-2 ">
+                <CalendarDays size={15} className="text-yellow-400" />
+                {semester ? `${semester.year}-${semester.number}` : "Cargando..."}
+              </span>
+            </div>
+          </button>
 
           <button 
             onClick={() => setIsExportOpen(true)} 
-            className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-yellow-500 transition-all shadow-lg shadow-yellow-400/10 border-none"
+            className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-yellow-500 transition-all shadow-lg shadow-yellow-400/10"
           >
             <Download size={12} /> EXPORTAR
           </button>
 
-          <div onClick={() => setIsNotificationsOpen(true)} className="relative cursor-pointer group p-1.5">
+          <div onClick={() => setIsNotificationsOpen(true)} className="relative cursor-pointer group p-1.5 ml-2">
             <Bell size={20} className="text-gray-400 group-hover:text-white transition-colors" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#0b101f]" />
           </div>
           
-          <div className="flex items-center gap-3 pl-6 border-l border-white/10">
+          <div className="flex items-center gap-4 pl-6 border-l border-white/10">
             <div className="text-right">
-              <p className="text-white text-[10px] font-bold tracking-tight leading-none uppercase">
+              <p className="text-white text-[10px] font-black tracking-tight leading-none uppercase">
                 {user?.username || "Usuario"}
               </p>
-              <p className="text-yellow-400/70 text-[8px] uppercase font-bold tracking-[0.2em] mt-1">
-                {userRole || "Personal"}
+              <p className="text-yellow-400/70 text-[8px] uppercase font-bold tracking-[0.2em] mt-1 italic">
+                {userRole}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-300 to-yellow-600 text-black flex items-center justify-center font-black text-xs uppercase shadow-lg shadow-yellow-500/10">
-              {(user?.username || "U").substring(0, 2)}
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-yellow-300 to-yellow-600 text-black flex items-center justify-center font-black text-xs shadow-xl">
+              {(user?.username || "U").substring(0, 2).toUpperCase()}
             </div>
           </div>
         </div>
@@ -70,6 +87,12 @@ export default function Navbar() {
 
       <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
       <NotificationsDrawer isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
+      
+      <CloseSemesterModal 
+        isOpen={isCloseModalOpen} 
+        onClose={() => setIsCloseModalOpen(false)}
+        currentSemester={semester}
+      />
     </>
   );
 }

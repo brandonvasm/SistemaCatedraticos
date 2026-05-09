@@ -1,5 +1,6 @@
 import api from "../api/axios";
-import type { Courses, TeacherStatsResponse, TeacherProfileAnalysis } from "../types/teacher";
+import type { Courses, TeacherStatsResponse, TeacherProfileAnalysis, TeacherWorkload } from "../types/teacher";
+import type { TrainingHourRecord } from "../types/traininghour";
 
 
 export const teacherService = {
@@ -45,15 +46,16 @@ export const teacherService = {
     }
   },
 
-  getTeacherWorkload: async (facultyId: number) => {
+  getTeacherWorkload: async (teacherId: string | number): Promise<TeacherWorkload[]> => {
     try {
-      const response = await api.get(`/academics/teachers/workload/`, {
-        params: { faculty: facultyId }
+      const response = await api.get<TeacherWorkload>(`/academics/teachers/workload/`, {
+        params: { teacher_id: teacherId }
       });
-      return response.data; 
+      
+      return response.data ? [response.data] : [];
     } catch (error) {
       console.error("Error en getTeacherWorkload:", error);
-      throw error;
+      return [];
     }
   },
 
@@ -89,7 +91,19 @@ export const teacherService = {
   getTeacherAnalysis: async (id: number) => {
   const response = await api.get(`/analytics/teacher-profile-analysis/${id}/`);
   return response.data;
-}
+},
+
+getTrainingHours: async (teacherId: number): Promise<TrainingHourRecord[]> => {
+    try {
+      const response = await api.get<TrainingHourRecord[]>(
+        `/evaluations/training-hours/${teacherId}/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Error en getTrainingHours (${teacherId}):`, error);
+      return [];
+    }
+  }
 
 
 

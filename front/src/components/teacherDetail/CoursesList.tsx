@@ -1,3 +1,5 @@
+import { useRef, useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Courses } from "../../types/teacher";
 
 interface Props {
@@ -6,7 +8,33 @@ interface Props {
 }
 
 export default function CoursesList({ courses, isLoading }: Props) {
-  
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showControls, setShowControls] = useState({ left: false, right: false });
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollTo = direction === "left" ? scrollLeft - clientWidth / 1.5 : scrollLeft + clientWidth / 1.5;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
+    }
+  };
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowControls({
+        left: scrollLeft > 10,
+        right: scrollLeft < scrollWidth - clientWidth - 10,
+      });
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
+  }, [courses, isLoading]);
+
   if (isLoading) {
     return (
       <div className="p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-xl">
@@ -25,17 +53,39 @@ export default function CoursesList({ courses, isLoading }: Props) {
   };
 
   return (
-    <div className="p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-xl">
-      <div className="mb-6">
-        <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
-          CURSOS
-        </h2>
-        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
-          DESEMPEÑO POR CURSO
-        </p>
+    <div className="p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-xl relative overflow-hidden">
+      <div className="mb-6 flex justify-between items-end">
+        <div>
+          <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
+            CURSOS
+          </h2>
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
+            DESEMPEÑO POR CURSO
+          </p>
+        </div>
+
+        <div className="flex gap-1 mb-1">
+          <button
+            onClick={() => scroll("left")}
+            className={`p-2 transition-all ${showControls.left ? "text-white opacity-100 hover:scale-110" : "text-white/10 opacity-0 pointer-events-none"}`}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className={`p-2 transition-all ${showControls.right ? "text-white opacity-100 hover:scale-110" : "text-white/10 opacity-0 pointer-events-none"}`}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div 
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="flex overflow-x-auto gap-5 pb-4 no-scrollbar snap-x"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {courses.length > 0 ? (
           courses.map((course) => {
             const status = getStatus(course.score);
@@ -44,6 +94,7 @@ export default function CoursesList({ courses, isLoading }: Props) {
               <div
                 key={course.id}
                 className="
+                  min-w-[300px] sm:min-w-[340px] snap-start
                   bg-[#0f111a]/50
                   border border-white/10
                   p-5
@@ -78,7 +129,7 @@ export default function CoursesList({ courses, isLoading }: Props) {
             );
           })
         ) : (
-          <div className="col-span-full py-10 text-center border border-dashed border-white/10 rounded-3xl">
+          <div className="w-full py-10 text-center border border-dashed border-white/10 rounded-3xl">
              <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">
                No hay cursos registrados en el historial
              </p>

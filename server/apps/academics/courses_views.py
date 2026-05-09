@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +13,11 @@ from .models import Course, CourseSection
 from .serializers import CourseListResponseSerializer
 
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 8
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class CourseListView(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsSysAdminOrCoordinator]
@@ -22,8 +27,11 @@ class CourseListView(APIView):
         responses={200: CourseListResponseSerializer},
     )
     def get(self, request):
-        courses = list(Course.objects.filter(cost_center__faculty=request.user.faculty_id)
-                       .select_related('cost_center'))
+        queryset = Course.objects.filter(
+            cost_center__faculty=request.user.faculty_id
+        ).select_related('cost_center').order_by('id')
+        
+        courses = list(queryset)
         course_ids = [c.id for c in courses]
 
         sections = CourseSection.objects.filter(
@@ -67,7 +75,17 @@ class CourseListView(APIView):
                 }
             )
 
-        return Response({"total": len(courses_data), "courses": courses_data})
+        page_param = request.query_params.get('page')
+        
+        if page_param:
+            paginator = StandardResultsSetPagination()
+            paginated_data = paginator.paginate_queryset(courses_data, request)
+            return paginator.get_paginated_response(paginated_data)
+
+        return Response({
+            "total": len(courses_data), 
+            "courses": courses_data
+        })
     
 class CourseDetailView(APIView):
     authentication_classes = [CookieJWTAuthentication]

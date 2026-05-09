@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import StatCard from '../components/ui/StatCard';
 import PerformanceBar from '../components/ui/PerformanceBar';
-import CourseBarChart from '../components/dashboard/courses/CourseBarChart';
 import HistoryTrend from "../components/dashboard/charts/HistoryTrend";
+import CareerStatsChart from '../components/health/CareerStatsChart';
 import { AlertOctagon, Users, Percent} from 'lucide-react';
 import { teacherService } from "../services/teacherService"; 
 import { courseService } from "../services/courseService";
 import { useAuth } from "../context/AuthContext";
 
-const SaludCarrera: React.FC = () => {
+const SaludFacultad: React.FC = () => {
   const { user } = useAuth();
   const [courses, setCourses] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -18,7 +18,6 @@ const SaludCarrera: React.FC = () => {
   const semesterId = user?.semester_id;
 
   useEffect(() => {
-    // Usamos semesterId! para evitar el error de TypeScript
     if (facultyId && semesterId) {
       setLoading(true);
       Promise.all([
@@ -54,7 +53,7 @@ const SaludCarrera: React.FC = () => {
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
       <header>
         <h1 className="text-5xl font-black text-white tracking-tighter uppercase">
-          Salud de la carrera
+          Salud de la Facultad
         </h1>
         <p className="text-gray-500 font-bold mt-4 uppercase text-[10px] tracking-[0.4em] ml-1">
           Estado Académico — {user?.faculty_name || "Facultad"}
@@ -111,20 +110,14 @@ const SaludCarrera: React.FC = () => {
         </div>
       </section>
 
-      
-      <div className="grid grid-cols-1 gap-8">
-     
-        <div className="bg-[#11141d]/50 border border-white/5 p-0 rounded-[2.5rem] overflow-hidden">
-          {!loading && <CourseBarChart courses={courses} />}
-        </div>
-
-          
-          <HistoryTrend facultyId={facultyId} />
-
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {!loading && <CareerStatsChart />}
+        
+        <HistoryTrend facultyId={facultyId} />
       </div>
 
     </div>
   );
 };
 
-export default SaludCarrera;
+export default SaludFacultad;

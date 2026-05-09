@@ -2,6 +2,7 @@ import CourseRow from "./CourseRow";
 import { useEffect, useState } from "react";
 import { courseService } from "../../services/courseService";
 import type { CourseTable } from "../../types/courseTable";
+import { ChevronLeft, ChevronRight, Search, Filter, ArrowUpDown } from "lucide-react";
 
 export default function CoursesTable() {
   const [search, setSearch] = useState("");
@@ -10,13 +11,17 @@ export default function CoursesTable() {
   const [courses, setCourses] = useState<CourseTable[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 8;
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const data = await courseService.getCourses();
+        const response = await courseService.getCourses(currentPage, pageSize);
         
-        const mapped = data.map((c: any) => ({
+        const mapped = response.results.map((c: any) => ({
           id: c.id,
           code: c.code,
           name: c.name,
@@ -27,6 +32,7 @@ export default function CoursesTable() {
         }));
 
         setCourses(mapped);
+        setTotalCount(response.count);
       } catch (error) {
         console.error("Error fetching courses:", error);
       } finally {
@@ -35,56 +41,76 @@ export default function CoursesTable() {
     };
 
     fetchCourses();
-  }, []);
-
+  }, [currentPage]);
 
   const filtered = courses.filter((c) => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchCategory = category === "Todos" || c.category === category;
-    
     return matchSearch && matchCategory;
   });
 
   const sorted = [...filtered].sort((a, b) =>
-    order === "asc" ? a.score - b.score : b.score - a.score
+    order === "asc" ? (a.score ?? 0) - (b.score ?? 0) : (b.score ?? 0) - (a.score ?? 0)
   );
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="w-full bg-[#0f111a]/50 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-2xl">
-      <div className="mb-6">
-        <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
-          GESTIÓN DE CURSOS
-        </h2>
-        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
-          EVALUACIÓN · RENDIMIENTO ACADÉMICO
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
+            GESTIÓN DE CURSOS
+          </h2>
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
+            EVALUACIÓN · RENDIMIENTO ACADÉMICO
+          </p>
+        </div>
+
+        <div className="px-5 py-2.5 bg-white/[0.03] rounded-xl border border-white/5 backdrop-blur-md">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+            CURSOS TOTALES: <span className="text-yellow-400 ml-2 text-xs">{totalCount}</span>
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <input
-          type="text"
-          placeholder="BUSCAR CURSO..."
-          className="w-full md:w-72 border-none py-4 px-6 rounded-2xl text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase bg-white/[0.03]"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
+          <input
+            type="text"
+            placeholder="BUSCAR CURSO..."
+            className="w-full border-none py-4 pl-12 pr-6 rounded-2xl text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase bg-white/[0.03] focus:bg-white/[0.05] transition-all"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
 
-        <select
-          className="bg-white/5 border border-white/10 px-6 py-4 rounded-2xl text-gray-400 outline-none cursor-pointer hover:border-yellow-400/20 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[180px]"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          <option value="Todos" className="bg-[#0b101f] text-gray-300">Todas las Áreas</option>
-        </select>
+        <div className="relative">
+          <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
+          <select
+            className="appearance-none bg-white/5 border border-white/10 pl-12 pr-10 py-4 rounded-2xl text-gray-400 outline-none cursor-pointer hover:border-white/20 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[200px]"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="Todos" className="bg-[#0b101f]">Todas las Áreas</option>
+          </select>
+        </div>
 
-        <select
-          className="bg-white/5 border border-white/10 px-6 py-4 rounded-2xl text-gray-400 outline-none cursor-pointer hover:border-yellow-400/20 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[180px]"
-          value={order}
-          onChange={(e) => setOrder(e.target.value)}
-        >
-          <option value="desc" className="bg-[#0b101f] text-gray-300">Mayor Promedio</option>
-          <option value="asc" className="bg-[#0b101f] text-gray-300">Menor Promedio</option>
-        </select>
+        <div className="relative">
+          <ArrowUpDown className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
+          <select
+            className="appearance-none bg-white/5 border border-white/10 pl-12 pr-10 py-4 rounded-2xl text-gray-400 outline-none cursor-pointer hover:border-white/20 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[200px]"
+            value={order}
+            onChange={(e) => setOrder(e.target.value)}
+          >
+            <option value="desc" className="bg-[#0b101f]">Mayor Promedio</option>
+            <option value="asc" className="bg-[#0b101f]">Menor Promedio</option>
+          </select>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -112,7 +138,7 @@ export default function CoursesTable() {
         {loading && (
           <div className="py-20 flex flex-col items-center gap-4">
             <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Sincronizando...</p>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Sincronizando registros...</p>
           </div>
         )}
 
@@ -121,6 +147,56 @@ export default function CoursesTable() {
             <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Sin registros encontrados</p>
           </div>
         )}
+      </div>
+
+      <div className="mt-8 flex flex-col sm:flex-row items-center justify-center border-t border-white/5 pt-8 gap-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1 || loading}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft size={14} strokeWidth={3} />
+            Anterior
+          </button>
+          
+          <div className="flex items-center gap-2">
+             {[...Array(totalPages)].map((_, i) => {
+               const pageNum = i + 1;
+               if (
+                 pageNum === 1 || 
+                 pageNum === totalPages || 
+                 (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+               ) {
+                 return (
+                   <button
+                     key={pageNum}
+                     onClick={() => setCurrentPage(pageNum)}
+                     className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${
+                       currentPage === pageNum 
+                       ? "bg-yellow-400 text-black shadow-[0_0_20px_rgba(250,204,21,0.3)]" 
+                       : "bg-white/5 text-gray-500 hover:bg-white/10"
+                     }`}
+                   >
+                     {pageNum}
+                   </button>
+                 );
+               } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                 return <span key={pageNum} className="text-gray-700 mx-1">...</span>;
+               }
+               return null;
+             })}
+          </div>
+
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages || loading}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+          >
+            Siguiente
+            <ChevronRight size={14} strokeWidth={3} />
+          </button>
+        </div>
       </div>
     </div>
   );
