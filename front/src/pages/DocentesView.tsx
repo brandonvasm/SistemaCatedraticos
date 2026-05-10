@@ -4,7 +4,7 @@ import { TeachersTable } from "../components/dashboard/TeachersTable";
 import { useAuth } from "../context/AuthContext";
 import PerformancePie from "../components/dashboard/charts/PerformancePie";
 import { teacherService } from "../services/teacherService";
-import { courseService } from "../services/courseService"; 
+import { courseService } from "../services/courseService";
 import type { TeacherStats } from "../types/teacher";
 
 export default function DocentesViews() {
@@ -23,7 +23,7 @@ export default function DocentesViews() {
       ])
         .then(([teachersRes]) => {
           setTeachersData(teachersRes.teachers || []);
-  
+
         })
         .catch(err => console.error("Error cargando analítica:", err));
     }
@@ -31,7 +31,7 @@ export default function DocentesViews() {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
+
       <header className="flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="w-full md:w-auto">
           <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">
@@ -46,21 +46,22 @@ export default function DocentesViews() {
 
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
 
-          <PerformancePie teachers={teachersData} />
+        <PerformancePie teachers={teachersData} />
 
       </div>
 
       <Filters active={activeFilter} setActive={setActiveFilter} />
 
       <div className="glass-card overflow-hidden relative border-white/5 bg-white/[0.01]">
-        <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-        {facultyId ? (
-          <TeachersTable filter={activeFilter} facultyId={facultyId} />
-        ) : (
-          <div className="py-20 text-center text-gray-500 font-black uppercase text-[10px] tracking-[0.5em]">
-            Obteniendo datos de facultad...
-          </div>
-        )}
+        <div className="relative">
+          {facultyId ? (
+            <TeachersTable filter={activeFilter} facultyId={facultyId} />
+          ) : (
+            <div className="py-20 text-center text-gray-500 font-black uppercase text-[10px] tracking-[0.5em]">
+              Obteniendo datos de facultad...
+            </div>
+          )}
+        </div>
       </div>
 
     </div>

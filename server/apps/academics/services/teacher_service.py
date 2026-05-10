@@ -1,7 +1,10 @@
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, OuterRef, Subquery
+from django.db.models.functions import Coalesce
+
 from apps.evaluations.models import StudentEvaluation
 from apps.historical.models import TeacherCourseHistory
-from apps.academics.models import CourseSection
+from apps.academics.models import CourseSection, Teacher
+from apps.academics.models import Contract
 
 
 def get_teachers_stats(faculty_id):
@@ -10,83 +13,76 @@ def get_teachers_stats(faculty_id):
 
     faculty_id = int(faculty_id)
 
-    secciones = CourseSection.objects.filter(
-        course__cost_center__faculty_id=faculty_id
-    ).select_related("teacher", "course")
+    promedio_global_facultad = StudentEvaluation.objects.filter(
+        course_section__semester__faculty_id=faculty_id
+    ).aggregate(m=Avg("score"))["m"] or 0.0
 
-    teacher_map = {}
+    teachers_qs = Teacher.objects.filter(
+        contract__faculty_id=faculty_id,
+        contract__is_active=True
+    ).distinct().order_by("id")
 
-    for s in secciones:
-        if not s.teacher:
-            continue
-
-        t_id = s.teacher.id
-
-        if t_id not in teacher_map:
-            teacher_map[t_id] = {
-                "teacher": s.teacher,
-                "courses": set()
-            }
-
-        if s.course:
-            teacher_map[t_id]["courses"].add(s.course.name)
-
-    promedio_global = (
-        StudentEvaluation.objects.filter(
-            course_section__course__cost_center__faculty_id=faculty_id
-        ).aggregate(m=Avg("score"))["m"] or 0.0
+    eval_subquery = StudentEvaluation.objects.filter(
+        course_section__teacher_id=OuterRef("pk"),
+        course_section__semester__faculty_id=faculty_id
+    ).values("course_section__teacher_id").annotate(
+        avg_score=Avg("score"),
+        total=Count("id")
     )
+
+    teachers_annotated = teachers_qs.annotate(
+        promedio=Coalesce(Subquery(eval_subquery.values("avg_score")[:1]), 0.0),
+        total_evals=Coalesce(Subquery(eval_subquery.values("total")[:1]), 0),
+    )
+
+    cursos_qs = CourseSection.objects.select_related("course").filter(
+        semester__faculty_id=faculty_id
+    ).values("teacher_id", "course__name").distinct()
+
+    cursos_map = {}
+
+    for c in cursos_qs:
+        cursos_map.setdefault(c["teacher_id"], []).append(c["course__name"])
+
+    history_qs = TeacherCourseHistory.objects.filter(
+        semester__faculty_id=faculty_id
+    ).values("teacher_id", "semester_id").annotate(
+        avg_score=Avg("student_score")
+    ).order_by("teacher_id", "-semester_id")
+
+    history_map = {}
+
+    for h in history_qs:
+        history_map.setdefault(h["teacher_id"], []).append(h)
 
     result = []
 
-    for t_id, data in teacher_map.items():
-        teacher = data["teacher"]
-        cursos = list(data["courses"])
-
-        stats = StudentEvaluation.objects.filter(
-            course_section__teacher_id=t_id,
-            course_section__course__cost_center__faculty_id=faculty_id
-        ).aggregate(
-            promedio=Avg("score"),
-            total=Count("id")
-        )
-
-        promedio = stats["promedio"] or 0.0
-        total = stats["total"] or 0
-
-        if total == 0:
-            continue
-
-        historico = (
-            TeacherCourseHistory.objects.filter(
-                teacher_id=t_id,
-                course__cost_center__faculty_id=faculty_id
-            )
-            .values("semester_id")
-            .annotate(avg_score=Avg("student_score"))
-            .order_by("-semester_id")[:2]
-        )
+    for teacher in teachers_annotated:
+        historico = history_map.get(teacher.id, [])[:2]
 
         tendencia = 0.0
+
         if len(historico) == 2 and historico[1]["avg_score"]:
             tendencia = (
                 (historico[0]["avg_score"] - historico[1]["avg_score"])
                 / historico[1]["avg_score"]
             ) * 100
 
-        recomendado = (
-            ((promedio - promedio_global) / promedio_global * 100)
-            if promedio_global > 0 and promedio > 0
-            else 0.0
-        )
+        recomendado = 0.0
+
+        if promedio_global_facultad > 0 and teacher.promedio > 0:
+            recomendado = (
+                (teacher.promedio - promedio_global_facultad)
+                / promedio_global_facultad
+            ) * 100
 
         result.append({
-            "teacher_id": t_id,
+            "teacher_id": teacher.id,
             "teacher_name": teacher.name,
-            "cursos_impartidos": cursos,
-            "promedio_general": round(promedio, 2),
+            "cursos_impartidos": cursos_map.get(teacher.id, []),
+            "promedio_general": round(teacher.promedio, 2),
             "tendencia_mejora": round(tendencia, 2),
-            "evaluaciones_total": total,
+            "evaluaciones_total": teacher.total_evals,
             "recomendado_vs_otros": round(recomendado, 2),
         })
 
