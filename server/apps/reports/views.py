@@ -1,28 +1,65 @@
 from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
+
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import (
+    Font,
+    PatternFill,
+    Alignment,
+    Border,
+    Side,
+)
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
+
 from django.shortcuts import get_object_or_404
 
-from apps.users.infrastructure.authentication import CookieJWTAuthentication
-from apps.users.infrastructure.permissions import IsSysAdminOrCoordinator
+from apps.users.infrastructure.authentication import (
+    CookieJWTAuthentication,
+)
+
+from apps.users.infrastructure.permissions import (
+    IsSysAdminOrCoordinator,
+)
 
 from .models import Notification
 from .serializers import NotificationSerializer
 
-from apps.academics.services.course_service import get_courses_data
-from apps.academics.services.teacher_service import get_teachers_stats
-from apps.users.service.user_service import get_users_data
+from apps.academics.services.course_service import (
+    get_courses_data,
+)
+
+from apps.academics.services.teacher_service import (
+    get_teachers_stats,
+)
+
+from apps.users.service.user_service import (
+    get_users_data,
+)
 
 
 def aplicar_estilos(ws):
-    header_fill = PatternFill(start_color="FFC000", fill_type="solid")
+    header_fill = PatternFill(
+        start_color="FFC000",
+        fill_type="solid"
+    )
+
     header_font = Font(bold=True)
-    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    center = Alignment(
+        horizontal="center",
+        vertical="center",
+        wrap_text=True
+    )
 
     border = Border(
         left=Side(style="thin"),
@@ -48,18 +85,32 @@ def aplicar_estilos(ws):
 
         for cell in col:
             if cell.value:
-                max_length = max(max_length, len(str(cell.value)))
+                max_length = max(
+                    max_length,
+                    len(str(cell.value))
+                )
 
-        ws.column_dimensions[col_letter].width = min(max_length + 5, 40)
+        ws.column_dimensions[col_letter].width = min(
+            max_length + 5,
+            40
+        )
 
 
 def get_faculty_id(request):
-    return getattr(request.user, "faculty_id_id", None)
+    return getattr(
+        request.user,
+        "faculty_id_id",
+        None
+    )
 
 
-@login_required
+@api_view(["GET"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsSysAdminOrCoordinator])
 def reporte_docentes(request):
+
     faculty_id = get_faculty_id(request)
+
     if not faculty_id:
         return HttpResponse(status=403)
 
@@ -67,11 +118,16 @@ def reporte_docentes(request):
 
     wb = Workbook()
     ws = wb.active
+
     ws.title = "Docentes"
 
     ws.append([
-        "Docente", "Cursos", "Promedio",
-        "Tendencia (%)", "Evaluaciones", "Recomendado (%)"
+        "Docente",
+        "Cursos",
+        "Promedio",
+        "Tendencia (%)",
+        "Evaluaciones",
+        "Recomendado (%)"
     ])
 
     for t in data:
@@ -89,15 +145,23 @@ def reporte_docentes(request):
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response["Content-Disposition"] = "attachment; filename=reporte_docentes.xlsx"
+
+    response["Content-Disposition"] = (
+        "attachment; filename=reporte_docentes.xlsx"
+    )
 
     wb.save(response)
+
     return response
 
 
-@login_required
+@api_view(["GET"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsSysAdminOrCoordinator])
 def reporte_cursos(request):
+
     faculty_id = get_faculty_id(request)
+
     if not faculty_id:
         return HttpResponse(status=403)
 
@@ -105,9 +169,16 @@ def reporte_cursos(request):
 
     wb = Workbook()
     ws = wb.active
+
     ws.title = "Cursos"
 
-    ws.append(["Código", "Nombre", "Créditos", "Score", "Trend (%)"])
+    ws.append([
+        "Código",
+        "Nombre",
+        "Créditos",
+        "Score",
+        "Trend (%)"
+    ])
 
     for c in data:
         ws.append([
@@ -123,14 +194,21 @@ def reporte_cursos(request):
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response["Content-Disposition"] = "attachment; filename=reporte_cursos.xlsx"
+
+    response["Content-Disposition"] = (
+        "attachment; filename=reporte_cursos.xlsx"
+    )
 
     wb.save(response)
+
     return response
 
 
-@login_required
+@api_view(["GET"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsSysAdminOrCoordinator])
 def reporte_usuarios(request):
+
     data = sorted(
         get_users_data(),
         key=lambda x: x.get("evaluation_count", 0),
@@ -139,11 +217,17 @@ def reporte_usuarios(request):
 
     wb = Workbook()
     ws = wb.active
+
     ws.title = "Usuarios"
 
     ws.append([
-        "Ranking", "Usuario", "Correo",
-        "Rol", "Facultad", "Evaluaciones", "Estado"
+        "Ranking",
+        "Usuario",
+        "Correo",
+        "Rol",
+        "Facultad",
+        "Evaluaciones",
+        "Estado"
     ])
 
     for i, u in enumerate(data, start=1):
@@ -162,15 +246,23 @@ def reporte_usuarios(request):
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response["Content-Disposition"] = "attachment; filename=reporte_usuarios.xlsx"
+
+    response["Content-Disposition"] = (
+        "attachment; filename=reporte_usuarios.xlsx"
+    )
 
     wb.save(response)
+
     return response
 
 
-@login_required
+@api_view(["GET"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsSysAdminOrCoordinator])
 def reporte_general(request):
+
     faculty_id = get_faculty_id(request)
+
     if not faculty_id:
         return HttpResponse(status=403)
 
@@ -182,8 +274,15 @@ def reporte_general(request):
 
     # DOCENTES
     ws1 = wb.active
+
     ws1.title = "Docentes"
-    ws1.append(["Docente", "Cursos", "Promedio", "Tendencia (%)"])
+
+    ws1.append([
+        "Docente",
+        "Cursos",
+        "Promedio",
+        "Tendencia (%)"
+    ])
 
     for t in teachers:
         ws1.append([
@@ -197,7 +296,14 @@ def reporte_general(request):
 
     # CURSOS
     ws2 = wb.create_sheet("Cursos")
-    ws2.append(["Código", "Nombre", "Créditos", "Score", "Trend (%)"])
+
+    ws2.append([
+        "Código",
+        "Nombre",
+        "Créditos",
+        "Score",
+        "Trend (%)"
+    ])
 
     for c in courses:
         ws2.append([
@@ -212,7 +318,15 @@ def reporte_general(request):
 
     # USUARIOS
     ws3 = wb.create_sheet("Usuarios")
-    ws3.append(["Usuario", "Correo", "Rol", "Facultad", "Evaluaciones", "Estado"])
+
+    ws3.append([
+        "Usuario",
+        "Correo",
+        "Rol",
+        "Facultad",
+        "Evaluaciones",
+        "Estado"
+    ])
 
     for u in users:
         ws3.append([
@@ -229,59 +343,129 @@ def reporte_general(request):
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response["Content-Disposition"] = "attachment; filename=reporte_general.xlsx"
+
+    response["Content-Disposition"] = (
+        "attachment; filename=reporte_general.xlsx"
+    )
 
     wb.save(response)
+
     return response
 
+
 class NotificationListCreateView(APIView):
-    authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsSysAdminOrCoordinator]
+
+    authentication_classes = [
+        CookieJWTAuthentication
+    ]
+
+    permission_classes = [
+        IsSysAdminOrCoordinator
+    ]
 
     def get(self, request):
+
         qs = Notification.objects.all()
+
         user_id = request.query_params.get("user")
+
         if user_id:
             qs = qs.filter(user_id=user_id)
-        serializer = NotificationSerializer(qs, many=True)
+
+        serializer = NotificationSerializer(
+            qs,
+            many=True
+        )
+
         return Response(serializer.data)
-    
+
     @extend_schema(
         summary="crear notificación",
         description="Crea una nueva notificación",
-        parameters=[OpenApiParameter(
-            name="notification",
-            description="Datos de la notificación a crear",
-            required=True,
-            type=NotificationSerializer,
-        )]
+        parameters=[
+            OpenApiParameter(
+                name="notification",
+                description="Datos de la notificación a crear",
+                required=True,
+                type=NotificationSerializer,
+            )
+        ]
     )
     def post(self, request):
-        serializer = NotificationSerializer(data=request.data)
+
+        serializer = NotificationSerializer(
+            data=request.data
+        )
+
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class NotificationDetailView(APIView):
-    authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsSysAdminOrCoordinator]
+
+    authentication_classes = [
+        CookieJWTAuthentication
+    ]
+
+    permission_classes = [
+        IsSysAdminOrCoordinator
+    ]
 
     def get(self, request, pk):
-        notification = get_object_or_404(Notification, pk=pk)
-        serializer = NotificationSerializer(notification)
+
+        notification = get_object_or_404(
+            Notification,
+            pk=pk
+        )
+
+        serializer = NotificationSerializer(
+            notification
+        )
+
         return Response(serializer.data)
 
     def patch(self, request, pk):
-        notification = get_object_or_404(Notification, pk=pk)
-        serializer = NotificationSerializer(notification, data=request.data, partial=True)
+
+        notification = get_object_or_404(
+            Notification,
+            pk=pk
+        )
+
+        serializer = NotificationSerializer(
+            notification,
+            data=request.data,
+            partial=True
+        )
+
         if serializer.is_valid():
             serializer.save()
+
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete(self, request, pk):
-        notification = get_object_or_404(Notification, pk=pk)
+
+        notification = get_object_or_404(
+            Notification,
+            pk=pk
+        )
+
         notification.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT
+        )
