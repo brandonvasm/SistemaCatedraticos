@@ -1,10 +1,38 @@
 import re
+import unicodedata
 
 from apps.academics.models import Career, Course
 
 
 def _normalize_name(name: str) -> str:
     return re.sub(r'\s+', ' ', name.strip())
+
+def _career_key(value: str) -> str:
+    text = unicodedata.normalize("NFKD", value or "")
+    text = "".join(character for character in text if not unicodedata.combining(character))
+    text = re.sub(r"\s+", " ", text).strip()
+
+    if not text:
+        return ""
+
+    if " " not in text and len(text) <= 8:
+        return re.sub(r"\s+", "", text).upper()
+
+    ignored_words = {
+        "A",
+        "DE",
+        "DEL",
+        "E",
+        "EL",
+        "EN",
+        "LA",
+        "LAS",
+        "LOS",
+        "PARA",
+        "Y",
+    }
+    words = [word.upper() for word in re.findall(r"[A-Za-z0-9]+", text)]
+    return "".join(word[0] for word in words if word not in ignored_words)
 
 
 class InsertPensumService:
@@ -32,7 +60,7 @@ class InsertPensumService:
                 career, _ = Career.objects.get_or_create(
                     code=career_code,
                     faculty_id=faculty_id,
-                    defaults={"name": career_name},
+                    defaults={"name": career_name, "abbreviation": _career_key(career_name)},
                 )
                 if career.name != career_name and career_name:
                     career.name = career_name
@@ -40,15 +68,15 @@ class InsertPensumService:
 
                 processed_career_codes.add(career_code)
 
-                _, c_created = Course.objects.update_or_create(
+                course, c_created = Course.objects.update_or_create(
                     code=course_code,
                     faculty_id=faculty_id,
                     defaults={
                         "name": course_name,
                         "credits": credits,
-                        "cost_center": career,
                     },
                 )
+                course.careers.add(career)
 
                 if c_created:
                     created += 1

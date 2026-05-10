@@ -22,8 +22,8 @@ class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=200)
     credits = models.IntegerField(default=0)
-    cost_center = models.ForeignKey(Career, on_delete=models.CASCADE)
     faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
+    careers = models.ManyToManyField(Career, blank=True)
 
     class Meta:
         indexes = [
@@ -76,6 +76,7 @@ class CourseSection(models.Model):
         Teacher, on_delete=models.SET_NULL, null=True, blank=True
     )
     control_score = models.FloatField(null=True, blank=True)
+    career = models.ForeignKey(Career, on_delete=models.SET_NULL, null=True, blank=True)
     shift = models.CharField(max_length=20, choices=SHIFT_CHOICES)
     appointment_number = models.CharField(max_length=50, blank=True, default='')
     credits = models.IntegerField(null=True, blank=True)

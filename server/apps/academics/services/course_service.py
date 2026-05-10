@@ -12,7 +12,7 @@ def get_courses_data(faculty_id):
         return []
 
     courses = list(
-        Course.objects.filter(cost_center__faculty_id=faculty_id)
+        Course.objects.filter(faculty_id=faculty_id)
     )
 
     course_ids = [c.id for c in courses]

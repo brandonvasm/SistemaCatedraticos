@@ -563,7 +563,7 @@ class CourseSectionByFacultyView(APIView):
         sections = (
             CourseSection.objects.filter(
                 semester_id=semester_id,
-                course__cost_center__faculty_id=faculty_id,
+                course__faculty_id=faculty_id,
             )
             .select_related("course", "teacher")
             .order_by("section_number")
@@ -620,7 +620,7 @@ class TopCoursesByScoreView(APIView):
 
         sections = CourseSection.objects.filter(
             semester_id=semester_id,
-            course__cost_center__faculty_id=faculty_id,
+            course__faculty_id=faculty_id,
             control_score__isnull=False,
         ).select_related("course")
 

@@ -30,9 +30,9 @@ def make_career(faculty, name="Informática", code="0001", abbreviation="IIS") -
 
 
 def make_course(career, faculty, name="Álgebra Lineal", code="000001", credits=5) -> Course:
-    return Course.objects.create(
-        code=code, name=name, credits=credits, cost_center=career, faculty=faculty
-    )
+    course = Course.objects.create(code=code, name=name, credits=credits, faculty=faculty)
+    course.careers.add(career)
+    return course
 
 
 def make_semester(faculty, year=2026, number=1) -> Semester:
