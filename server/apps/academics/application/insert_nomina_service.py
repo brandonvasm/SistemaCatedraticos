@@ -29,6 +29,7 @@ class InsertNominaService:
         updated = 0
         errors = []
         active_teacher_codes: set[str] = set()
+        active_course_ids: set[int] = set()
 
         for i, row in enumerate(rows):
             try:
@@ -96,6 +97,7 @@ class InsertNominaService:
                 )
 
                 active_teacher_codes.add(teacher_code)
+                active_course_ids.add(course.id)
 
                 if s_created:
                     created += 1
@@ -111,6 +113,8 @@ class InsertNominaService:
                 teacher__identity_code__in=active_teacher_codes,
             ).update(is_active=True)
 
+        if active_course_ids:
+            Course.objects.filter(id__in=active_course_ids).update(is_active=True)
 
         Semester.objects.filter(id=semester_id).update(roster_loaded=True)
 

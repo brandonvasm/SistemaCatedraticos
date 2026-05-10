@@ -34,7 +34,7 @@ except ImportError:
 from apps.evaluations.models import Comment, SectionControl, StudentEvaluation, TrainingHours
 from apps.historical.models import TeacherCourseHistory
 
-from .models import Contract, CourseSection, Faculty, Semester, Teacher
+from .models import Contract, Course, CourseSection, Faculty, Semester, Teacher
 from .serializers import (
     CourseSectionSerializer,
     FacultySerializer,
@@ -258,6 +258,7 @@ class CloseSemesterView(APIView):
                 Comment.objects.filter(course_section__in=sections_qs).delete()
                 TrainingHours.objects.filter(semester=semester).delete()
                 Contract.objects.filter(faculty_id=faculty_id, is_active=True).update(is_active=False)
+                Course.objects.filter(faculty_id=faculty_id, is_active=True).update(is_active=False)
 
                 # 5. Eliminar análisis de IA asociados al semestre
                 analytics_models = [

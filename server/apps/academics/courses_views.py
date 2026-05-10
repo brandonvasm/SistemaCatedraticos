@@ -28,7 +28,8 @@ class CourseListView(APIView):
     )
     def get(self, request):
         queryset = Course.objects.filter(
-            faculty=request.user.faculty_id
+            faculty=request.user.faculty_id,
+            is_active=True
         ).order_by('id')
 
         courses = list(queryset)
@@ -82,6 +83,7 @@ class CourseListView(APIView):
                     "code": course.code,
                     "name": course.name,
                     "credits": course.credits,
+                    "is_active": course.is_active,
                     "careers": careers,
                     "score": course_score,
                     "trend": trend,
@@ -150,6 +152,7 @@ class CourseDetailView(APIView):
             "code": course.code,
             "name": course.name,
             "credits": course.credits,
+            "is_active": course.is_active,
             "careers": [{"id": c["career_id"], "name": c["career__name"]} for c in careers],
             "score": course_score,
             "trend": trend,

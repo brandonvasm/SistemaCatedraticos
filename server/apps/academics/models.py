@@ -22,12 +22,14 @@ class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=200)
     credits = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=False)
     faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
     careers = models.ManyToManyField(Career, blank=True)
 
     class Meta:
         indexes = [
             models.Index(fields=['faculty', 'name'], name='course_faculty_name_idx'),
+            models.Index(fields=['faculty', 'is_active'], name='course_faculty_active_idx'),
         ]
 
 
