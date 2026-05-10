@@ -20,9 +20,9 @@ def make_career(faculty, name="Informática y Sistemas", code="0001", abbreviati
 
 
 def make_course(career, faculty, name="Álgebra Lineal", code="000001", credits=5) -> Course:
-    return Course.objects.create(
-        code=code, name=name, credits=credits, cost_center=career, faculty=faculty
-    )
+    course = Course.objects.create(code=code, name=name, credits=credits, faculty=faculty)
+    course.careers.add(career)
+    return course
 
 
 def make_semester(faculty, year=2026, number=1) -> Semester:
@@ -177,6 +177,11 @@ class InsertNominaServiceTest(TestCase):
         section = CourseSection.objects.get(course=self.course, section_number="01", shift="matutina")
         self.assertEqual(section.appointment_number, "999925")
         self.assertEqual(section.credits, 5)
+
+    def test_section_stores_career_from_m2m(self):
+        InsertNominaService.execute([self._row()], self.semester.id, self.faculty.id)
+        section = CourseSection.objects.get(course=self.course, section_number="01", shift="matutina")
+        self.assertEqual(section.career, self.career)
 
     def test_marks_semester_roster_loaded(self):
         InsertNominaService.execute([self._row()], self.semester.id, self.faculty.id)

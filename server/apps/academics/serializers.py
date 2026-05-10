@@ -100,11 +100,18 @@ class TopCourseSerializer(serializers.Serializer):
     punteo = serializers.FloatField()
 
 
+class CareerMinimalSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
 class CourseStatsSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     code = serializers.CharField()
     name = serializers.CharField()
     credits = serializers.IntegerField()
+    is_active = serializers.BooleanField()
+    careers = CareerMinimalSerializer(many=True)
     score = serializers.FloatField(allow_null=True)
     trend = serializers.FloatField(allow_null=True)
 

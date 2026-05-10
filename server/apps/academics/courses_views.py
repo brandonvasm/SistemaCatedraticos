@@ -28,9 +28,10 @@ class CourseListView(APIView):
     )
     def get(self, request):
         queryset = Course.objects.filter(
-            cost_center__faculty=request.user.faculty_id
-        ).select_related('cost_center').order_by('id')
-        
+            faculty=request.user.faculty_id,
+            is_active=True
+        ).order_by('id')
+
         courses = list(queryset)
         course_ids = [c.id for c in courses]
 
@@ -52,6 +53,15 @@ class CourseListView(APIView):
         for h in histories:
             history_by_course[h["course_id"]].append(h["control_avg_score"])
 
+        # Careers come from sections, not M2M
+        careers_by_course: dict[int, dict[int, str]] = defaultdict(dict)
+        for row in (
+            CourseSection.objects.filter(course_id__in=course_ids, career__isnull=False)
+            .values("course_id", "career_id", "career__name")
+            .distinct()
+        ):
+            careers_by_course[row["course_id"]][row["career_id"]] = row["career__name"]
+
         courses_data = []
         for course in courses:
             scores = section_scores.get(course.id, [])
@@ -62,31 +72,36 @@ class CourseListView(APIView):
             if len(hist) >= 2 and hist[-2] != 0:
                 trend = round(((hist[-1] - hist[-2]) / hist[-2]) * 100, 2)
 
+            careers = [
+                {"id": cid, "name": name}
+                for cid, name in careers_by_course.get(course.id, {}).items()
+            ]
+
             courses_data.append(
                 {
                     "id": course.id,
                     "code": course.code,
                     "name": course.name,
                     "credits": course.credits,
-                    "cost_center_id": course.cost_center.id,
-                    "cost_center_name": course.cost_center.name,
+                    "is_active": course.is_active,
+                    "careers": careers,
                     "score": course_score,
                     "trend": trend,
                 }
             )
 
         page_param = request.query_params.get('page')
-        
+
         if page_param:
             paginator = StandardResultsSetPagination()
             paginated_data = paginator.paginate_queryset(courses_data, request)
             return paginator.get_paginated_response(paginated_data)
 
         return Response({
-            "total": len(courses_data), 
+            "total": len(courses_data),
             "courses": courses_data
         })
-    
+
 class CourseDetailView(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsSysAdminOrCoordinator]
@@ -97,9 +112,9 @@ class CourseDetailView(APIView):
 
     def get(self, request, pk):
         course = get_object_or_404(
-            Course, 
-            id=pk, 
-            cost_center__faculty_id=request.user.faculty_id
+            Course,
+            id=pk,
+            faculty_id=request.user.faculty_id
         )
 
         sections = CourseSection.objects.filter(
@@ -117,7 +132,7 @@ class CourseDetailView(APIView):
         )
 
         hist = [h["control_avg_score"] for h in histories]
-        
+
         trend = None
 
         if len(hist) >= 2:
@@ -126,13 +141,19 @@ class CourseDetailView(APIView):
             if previous_score != 0:
                 trend = round(((last_score - previous_score) / previous_score) * 100, 2)
 
+        careers = list(
+            CourseSection.objects.filter(course_id=course.id, career__isnull=False)
+            .values("career_id", "career__name")
+            .distinct()
+        )
+
         return Response({
             "id": course.id,
             "code": course.code,
             "name": course.name,
             "credits": course.credits,
-            "cost_center_id": course.cost_center.id,
-            "cost_center_name": course.cost_center.name,
+            "is_active": course.is_active,
+            "careers": [{"id": c["career_id"], "name": c["career__name"]} for c in careers],
             "score": course_score,
             "trend": trend,
         })
