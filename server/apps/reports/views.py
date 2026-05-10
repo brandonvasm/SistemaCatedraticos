@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from rest_framework import status
@@ -246,7 +247,17 @@ class NotificationListCreateView(APIView):
             qs = qs.filter(user_id=user_id)
         serializer = NotificationSerializer(qs, many=True)
         return Response(serializer.data)
-
+    
+    @extend_schema(
+        summary="crear notificación",
+        description="Crea una nueva notificación",
+        parameters=[OpenApiParameter(
+            name="notification",
+            description="Datos de la notificación a crear",
+            required=True,
+            type=NotificationSerializer,
+        )]
+    )
     def post(self, request):
         serializer = NotificationSerializer(data=request.data)
         if serializer.is_valid():
