@@ -1,7 +1,18 @@
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+
+from apps.users.infrastructure.authentication import CookieJWTAuthentication
+from apps.users.infrastructure.permissions import IsSysAdminOrCoordinator
+
+from .models import Notification
+from .serializers import NotificationSerializer
 
 from apps.academics.services.course_service import get_courses_data
 from apps.academics.services.teacher_service import get_teachers_stats
@@ -224,3 +235,55 @@ def reporte_general(request):
 
     wb.save(response)
     return response
+
+class NotificationListCreateView(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsSysAdminOrCoordinator]
+
+    def get(self, request):
+        qs = Notification.objects.all()
+        user_id = request.query_params.get("user")
+        if user_id:
+            qs = qs.filter(user_id=user_id)
+        serializer = NotificationSerializer(qs, many=True)
+        return Response(serializer.data)
+    
+    @extend_schema(
+        summary="crear notificación",
+        description="Crea una nueva notificación",
+        parameters=[OpenApiParameter(
+            name="notification",
+            description="Datos de la notificación a crear",
+            required=True,
+            type=NotificationSerializer,
+        )]
+    )
+    def post(self, request):
+        serializer = NotificationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NotificationDetailView(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsSysAdminOrCoordinator]
+
+    def get(self, request, pk):
+        notification = get_object_or_404(Notification, pk=pk)
+        serializer = NotificationSerializer(notification)
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        notification = get_object_or_404(Notification, pk=pk)
+        serializer = NotificationSerializer(notification, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        notification = get_object_or_404(Notification, pk=pk)
+        notification.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

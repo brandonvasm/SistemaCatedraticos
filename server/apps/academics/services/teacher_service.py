@@ -11,7 +11,7 @@ def get_teachers_stats(faculty_id):
     faculty_id = int(faculty_id)
 
     secciones = CourseSection.objects.filter(
-        course__cost_center__faculty_id=faculty_id
+        course__faculty_id=faculty_id
     ).select_related("teacher", "course")
 
     teacher_map = {}
@@ -33,7 +33,7 @@ def get_teachers_stats(faculty_id):
 
     promedio_global = (
         StudentEvaluation.objects.filter(
-            course_section__course__cost_center__faculty_id=faculty_id
+            course_section__course__faculty_id=faculty_id
         ).aggregate(m=Avg("score"))["m"] or 0.0
     )
 
@@ -45,7 +45,7 @@ def get_teachers_stats(faculty_id):
 
         stats = StudentEvaluation.objects.filter(
             course_section__teacher_id=t_id,
-            course_section__course__cost_center__faculty_id=faculty_id
+            course_section__course__faculty_id=faculty_id
         ).aggregate(
             promedio=Avg("score"),
             total=Count("id")
@@ -60,7 +60,7 @@ def get_teachers_stats(faculty_id):
         historico = (
             TeacherCourseHistory.objects.filter(
                 teacher_id=t_id,
-                course__cost_center__faculty_id=faculty_id
+                course__faculty_id=faculty_id
             )
             .values("semester_id")
             .annotate(avg_score=Avg("student_score"))

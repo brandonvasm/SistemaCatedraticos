@@ -47,7 +47,7 @@ class CourseHistoryViewSet(viewsets.ViewSet):
         user_faculty = request.user.faculty_id
 
         histories = (
-            CourseHistory.objects.filter(course__cost_center__faculty=user_faculty)
+            CourseHistory.objects.filter(course__faculty=user_faculty)
             .select_related("course", "semester")
             .order_by("course_id", "-semester__year", "-semester__number")
         )
@@ -111,8 +111,8 @@ class CourseDetailHistoryViewSet(viewsets.ViewSet):
 
         histories = (
             CourseHistory.objects.filter(
-                course_id=pk, 
-                course__cost_center__faculty=user_faculty
+                course_id=pk,
+                course__faculty=user_faculty
             )
             .select_related("course", "semester")
             .order_by("semester__year", "semester__number")

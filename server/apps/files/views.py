@@ -138,9 +138,12 @@ class FileView(viewsets.ModelViewSet):
                     "insert_result": insert_result,
                 }, status=status.HTTP_200_OK)
         except Exception as e:
+            self.storage_service.delete_file(file_path)
+            File.objects.filter(id=file_record.id).delete()
             return Response({
                 "error": f"Error processing '{file_record.name}': {str(e)}",
                 "file_id": file_record.id,
                 "file_name": file_record.name,
                 "file_type": file_type,
+                "message": "The file has been deleted from storage."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

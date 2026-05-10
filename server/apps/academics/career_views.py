@@ -40,8 +40,8 @@ class CareerListView(APIView):
         careers = list(
             Career.objects.filter(faculty=faculty)
             .annotate(
-                avg_teacher_score=Round(Avg("course__coursesection__studentevaluation__score"), 2),
-                avg_course_control_score=Round(Avg("course__coursesection__control_score"), 2),
+                avg_teacher_score=Round(Avg("coursesection__studentevaluation__score"), 2),
+                avg_course_control_score=Round(Avg("coursesection__control_score"), 2),
             )
             .values("id", "name", "avg_teacher_score", "avg_course_control_score")
         )
