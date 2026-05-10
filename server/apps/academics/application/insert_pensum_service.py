@@ -42,11 +42,11 @@ class InsertPensumService:
 
                 _, c_created = Course.objects.update_or_create(
                     code=course_code,
+                    faculty_id=faculty_id,
                     defaults={
                         "name": course_name,
                         "credits": credits,
                         "cost_center": career,
-                        "faculty_id": faculty_id,
                     },
                 )
 

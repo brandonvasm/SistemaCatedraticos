@@ -105,6 +105,8 @@ class CourseStatsSerializer(serializers.Serializer):
     code = serializers.CharField()
     name = serializers.CharField()
     credits = serializers.IntegerField()
+    cost_center_id = serializers.IntegerField()
+    cost_center_name = serializers.CharField()
     score = serializers.FloatField(allow_null=True)
     trend = serializers.FloatField(allow_null=True)
 

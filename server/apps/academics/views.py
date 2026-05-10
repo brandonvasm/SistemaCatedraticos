@@ -257,6 +257,7 @@ class CloseSemesterView(APIView):
                 SectionControl.objects.filter(course_section__in=sections_qs).delete()
                 Comment.objects.filter(course_section__in=sections_qs).delete()
                 TrainingHours.objects.filter(semester=semester).delete()
+                Contract.objects.filter(faculty_id=faculty_id, is_active=True).update(is_active=False)
 
                 # 5. Eliminar análisis de IA asociados al semestre
                 analytics_models = [

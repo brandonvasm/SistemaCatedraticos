@@ -168,11 +168,6 @@ class InsertNominaService:
                 teacher__identity_code__in=active_teacher_codes,
             ).update(is_active=True)
 
-        Contract.objects.filter(
-            faculty_id=faculty_id,
-        ).exclude(
-            teacher__identity_code__in=active_teacher_codes,
-        ).update(is_active=False)
 
         Semester.objects.filter(id=semester_id).update(roster_loaded=True)
 
