@@ -1,13 +1,32 @@
 import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle2, X } from 'lucide-react';
+import { notificationService } from '../../services/notificationService';
+import { useAuth } from '../../context/AuthContext';
 
 export default function GlobalToast() {
   const [status, setStatus] = useState<'idle' | 'processing' | 'success'>('idle');
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleStart = () => setStatus('processing');
-    const handleFinish = () => {
+    
+    const handleFinish = async () => {
       setStatus('success');
+
+      if (user?.id) {
+        try {
+          await notificationService.createNotification({
+            subject: "Procesamiento de Datos",
+            message: "La carga de archivos se ha completado correctamente",
+            focus: "Carga de Datos",
+            type: "success",
+            user: user.id
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
       setTimeout(() => setStatus('idle'), 6000); 
     };
 
@@ -18,7 +37,7 @@ export default function GlobalToast() {
       window.removeEventListener('show-bg-processing', handleStart);
       window.removeEventListener('processing-finished', handleFinish);
     };
-  }, []);
+  }, [user]);
 
   if (status === 'idle') return null;
 

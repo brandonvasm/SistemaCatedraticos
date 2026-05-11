@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { logoutUser } from "../../services/authService"; 
+import { notificationService } from "../../services/notificationService";
 
 import {
   LayoutDashboard,
@@ -15,64 +17,86 @@ import {
   FolderClock,
 } from "lucide-react";
 
-const menu = [
-  {
-    name: "Dashboard",
-    icon: LayoutDashboard,
-    path: "/dashboard"
-  },
-  {
-    name: "Usuarios",
-    icon: Users,
-    path: "/usuarios" 
-  },
-  {
-    name: "Docentes",
-    icon: Users,
-    path: "/docentes"
-  },
-  {
-    name: "Cursos",
-    icon: BookOpen,
-    path: "/cursos" 
-  },
-  {
-    name: "Salud de la Facultad",
-    icon: Activity,
-    path: "/salud" 
-  },
-  {
-    name: "Recomendaciones",
-    icon: Lightbulb,
-    path: "/recomendaciones" 
-  },
-  {
-    name: "Acciones Globales",
-    icon: Zap,
-    path: "/acciones" 
-  },
-  {
-    name: "Historial de Datos", 
-    icon: FolderClock,
-    path: "/historial" 
-  },
-  {
-    name: "Reportes",
-    icon: FileText,
-    path: "/reportes" 
-  },
-  {
-    name: "Notificaciones",
-    icon: Bell,
-    badge: 5,
-    path: "/notificaciones"
-  },
-];
-
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const [notificationCount, setNotificationCount] = useState(0);
 
+  const fetchNotificationCount = async () => {
+    try {
+      const data = await notificationService.getNotifications();
+      if (data.length !== notificationCount) {
+        setNotificationCount(data.length);
+      }
+    } catch (error) {
+      console.error("Error al sincronizar notificaciones:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotificationCount();
+
+    const interval = setInterval(() => {
+      fetchNotificationCount();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const menu = [
+    {
+      name: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/dashboard"
+    },
+    {
+      name: "Usuarios",
+      icon: Users,
+      path: "/usuarios" 
+    },
+    {
+      name: "Docentes",
+      icon: Users,
+      path: "/docentes"
+    },
+    {
+      name: "Cursos",
+      icon: BookOpen,
+      path: "/cursos" 
+    },
+    {
+      name: "Salud de la Facultad",
+      icon: Activity,
+      path: "/salud" 
+    },
+    {
+      name: "Recomendaciones",
+      icon: Lightbulb,
+      path: "/recomendaciones" 
+    },
+    {
+      name: "Acciones Globales",
+      icon: Zap,
+      path: "/acciones" 
+    },
+    {
+      name: "Historial de Datos", 
+      icon: FolderClock,
+      path: "/historial" 
+    },
+    {
+      name: "Reportes",
+      icon: FileText,
+      path: "/reportes" 
+    },
+    {
+      name: "Notificaciones",
+      icon: Bell,
+      badge: notificationCount, 
+      path: "/notificaciones"
+    },
+  ];
 
   const userRole = localStorage.getItem("user_role")?.toLowerCase().trim();
 
@@ -106,16 +130,14 @@ export default function Sidebar() {
         </div>
         <div>
           <p className="font-semibold text-sm">Universidad Rafael Landivar</p>
-          <p className="text-xs text-gray-300">Facultad Ingeniería</p>
         </div>
       </div>
 
       <div className="flex-1 px-3 py-4">
         {filteredMenu.map((item, index) => {
           const Icon = item.icon;
-          const isActive = item.path === location.pathname
-          ? location.pathname === item.path
-          : location.pathname.startsWith(item.path);
+          const isActive = location.pathname.startsWith(item.path);
+
           return (
             <div
               key={index}
@@ -132,7 +154,7 @@ export default function Sidebar() {
                 <span className="text-sm">{item.name}</span>
               </div>
 
-              {item.badge && (
+              {item.badge !== undefined && item.badge > 0 && (
                 <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full text-white">
                   {item.badge}
                 </span>

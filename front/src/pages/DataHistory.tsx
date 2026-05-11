@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, Calendar, AlertCircle, Search, Loader2, RefreshCw, Trash2, PlayCircle } from 'lucide-react';
 import { fileService } from '../services/fileService';
+import { notificationService } from '../services/notificationService';
 import { useAuth } from '../context/AuthContext'; 
 import ConfirmDeleteModal from '../components/common/ConfirmDelete';
 import type { UploadedFile } from '../types/files';
@@ -25,7 +26,6 @@ export default function DataHistory() {
 
       const filters = {
          semester: user.semester_id,
-        
       };
 
       const data = await fileService.getAllFiles(filters);
@@ -43,9 +43,21 @@ export default function DataHistory() {
   }, [fetchFiles]);
 
   const handleProcess = async (fileId: number) => {
+    const fileToProcess = files.find(f => f.id === fileId);
     try {
       setProcessingId(fileId);
       await fileService.processFile(fileId);
+      
+      if (user?.id) {
+        await notificationService.createNotification({
+          subject: "Archivo Procesado",
+          message: `El archivo "${fileToProcess?.name}" ha sido procesado e integrado al sistema correctamente.`,
+          focus: "Historial de Datos",
+          type: "success",
+          user: user.id
+        });
+      }
+
       await fetchFiles(false);
     } catch (error) {
       console.error(error);
@@ -59,6 +71,7 @@ export default function DataHistory() {
     try {
       setDownloadingId(fileId);
       const downloadUrl = await fileService.getDownloadUrl(fileId);
+      
       if (downloadUrl) {
         const link = document.createElement('a');
         link.href = downloadUrl;
@@ -67,6 +80,16 @@ export default function DataHistory() {
         document.body.appendChild(link);
         link.click();
         link.remove();
+
+        if (user?.id) {
+          await notificationService.createNotification({
+            subject: "Descarga de Archivo",
+            message: `El usuario ha descargado una copia local del archivo: "${fileName}".`,
+            focus: "Historial de Datos / Exportación",
+            type: "info",
+            user: user.id
+          });
+        }
       }
     } catch (error) {
       console.error(error);
@@ -78,10 +101,22 @@ export default function DataHistory() {
   const handleDelete = async () => {
     if (!showConfirm) return;
     const idToDelete = showConfirm.id;
+    const nameToDelete = showConfirm.name;
 
     try {
       setDeletingId(idToDelete);
       await fileService.deleteFile(idToDelete);
+      
+      if (user?.id) {
+        await notificationService.createNotification({
+          subject: "Archivo Eliminado",
+          message: `Se ha eliminado permanentemente el archivo "${nameToDelete}" del historial.`,
+          focus: "Historial de Datos",
+          type: "warning",
+          user: user.id
+        });
+      }
+
       setFiles(prev => prev.filter(f => f.id !== idToDelete));
     } catch (error) {
       console.error(error);

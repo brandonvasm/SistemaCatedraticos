@@ -3,7 +3,7 @@ import type { TeacherStats } from "../../../types/teacher";
 
 interface TeachersGridProps {
   teachers: TeacherStats[];
-  loading?: boolean; // Nueva prop opcional
+  loading?: boolean; 
 }
 
 export default function TeachersGrid({ teachers, loading }: TeachersGridProps) {

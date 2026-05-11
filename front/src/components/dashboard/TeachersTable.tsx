@@ -35,7 +35,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
   }, [facultyId, filter]);
 
   const getStatus = (score: number) => {
-    if (score >= 65) return "Excelente";
+    if (score >= 65) return "Excelente (>= 65)";
     return "Bajo";
   };
 
