@@ -1,16 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { renderStars } from "./renderStars";
-import { Eye } from "lucide-react";
+import { Eye, ArrowUpRight, ArrowDownRight, CheckCircle } from "lucide-react";
 import type { TeacherStats } from "../../types/teacher"; 
-import {
-  ArrowUpRight,
-  ArrowDownRight,
-  CheckCircle,
-} from "lucide-react";
 
 export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
   const navigate = useNavigate();
-  const isTrendUp = !teacher.tendencia_mejora.toLowerCase().includes("baja");
+
+  const tendenciaStr = teacher.tendencia_mejora || "";
+  const isTrendUp = 
+    !tendenciaStr.includes("-");
 
   return (
     <>
@@ -24,7 +22,7 @@ export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
 
       <td className="px-6 py-5 w-[400px]">
         <div className="flex flex-nowrap gap-2 overflow-hidden">
-          {teacher.cursos_impartidos.length > 0 ? (
+          {teacher.cursos_impartidos && teacher.cursos_impartidos.length > 0 ? (
             <>
               {teacher.cursos_impartidos.slice(0, 2).map((curso, idx) => (
                 <span key={idx} className="bg-blue-500/10 text-blue-300 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-xl border border-blue-500/20 whitespace-nowrap">
@@ -38,16 +36,17 @@ export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
               )}
             </>
           ) : (
-            <span className="text-blue-400 font-black text-[11px] uppercase tracking-widest">
-              No hay cursos
+            <span className="text-gray-600 font-bold text-[10px] uppercase tracking-widest">
+              Sin cursos asignados
             </span>
           )}
         </div>
       </td>
 
+
       <td className="px-6 py-5">
-        <div className="flex flex-col">
-          <div className="flex">
+        <div className="flex flex-col leading-tight">
+          <div className="flex mb-1">
             {renderStars(teacher.promedio_general, 12)}
           </div>
           <span className="text-white font-black text-xl">
@@ -57,28 +56,32 @@ export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
       </td>
 
       <td className="px-6 py-5">
-        {teacher.tendencia_mejora ? (
+        {tendenciaStr ? (
           <div
             className={`flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest ${
               isTrendUp ? "text-emerald-400" : "text-red-400"
             }`}
           >
-            {isTrendUp ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-            {teacher.tendencia_mejora}
+            {isTrendUp ? (
+              <ArrowUpRight size={16} strokeWidth={2.5} />
+            ) : (
+              <ArrowDownRight size={16} strokeWidth={2.5} />
+            )}
+            {tendenciaStr}
           </div>
         ) : (
-          <span className="text-blue-400 font-black text-[11px] uppercase tracking-widest">
-            Sin Tendencia
+          <span className="text-gray-600 font-bold text-[10px] uppercase tracking-widest">
+            Estable
           </span>
         )}
       </td>
 
       <td className="px-6 py-5">
         <span className="text-gray-300 font-bold text-[11px] uppercase tracking-widest">
-          {teacher.evaluaciones_total > 0 ? `${teacher.evaluaciones_total} Evals` : (
-            <span className="text-blue-400 font-black text-[11px] uppercase tracking-widest">
-              Sin Evals
-            </span>
+          {teacher.evaluaciones_total > 0 ? (
+            `${teacher.evaluaciones_total} Evals`
+          ) : (
+            <span className="text-gray-600">0 Evals</span>
           )}
         </span>
       </td>
@@ -106,7 +109,6 @@ export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
         </span>
       </td>
 
-
       <td className="px-6 py-5 w-[120px] text-right">
         <button
           onClick={() => navigate(`/docentes/${teacher.teacher_id}`)}
@@ -114,7 +116,7 @@ export const TeacherRow = ({ teacher }: { teacher: TeacherStats }) => {
         >
           <Eye size={12} className="transition-transform group-hover/btn:scale-110" />
           <span className="text-[9px] font-black uppercase tracking-widest">
-            Ver Detalle
+            Detalle
           </span>
         </button>
       </td>
