@@ -6,11 +6,10 @@ import { ChevronLeft, ChevronRight, Search, Filter, ArrowUpDown } from "lucide-r
 
 export default function CoursesTable() {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("Todos");
+  const [selectedCareer, setSelectedCareer] = useState("Todos");
   const [order, setOrder] = useState("desc");
   const [courses, setCourses] = useState<CourseTable[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 8;
@@ -28,6 +27,8 @@ export default function CoursesTable() {
           credits: c.credits,
           score: c.score, 
           trend: c.trend,
+          is_active: c.is_active,
+          careers: c.careers || [], 
           category: c.code.startsWith("SIS") ? "Informática" : "General" 
         }));
 
@@ -43,10 +44,16 @@ export default function CoursesTable() {
     fetchCourses();
   }, [currentPage]);
 
+  const uniqueCareers = Array.from(
+    new Set(courses.flatMap(c => c.careers.map(car => car.name)))
+  ).sort();
+
   const filtered = courses.filter((c) => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = category === "Todos" || c.category === category;
-    return matchSearch && matchCategory;
+    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
+                        c.code.toLowerCase().includes(search.toLowerCase());
+    const matchCareer = selectedCareer === "Todos" || 
+                        c.careers.some(car => car.name === selectedCareer);
+    return matchSearch && matchCareer;
   });
 
   const sorted = [...filtered].sort((a, b) =>
@@ -56,10 +63,10 @@ export default function CoursesTable() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="w-full bg-[#0f111a]/50 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-2xl">
+    <div className="w-full bg-[#0f111a]/50 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-2xl text-white">
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none">
+          <h2 className="text-xl font-black tracking-tighter uppercase leading-none">
             GESTIÓN DE CURSOS
           </h2>
           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-3 ml-1">
@@ -67,19 +74,34 @@ export default function CoursesTable() {
           </p>
         </div>
 
-        <div className="px-5 py-2.5 bg-white/[0.03] rounded-xl border border-white/5 backdrop-blur-md">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-            CURSOS TOTALES: <span className="text-yellow-400 ml-2 text-xs">{totalCount}</span>
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="relative group/status cursor-help p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl backdrop-blur-md">
+            <div className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]"></span>
+            </div>
+            
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-[#1a1d29] border border-white/10 rounded-lg opacity-0 group-hover/status:opacity-100 transition-all pointer-events-none whitespace-nowrap z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+              <p className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em]">
+                Cursos activos en semestre
+              </p>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1d29] border-r border-b border-white/10 rotate-45" />
+            </div>
+          </div>
+
+          <div className="px-5 py-2.5 bg-white/[0.03] rounded-xl border border-white/5 backdrop-blur-md">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+              CURSOS TOTALES: <span className="text-yellow-400 ml-2 text-xs">{totalCount}</span>
+            </p>
+          </div>
         </div>
       </div>
-
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="relative w-full md:w-72">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
           <input
             type="text"
-            placeholder="BUSCAR CURSO..."
+            placeholder="BUSCAR POR NOMBRE O CÓDIGO..."
             className="w-full border-none py-4 pl-12 pr-6 rounded-2xl text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase bg-white/[0.03] focus:bg-white/[0.05] transition-all"
             value={search}
             onChange={(e) => {
@@ -93,14 +115,17 @@ export default function CoursesTable() {
           <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
           <select
             className="appearance-none bg-white/5 border border-white/10 pl-12 pr-10 py-4 rounded-2xl text-gray-400 outline-none cursor-pointer hover:border-white/20 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[200px]"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            value={selectedCareer}
+            onChange={(e) => setSelectedCareer(e.target.value)}
           >
-            <option value="Todos" className="bg-[#0b101f]">Todas las Áreas</option>
+            <option value="Todos" className="bg-[#0b101f]">Todas las Carreras</option>
+            {uniqueCareers.map(name => (
+              <option key={name} value={name} className="bg-[#0b101f]">{name}</option>
+            ))}
           </select>
         </div>
 
-        <div className="relative">
+        <div className="relative ml-auto">
           <ArrowUpDown className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
           <select
             className="appearance-none bg-white/5 border border-white/10 pl-12 pr-10 py-4 rounded-2xl text-gray-400 outline-none cursor-pointer hover:border-white/20 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[200px]"
@@ -114,15 +139,16 @@ export default function CoursesTable() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[1000px] w-full border-collapse">
+        <table className="min-w-[1250px] w-full border-collapse">
           <thead className="bg-white/[0.02] text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
             <tr>
-              <th className="px-6 py-5 w-[300px] text-center">Curso</th>
+              <th className="px-6 py-5 w-[280px] text-left">Curso</th>
+              <th className="px-6 py-5 w-[220px] text-center font-black">Carrera(s)</th>
               <th className="px-6 py-5 w-[140px] text-center">Código</th>
               <th className="px-6 py-5 w-[100px] text-center">Créditos</th>
               <th className="px-6 py-5 w-[120px] text-center">Promedio</th>
               <th className="px-6 py-5 w-[120px] text-center">Tendencia</th>
-              <th className="px-6 py-5 w-[120px] text-center">Acciones</th>
+              <th className="px-6 py-5 w-[140px] text-center">Acciones</th>
             </tr>
           </thead>
 
@@ -163,11 +189,7 @@ export default function CoursesTable() {
           <div className="flex items-center gap-2">
              {[...Array(totalPages)].map((_, i) => {
                const pageNum = i + 1;
-               if (
-                 pageNum === 1 || 
-                 pageNum === totalPages || 
-                 (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-               ) {
+               if (pageNum === 1 || pageNum === totalPages || (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)) {
                  return (
                    <button
                      key={pageNum}

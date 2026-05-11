@@ -1,6 +1,9 @@
+import { useEffect } from "react";
 import { Users, Trophy, AlertTriangle, TrendingUp } from "lucide-react"
 import StatCard from "../../ui/StatCard"
 import type { TeacherStats } from "../../../types/teacher";
+import { notificationService } from "../../../services/notificationService";
+import { useAuth } from "../../../context/AuthContext";
 
 interface StatsSectionProps {
   teachers: TeacherStats[];
@@ -8,8 +11,9 @@ interface StatsSectionProps {
 }
 
 export default function StatsSection({ teachers, facultyName }: StatsSectionProps) {
-  const totalTeachers = teachers.length;
+  const { user } = useAuth();
 
+  const totalTeachers = teachers.length;
   const evaluatedTeachers = teachers.filter(t => t.promedio_general > 0);
 
   const averageScore = evaluatedTeachers.length > 0
@@ -17,8 +21,56 @@ export default function StatsSection({ teachers, facultyName }: StatsSectionProp
     : "0.0";
 
   const highPerformance = teachers.filter(t => t.promedio_general >= 85).length;
-
   const needsAttention = teachers.filter(t => t.promedio_general > 0 && t.promedio_general < 70).length;
+
+  useEffect(() => {
+    if (!user?.id || teachers.length === 0) return;
+
+    const triggerNotifications = async () => {
+      const storageKey = `stats_notif_${facultyName || 'general'}`;
+      
+      const savedStats = localStorage.getItem(storageKey);
+      const { lastHigh, lastLow } = savedStats ? JSON.parse(savedStats) : { lastHigh: null, lastLow: null };
+
+      let dataChanged = false;
+      const newStorageData = { lastHigh, lastLow };
+
+      if (highPerformance > 0 && highPerformance !== lastHigh) {
+        try {
+          await notificationService.createNotification({
+            subject: "Excelencia Docente Detectada",
+            message: `Hay ${highPerformance} docentes con desempeño superior a 85 en ${facultyName || 'la facultad'}.`,
+            focus: "Rendimiento",
+            type: "success",
+            user: user.id
+          });
+          newStorageData.lastHigh = highPerformance;
+          dataChanged = true;
+        } catch (e) { console.error(e); }
+      }
+
+      if (needsAttention > 0 && needsAttention !== lastLow) {
+        try {
+          await notificationService.createNotification({
+            subject: "Alerta de Desempeño",
+            message: `Atención: ${needsAttention} docentes tienen promedio bajo en ${facultyName || 'la facultad'}.`,
+            focus: "Evaluación",
+            type: "warning",
+            user: user.id
+          });
+          newStorageData.lastLow = needsAttention;
+          dataChanged = true;
+        } catch (e) { console.error(e); }
+      }
+
+      if (dataChanged) {
+        localStorage.setItem(storageKey, JSON.stringify(newStorageData));
+      }
+    };
+
+    triggerNotifications();
+    
+  }, [highPerformance, needsAttention, user?.id, facultyName, teachers.length]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

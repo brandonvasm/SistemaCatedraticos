@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { X, Save, Shield, Mail, User, Lock, School, Plus } from "lucide-react";
 import { userService } from "../../services/userService";
 import { academicsService } from "../../services/academicsService";
+import { notificationService } from "../../services/notificationService"; 
+import { useAuth } from "../../context/AuthContext";
 import FacultyModal from "../common/FacultyModal";
 import type { UserData, UserRole } from "../../types/user";
 
@@ -14,6 +16,7 @@ interface Props {
 }
 
 export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: Props) {
+  const { user: currentUser } = useAuth(); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [faculties, setFaculties] = useState<any[]>([]);
@@ -79,8 +82,28 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
 
       if (selectedUser) {
         await userService.updateUser(selectedUser.id, dataToSend as any);
+        
+        if (currentUser?.id) {
+          await notificationService.createNotification({
+            subject: "Usuario Actualizado",
+            message: `Se ha modificado el rol del usuario ${formData.username} a ${formData.role}.`,
+            focus: "Gestión de Usuarios",
+            type: "info",
+            user: currentUser.id
+          });
+        }
       } else {
         await userService.createUser(dataToSend as any);
+
+        if (currentUser?.id) {
+          await notificationService.createNotification({
+            subject: "Nuevo Usuario Registrado",
+            message: `Se ha creado la cuenta para ${formData.username} con rol ${formData.role}.`,
+            focus: "Gestión de Usuarios",
+            type: "success",
+            user: currentUser.id
+          });
+        }
       }
       
       onSuccess();
