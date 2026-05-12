@@ -119,9 +119,6 @@ export default function ExportModal({
                   Exportar Reportes
                 </h2>
 
-                <p className="text-gray-500 text-sm font-bold mt-2 uppercase tracking-tight opacity-70">
-                  Configura tu documento antes de la descarga
-                </p>
               </div>
             </div>
 
@@ -137,9 +134,8 @@ export default function ExportModal({
                   <ul className="space-y-4 relative z-10">
                     {[
                       "Métricas de desempeño docente",
-                      "Ranking de las mejores facultades",
-                      "Alertas de umbral de rendimiento",
-                      "Gráficos históricos",
+                      "Métricas de desempeño cursos",
+                      "Listado completo de usuarios ",
                     ].map((item, i) => (
                       <li
                         key={i}

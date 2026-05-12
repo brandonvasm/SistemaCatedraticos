@@ -30,12 +30,14 @@ from apps.users.infrastructure.authentication import (
 from apps.users.infrastructure.permissions import (
     IsSysAdminOrCoordinator,
 )
+from apps.files.services.get_files_report import get_files_report
 
 from .models import Notification
 from .serializers import NotificationSerializer
 
 from apps.academics.services.course_service import (
     get_courses_data,
+    get_top_courses_by_score,
 )
 
 from apps.academics.services.teacher_service import (
@@ -46,14 +48,56 @@ from apps.users.service.user_service import (
     get_users_data,
 )
 
+from apps.historical.services.courses_historical import (
+    get_courses_evolution_data_service,
+)
+from openpyxl.utils import get_column_letter
+
+def auto_adjust_columns(ws):
+
+    for col_idx, column_cells in enumerate(ws.columns, 1):
+
+        max_length = 0
+        column_letter = get_column_letter(col_idx)
+
+        for cell in column_cells:
+
+            if cell.value is None:
+                continue
+
+            cell_length = len(str(cell.value))
+
+            if cell_length > max_length:
+                max_length = cell_length
+
+        adjusted_width = max_length + 4
+
+        ws.column_dimensions[column_letter].width = min(adjusted_width, 60)
 
 def aplicar_estilos(ws):
-    header_fill = PatternFill(
-        start_color="FFC000",
+
+    title_fill = PatternFill(
+        start_color="111827",
+        end_color="111827",
         fill_type="solid"
     )
 
-    header_font = Font(bold=True)
+    title_font = Font(
+        bold=True,
+        size=16,
+        color="FFFFFF"
+    )
+
+    header_fill = PatternFill(
+        start_color="FACC15",
+        end_color="FACC15",
+        fill_type="solid"
+    )
+
+    header_font = Font(
+        bold=True,
+        color="000000"
+    )
 
     center = Alignment(
         horizontal="center",
@@ -62,39 +106,44 @@ def aplicar_estilos(ws):
     )
 
     border = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin"),
+        left=Side(style="thin", color="2A2A2A"),
+        right=Side(style="thin", color="2A2A2A"),
+        top=Side(style="thin", color="2A2A2A"),
+        bottom=Side(style="thin", color="2A2A2A"),
     )
 
     for cell in ws[1]:
+        cell.fill = title_fill
+        cell.font = title_font
+        cell.alignment = center
+
+    for cell in ws[2]:
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = center
         cell.border = border
 
-    for row in ws.iter_rows(min_row=2):
+    for row in ws.iter_rows(min_row=3):
         for cell in row:
             cell.alignment = center
             cell.border = border
 
-    for col in ws.columns:
+    from openpyxl.utils import get_column_letter
+
+    for col_idx in range(1, ws.max_column + 1):
+
+        col_letter = get_column_letter(col_idx)
+
         max_length = 0
-        col_letter = col[0].column_letter
 
-        for cell in col:
-            if cell.value:
-                max_length = max(
-                    max_length,
-                    len(str(cell.value))
-                )
+        for row in ws.iter_rows(min_col=col_idx, max_col=col_idx):
 
-        ws.column_dimensions[col_letter].width = min(
-            max_length + 5,
-            40
-        )
+            cell = row[0]
 
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+
+        ws.column_dimensions[col_letter].width = min(max_length + 5, 40)
 
 def get_faculty_id(request):
     return getattr(
@@ -102,8 +151,6 @@ def get_faculty_id(request):
         "faculty_id_id",
         None
     )
-
-
 @api_view(["GET"])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsSysAdminOrCoordinator])
@@ -120,6 +167,16 @@ def reporte_docentes(request):
     ws = wb.active
 
     ws.title = "Docentes"
+
+    ws.merge_cells("A1:F1")
+
+    title = ws["A1"]
+    title.value = "REPORTE DE DOCENTES"
+    title.font = Font(bold=True, size=16, color="FFFFFF")
+    title.fill = PatternFill(start_color="111827", end_color="111827", fill_type="solid")
+    title.alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.row_dimensions[1].height = 30
 
     ws.append([
         "Docente",
@@ -154,7 +211,6 @@ def reporte_docentes(request):
 
     return response
 
-
 @api_view(["GET"])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsSysAdminOrCoordinator])
@@ -171,6 +227,16 @@ def reporte_cursos(request):
     ws = wb.active
 
     ws.title = "Cursos"
+
+    ws.merge_cells("A1:E1")
+
+    title = ws["A1"]
+    title.value = "REPORTE DE CURSOS"
+    title.font = Font(bold=True, size=16, color="FFFFFF")
+    title.fill = PatternFill(start_color="111827", end_color="111827", fill_type="solid")
+    title.alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.row_dimensions[1].height = 30
 
     ws.append([
         "Código",
@@ -203,7 +269,6 @@ def reporte_cursos(request):
 
     return response
 
-
 @api_view(["GET"])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsSysAdminOrCoordinator])
@@ -219,6 +284,16 @@ def reporte_usuarios(request):
     ws = wb.active
 
     ws.title = "Usuarios"
+
+    ws.merge_cells("A1:G1")
+
+    title = ws["A1"]
+    title.value = "REPORTE DE USUARIOS"
+    title.font = Font(bold=True, size=16, color="FFFFFF")
+    title.fill = PatternFill(start_color="111827", end_color="111827", fill_type="solid")
+    title.alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.row_dimensions[1].height = 30
 
     ws.append([
         "Ranking",
@@ -254,7 +329,6 @@ def reporte_usuarios(request):
     wb.save(response)
 
     return response
-
 
 @api_view(["GET"])
 @authentication_classes([CookieJWTAuthentication])
@@ -413,6 +487,7 @@ class NotificationListCreateView(APIView):
 
 class NotificationDetailView(APIView):
 
+
     authentication_classes = [
         CookieJWTAuthentication
     ]
@@ -469,3 +544,358 @@ class NotificationDetailView(APIView):
         return Response(
             status=status.HTTP_204_NO_CONTENT
         )
+
+
+@api_view(["GET"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsSysAdminOrCoordinator])
+def reporte_top_cursos(request):
+
+    faculty_id = get_faculty_id(request)
+
+    if not faculty_id:
+        return HttpResponse(status=403)
+
+    semester_id = request.GET.get("semester")
+
+    if not semester_id:
+        return HttpResponse(
+            "El parámetro semester es requerido",
+            status=400
+        )
+
+    top4 = get_top_courses_by_score(
+        faculty_id,
+        semester_id
+    )
+
+    wb = Workbook()
+
+    ws = wb.active
+    ws.title = "Top 4 Cursos"
+
+    ws.merge_cells("A1:C1")
+
+    title_cell = ws["A1"]
+    title_cell.value = "TOP 4 CURSOS CON MEJOR PUNTEO"
+
+    title_cell.font = Font(
+        bold=True,
+        size=16,
+        color="FFFFFF"
+    )
+
+    title_cell.fill = PatternFill(
+        start_color="111827",
+        end_color="111827",
+        fill_type="solid"
+    )
+
+    title_cell.alignment = Alignment(
+        horizontal="center",
+        vertical="center"
+    )
+
+    ws.row_dimensions[1].height = 30
+
+    headers = [
+        "Ranking",
+        "Curso",
+        "Punteo"
+    ]
+
+    ws.append(headers)
+
+    header_fill = PatternFill(
+        start_color="FACC15",
+        end_color="FACC15",
+        fill_type="solid"
+    )
+
+    header_font = Font(
+        bold=True,
+        color="000000"
+    )
+
+    center = Alignment(
+        horizontal="center",
+        vertical="center",
+        wrap_text=True
+    )
+
+    border = Border(
+        left=Side(style="thin", color="2A2A2A"),
+        right=Side(style="thin", color="2A2A2A"),
+        top=Side(style="thin", color="2A2A2A"),
+        bottom=Side(style="thin", color="2A2A2A"),
+    )
+
+    for cell in ws[2]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+        cell.border = border
+
+    for index, course in enumerate(top4, start=1):
+
+        ws.append([
+            index,
+            course["course_name"],
+            course["punteo"],
+        ])
+
+    for row in ws.iter_rows(min_row=3):
+
+        for cell in row:
+            cell.border = border
+            cell.alignment = center
+
+        row[0].font = Font(
+            bold=True,
+            color="FACC15"
+        )
+
+        row[2].font = Font(
+            bold=True,
+            color="16A34A"
+        )
+
+    widths = {
+        "A": 15,
+        "B": 50,
+        "C": 20,
+    }
+
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+
+    response = HttpResponse(
+        content_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        )
+    )
+
+    response["Content-Disposition"] = (
+        "attachment; filename=top_4_cursos.xlsx"
+    )
+
+    wb.save(response)
+
+    return response
+
+
+
+@api_view(["GET"])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsSysAdminOrCoordinator])
+def get_courses_evolution_data(request):
+
+    faculty_id = get_faculty_id(request)
+
+    if faculty_id is None:
+
+        return HttpResponse(status=403)
+
+    data = get_courses_evolution_data_service(faculty_id)
+
+    wb = Workbook()
+
+    ws = wb.active
+
+    ws.title = "Evolución Cursos"
+
+
+
+    ws.merge_cells("A1:E1")
+
+    title = ws["A1"]
+
+    title.value = "EVOLUCIÓN HISTÓRICA DE CURSOS"
+
+    title.font = Font(bold=True, size=16, color="FFFFFF")
+
+    title.fill = PatternFill(start_color="111827", end_color="111827", fill_type="solid")
+
+    title.alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.row_dimensions[1].height = 30
+
+
+
+    headers = ["Curso ID", "Curso", "Año", "Semestre", "Rating"]
+
+    ws.append(headers)
+
+    header_fill = PatternFill(start_color="FACC15", end_color="FACC15", fill_type="solid")
+
+    header_font = Font(bold=True, color="000000")
+
+    center = Alignment(horizontal="center", vertical="center")
+
+    border = Border(
+
+        left=Side(style="thin", color="2A2A2A"),
+
+        right=Side(style="thin", color="2A2A2A"),
+
+        top=Side(style="thin", color="2A2A2A"),
+
+        bottom=Side(style="thin", color="2A2A2A"),
+
+    )
+
+    for cell in ws[2]:
+
+        cell.fill = header_fill
+
+        cell.font = header_font
+
+        cell.alignment = center
+
+        cell.border = border
+
+
+    for course in data:
+
+        for rating in course.get("semester_ratings", []):
+
+            ws.append([
+
+                course["course_id"],
+
+                course["course_name"],
+
+                rating["semester_year"],
+
+                rating["semester_number"],
+
+                rating["rating"],
+
+            ])
+
+
+
+    for row in ws.iter_rows(min_row=3):
+
+        for cell in row:
+
+            cell.border = border
+
+            cell.alignment = center
+
+        row[0].font = Font(bold=True, color="FACC15")
+
+        row[4].font = Font(bold=True, color="16A34A")
+
+
+    ws.column_dimensions["A"].width = 15
+
+    ws.column_dimensions["B"].width = 45
+
+    ws.column_dimensions["C"].width = 15
+
+    ws.column_dimensions["D"].width = 15
+
+    ws.column_dimensions["E"].width = 15
+
+
+    response = HttpResponse(
+
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+    )
+
+    response["Content-Disposition"] = 'attachment; filename="evolucion_cursos.xlsx"'
+
+    wb.save(response)
+
+    return response
+
+@api_view(["GET"])
+
+@authentication_classes([CookieJWTAuthentication])
+
+@permission_classes([IsSysAdminOrCoordinator])
+
+def reporte_files_excel(request):
+
+    faculty_id = get_faculty_id(request)
+
+    if not faculty_id:
+        return HttpResponse(status=403)
+
+    data = get_files_report(faculty_id)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Archivos"
+
+
+
+    ws.merge_cells("A1:F1")
+    title = ws["A1"]
+    title.value = "REPORTE DE ARCHIVOS"
+    title.font = Font(bold=True, size=16, color="FFFFFF")
+    title.fill = PatternFill(
+        start_color="111827",
+        end_color="111827",
+        fill_type="solid"
+    )
+    title.alignment = Alignment(
+        horizontal="center",
+        vertical="center"
+    )
+    ws.row_dimensions[1].height = 30
+
+
+
+    ws.append([
+        "ID",
+        "Nombre",
+        "URL",
+        "Tamaño",
+        "Procesado",
+        "Fecha"
+    ])
+
+    header_fill = PatternFill(
+        start_color="FACC15",
+        end_color="FACC15",
+        fill_type="solid"
+    )
+
+    header_font = Font(bold=True, color="000000")
+
+    for cell in ws[2]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+
+    for f in data:
+        ws.append([
+            f["id"],
+            f["name"],
+            f["url"],
+            f["size"],
+            f["processed"],
+            f["uploaded_at"],
+        ])
+
+
+    auto_adjust_columns(ws)
+
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    response["Content-Disposition"] = 'attachment; filename="reporte_files.xlsx"'
+
+    wb.save(response)
+
+    return response
