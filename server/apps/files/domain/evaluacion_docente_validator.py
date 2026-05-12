@@ -57,10 +57,10 @@ class EvaluacionDocenteValidator(BaseExcelValidator):
         records: list[dict[str, Any]] = []
 
         # Recorre las filas después de los encabezados
-        for row in dataframe.iloc[self.HEADER_ROW_INDEX:].itertuples(
-            index=False,
-            name=None,
-        ):
+        for excel_index, row in dataframe.iloc[self.HEADER_ROW_INDEX:].iterrows():
+            row = tuple(row)
+            excel_row_number = excel_index + 1
+
             # Salta filas vacías
             if self.is_empty_row(row):
                 continue
@@ -89,6 +89,7 @@ class EvaluacionDocenteValidator(BaseExcelValidator):
                 record.get("Centro de Costo")
             )
             record["Curso"] = self.normalize_course(record.get("Curso"))
+            record["__excel_row__"] = excel_row_number
 
             if not record["Código"] or not record["Catedrático"] or not record["Curso"]:
                 continue

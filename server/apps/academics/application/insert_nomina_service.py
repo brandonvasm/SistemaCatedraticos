@@ -1,4 +1,5 @@
 from datetime import date
+import math
 
 from apps.academics.models import Contract, Course, CourseSection, Semester, Teacher
 
@@ -17,9 +18,23 @@ def _normalize_shift(raw: str) -> str:
 def _first_value(row: dict, *keys: str):
     for key in keys:
         value = row.get(key)
-        if value not in (None, ""):
+        if value not in (None, "") and not _is_empty_number(value):
             return value
     return None
+
+
+def _is_empty_number(value) -> bool:
+    return isinstance(value, float) and math.isnan(value)
+
+
+def _optional_int(value, field_name: str) -> int | None:
+    if value in (None, "") or _is_empty_number(value):
+        return None
+
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} debe ser numérico.")
 
 
 class InsertNominaService:
@@ -31,7 +46,8 @@ class InsertNominaService:
         active_teacher_codes: set[str] = set()
         active_course_ids: set[int] = set()
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(rows, start=1):
+            row_number = row.get("__excel_row__", i)
             try:
                 teacher_name = str(row.get("Docente", "")).strip()
                 teacher_code = str(
@@ -49,26 +65,26 @@ class InsertNominaService:
                     "Total de créditos",
                     "Total de Creditos",
                 )
-                credits = int(credits_raw) if credits_raw is not None else None
+                credits = _optional_int(credits_raw, "Total de créditos")
 
                 if not teacher_code or not course_name or not section_number:
-                    errors.append(f"Fila {i}: Docente, Curso y Sección son obligatorios.")
+                    errors.append(f"Fila {row_number}: Docente, Curso y Sección son obligatorios.")
                     continue
 
                 try:
                     course = Course.objects.get(name=course_name, faculty_id=faculty_id)
                 except Course.DoesNotExist:
-                    errors.append(f"Fila {i}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
+                    errors.append(f"Fila {row_number}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
                     continue
                 except Course.MultipleObjectsReturned:
-                    errors.append(f"Fila {i}: hay varios cursos llamados '{course_name}' en la facultad {faculty_id}.")
+                    errors.append(f"Fila {row_number}: hay varios cursos llamados '{course_name}' en la facultad {faculty_id}.")
                     continue
 
                 career = course.careers.filter(abbreviation=career_abbr).first()
                 if career is None:
                     errors.append(
-                        f"Row {i}: career with abbreviation '{career_abbr}' not found in pensum for course '{course_name}'. "
-                        "Load the pensum before uploading the nomina."
+                        f"Fila {row_number}: la carrera con abreviatura '{career_abbr}' no existe en el pensum para el curso '{course_name}'. "
+                        "Cargue el pensum antes de subir la nómina."
                     )
                     continue
 
@@ -105,7 +121,7 @@ class InsertNominaService:
                     updated += 1
 
             except Exception as e:
-                errors.append(f"Fila {i}: {e}")
+                errors.append(f"Fila {row_number}: {e}")
 
         if active_teacher_codes:
             Contract.objects.filter(

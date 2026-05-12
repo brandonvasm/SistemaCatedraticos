@@ -61,19 +61,69 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
 
 
   const handleFinalProcess = async () => {
-    const idsToProcess = Object.values(fileIds);
-    if (idsToProcess.length === 0) return;
-    window.dispatchEvent(new CustomEvent('show-bg-processing'));
+    const filesToProcess = FILE_REQUIREMENTS
+      .map(file => ({ ...file, fileId: fileIds[file.id] }))
+      .filter(file => Boolean(file.fileId));
+
+    if (filesToProcess.length === 0) return;
+
+    window.dispatchEvent(new CustomEvent('show-bg-processing', {
+      detail: {
+        message: `Preparando ${filesToProcess.length} archivos`,
+        description: 'El sistema está iniciando el procesamiento de los datos',
+      }
+    }));
     onClose();
 
     try {
-      for (const id of idsToProcess) {
-        await fileService.processFile(id);
+      for (let index = 0; index < filesToProcess.length; index += 1) {
+        const file = filesToProcess[index];
+        const response = await fileService.processFile(file.fileId);
+
+        if (!response.task_id) {
+          window.dispatchEvent(new CustomEvent('show-bg-processing', {
+            detail: {
+              message: `Procesando ${index + 1}/${filesToProcess.length}: ${file.name}`,
+              description: response.detail || 'El archivo ya fue procesado',
+            }
+          }));
+          continue;
+        }
+
+        await fileService.waitForProcess(file.fileId, response.task_id, {
+          onStatus: (status) => {
+            window.dispatchEvent(new CustomEvent('show-bg-processing', {
+              detail: {
+                message: `Procesando ${index + 1}/${filesToProcess.length}: ${file.name}`,
+                description: getStatusDescription(status.meta?.step || status.state),
+              }
+            }));
+          }
+        });
       }
       window.dispatchEvent(new CustomEvent('processing-finished'));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error en procesamiento:", err);
+      window.dispatchEvent(new CustomEvent('processing-failed', {
+        detail: {
+          title: 'No se pudo procesar el archivo',
+          message: err.message || 'No se pudo completar el procesamiento de archivos',
+        }
+      }));
     }
+  };
+
+  const getStatusDescription = (step: string) => {
+    const descriptions: Record<string, string> = {
+      downloading_file: 'Descargando archivo desde almacenamiento',
+      processing_excel: 'Leyendo y validando el Excel',
+      inserting_records: 'Guardando registros en el sistema',
+      PENDING: 'Esperando turno de procesamiento',
+      STARTED: 'Procesamiento iniciado',
+      PROGRESS: 'Procesamiento en progreso',
+    };
+
+    return descriptions[step] || 'Procesamiento en segundo plano';
   };
 
   const modalContent = (

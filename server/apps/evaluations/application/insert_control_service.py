@@ -1,3 +1,5 @@
+import math
+
 from django.db.models import Avg, Count
 
 from apps.academics.models import Course, CourseSection, Semester
@@ -25,6 +27,20 @@ def _control_score(high: int, medium: int, low: int) -> float | None:
     if total == 0:
         return None
     return round(high / total * 100, 2)
+
+
+def _limit_text(value: object, max_length: int) -> str:
+    return str(value or "").strip()[:max_length]
+
+
+def _int_or_zero(value, field_name: str) -> int:
+    if value in (None, "") or (isinstance(value, float) and math.isnan(value)):
+        return 0
+
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} debe ser numérico.")
 
 
 def _update_teacher_course_history(teacher, semester_id: int, course) -> None:
@@ -146,7 +162,7 @@ def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -
             try:
                 CourseGeneralRecomendationsAI.objects.create(
                     semester_id=semester_id,
-                    recomendation=recomendation,
+                    recomendation=_limit_text(recomendation, 100),
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
@@ -157,9 +173,9 @@ def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -
                 CourseAnalysisAI.objects.create(
                     course_id=analysis["course_id"],
                     semester_id=semester_id,
-                    title=analysis["title"],
-                    course_overview=analysis["course_recomendation"],
-                    perception=analysis["perception"],
+                    title=_limit_text(analysis.get("title"), 40),
+                    course_overview=_limit_text(analysis.get("course_recomendation"), 100),
+                    perception=_limit_text(analysis.get("perception"), 20) or "neutral",
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
@@ -178,26 +194,27 @@ class InsertControlService:
 
         processed_courses: set[int] = set()
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(rows, start=1):
+            row_number = row.get("__excel_row__", i)
             try:
                 course_name = str(row.get("Curso", "")).strip()
                 section_number = str(row.get("Sección", "")).strip()
                 shift = _normalize_shift(str(row.get("Jornada", "")))
-                high = int(row.get("cantidad_1") or 0)
-                medium = int(row.get("cantidad_0_5") or 0)
-                low = int(row.get("cantidad_0") or 0)
+                high = _int_or_zero(row.get("cantidad_1"), "cantidad_1")
+                medium = _int_or_zero(row.get("cantidad_0_5"), "cantidad_0_5")
+                low = _int_or_zero(row.get("cantidad_0"), "cantidad_0")
 
                 if not course_name or not section_number:
-                    errors.append(f"Fila {i}: Curso y Sección son obligatorios.")
+                    errors.append(f"Fila {row_number}: Curso y Sección son obligatorios.")
                     continue
 
                 try:
                     course = Course.objects.get(name=course_name, faculty_id=faculty_id)
                 except Course.DoesNotExist:
-                    errors.append(f"Fila {i}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
+                    errors.append(f"Fila {row_number}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
                     continue
                 except Course.MultipleObjectsReturned:
-                    errors.append(f"Fila {i}: hay varios cursos llamados '{course_name}' en la facultad {faculty_id}.")
+                    errors.append(f"Fila {row_number}: hay varios cursos llamados '{course_name}' en la facultad {faculty_id}.")
                     continue
 
                 try:
@@ -208,7 +225,7 @@ class InsertControlService:
                     )
                 except CourseSection.DoesNotExist:
                     errors.append(
-                        f"Fila {i}: no se encontró la sección {section_number}/{shift} para el curso '{course_name}'."
+                        f"Fila {row_number}: no se encontró la sección {section_number}/{shift} para el curso '{course_name}'."
                     )
                     continue
 
@@ -230,7 +247,7 @@ class InsertControlService:
                 processed_courses.add(course.id)
 
             except Exception as e:
-                errors.append(f"Fila {i}: {e}")
+                errors.append(f"Fila {row_number}: {e}")
 
         for course_id in processed_courses:
             try:

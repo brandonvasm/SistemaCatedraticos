@@ -1,3 +1,5 @@
+import math
+
 from django.db.models import Avg
 
 from apps.academics.models import CourseSection, Semester, Teacher
@@ -24,6 +26,24 @@ def _performance_level(score: float) -> str:
     if score <= 80:
         return "medium"
     return "high"
+
+
+def _limit_text(value: object, max_length: int) -> str:
+    return str(value or "").strip()[:max_length]
+
+
+def _float_or_zero(value, field_name: str) -> float:
+    if value in (None, "") or (isinstance(value, float) and math.isnan(value)):
+        return 0.0
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} debe ser numérico.")
+
+
+def _int_or_zero(value, field_name: str) -> int:
+    return int(_float_or_zero(value, field_name))
 
 
 def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int) -> list[str]:
@@ -85,7 +105,7 @@ def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int)
             try:
                 TeacherGeneralRecomendationsAI.objects.create(
                     semester_id=semester_id,
-                    recomendation=recomendation,
+                    recomendation=_limit_text(recomendation, 100),
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
@@ -96,9 +116,9 @@ def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int)
                 TeacherProfileAnalysisAI.objects.create(
                     teacher_id=analysis["teacher_id"],
                     semester_id=semester_id,
-                    title=analysis["title"],
-                    profile_overview=analysis["profile_recomendation"],
-                    perception=analysis["perception"],
+                    title=_limit_text(analysis.get("title"), 40),
+                    profile_overview=_limit_text(analysis.get("profile_recomendation"), 100),
+                    perception=_limit_text(analysis.get("perception"), 20) or "neutral",
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
@@ -116,7 +136,8 @@ class InsertEvaluationService:
         errors = []
         processed_teachers: set[int] = set()
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(rows, start=1):
+            row_number = row.get("__excel_row__", i)
             try:
                 teacher_code = str(row.get("Código", "")).strip()
                 appointment_number = str(row.get("No. Nombramiento", "")).strip()
@@ -128,17 +149,17 @@ class InsertEvaluationService:
                 assigned_raw = row.get("Estudiantes Asignados")
 
                 if not teacher_code or not appointment_number:
-                    errors.append(f"Fila {i}: Código y No. Nombramiento son obligatorios.")
+                    errors.append(f"Fila {row_number}: Código y No. Nombramiento son obligatorios.")
                     continue
 
-                score = float(score_raw) if score_raw is not None else 0.0
-                submitted = int(submitted_raw) if submitted_raw is not None else 0
-                assigned = int(assigned_raw) if assigned_raw is not None else 0
+                score = _float_or_zero(score_raw, "Resultado")
+                submitted = _int_or_zero(submitted_raw, "Estudiantes que realizaron la evaluación")
+                assigned = _int_or_zero(assigned_raw, "Estudiantes Asignados")
 
                 try:
                     teacher = Teacher.objects.get(identity_code=teacher_code)
                 except Teacher.DoesNotExist:
-                    errors.append(f"Fila {i}: no se encontró el docente con código '{teacher_code}'. Cargue la nómina antes de procesar evaluaciones.")
+                    errors.append(f"Fila {row_number}: no se encontró el docente con código '{teacher_code}'. Cargue la nómina antes de procesar evaluaciones.")
                     continue
 
                 section_filters = {
@@ -161,12 +182,12 @@ class InsertEvaluationService:
                     section = CourseSection.objects.get(**section_filters)
                 except CourseSection.DoesNotExist:
                     errors.append(
-                        f"Fila {i}: no se encontró una sección para el nombramiento '{appointment_number}'. Cargue la nómina antes de procesar evaluaciones."
+                        f"Fila {row_number}: no se encontró una sección para el nombramiento '{appointment_number}'. Cargue la nómina antes de procesar evaluaciones."
                     )
                     continue
                 except CourseSection.MultipleObjectsReturned:
                     errors.append(
-                        f"Fila {i}: hay varias secciones para el nombramiento '{appointment_number}'. Revise la nómina para evitar duplicados."
+                        f"Fila {row_number}: hay varias secciones para el nombramiento '{appointment_number}'. Revise la nómina para evitar duplicados."
                     )
                     continue
 
@@ -188,7 +209,7 @@ class InsertEvaluationService:
                 processed_teachers.add(teacher.id)
 
             except Exception as e:
-                errors.append(f"Fila {i}: {e}")
+                errors.append(f"Fila {row_number}: {e}")
 
         Semester.objects.filter(id=semester_id).update(evaluation_loaded=True)
 

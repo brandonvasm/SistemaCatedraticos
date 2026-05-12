@@ -72,10 +72,10 @@ class PensumValidator(BaseExcelValidator):
 
         records: list[dict[str, Any]] = []
 
-        for row in dataframe.iloc[self.HEADER_ROW_INDEX:].itertuples(
-            index=False,
-            name=None,
-        ):
+        for excel_index, row in dataframe.iloc[self.HEADER_ROW_INDEX:].iterrows():
+            row = tuple(row)
+            excel_row_number = excel_index + 1
+
             values = row[
                 self.START_COLUMN_INDEX - 1:self.START_COLUMN_INDEX - 1 + self.TOTAL_COLUMNS
             ]
@@ -91,6 +91,7 @@ class PensumValidator(BaseExcelValidator):
                 headers[index]: values[index] if index < len(values) else None
                 for index in range(len(headers))
             }
+            record["__excel_row__"] = excel_row_number
             self._normalize_record(record)
             records.append(record)
 

@@ -58,10 +58,10 @@ class ComentariosValidator(BaseExcelValidator):
         records: list[dict[str, Any]] = []
 
         # Recorre las filas después del encabezado
-        for row in dataframe.iloc[self.HEADER_ROW_INDEX:].itertuples(
-            index=False,
-            name=None,
-        ):
+        for excel_index, row in dataframe.iloc[self.HEADER_ROW_INDEX:].iterrows():
+            row = tuple(row)
+            excel_row_number = excel_index + 1
+
             # Salta filas vacías
             if self.is_empty_row(row):
                 continue
@@ -107,6 +107,7 @@ class ComentariosValidator(BaseExcelValidator):
                 "Código Docente": current_teacher_code,
                 "Catedrático": current_teacher,
                 "Comentario": self.normalize_text(comment_value),
+                "__excel_row__": excel_row_number,
             }
             records.append(record)
 

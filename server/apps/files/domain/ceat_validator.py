@@ -62,7 +62,10 @@ class CeatValidator(BaseExcelValidator):
         # Recorre las filas de datos
         data_rows = dataframe.iloc[self.DATA_START_ROW_INDEX - 1 :, : self.DATA_COLUMNS]
 
-        for row in data_rows.itertuples(index=False, name=None):
+        for excel_index, row in data_rows.iterrows():
+            row = tuple(row)
+            excel_row_number = excel_index + 1
+
             # Salta filas vacías
             if self.is_empty_row(row):
                 continue
@@ -83,6 +86,7 @@ class CeatValidator(BaseExcelValidator):
             record["Nombre(s) y Apellidos"] = self.normalize_name(
                 record.get("Nombre(s) y Apellidos")
             )
+            record["__excel_row__"] = excel_row_number
 
             if not record["Código Docente"] and not record["Nombre(s) y Apellidos"]:
                 continue

@@ -1,5 +1,6 @@
 import re
 import unicodedata
+import math
 
 from apps.academics.models import Career, Course
 
@@ -35,6 +36,16 @@ def _career_key(value: str) -> str:
     return "".join(word[0] for word in words if word not in ignored_words)
 
 
+def _int_or_zero(value, field_name: str) -> int:
+    if value in (None, "") or (isinstance(value, float) and math.isnan(value)):
+        return 0
+
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} debe ser numérico.")
+
+
 class InsertPensumService:
     @staticmethod
     def execute(rows: list[dict], faculty_id: int) -> dict:
@@ -43,18 +54,19 @@ class InsertPensumService:
         errors = []
         processed_career_codes: set[str] = set()
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(rows, start=1):
+            row_number = row.get("__excel_row__", i)
             try:
                 career_name = str(row.get("Nombre_Carrera", "")).strip()
                 career_code = str(row.get("No_Carrera", "")).strip()
                 course_code = str(row.get("No_Curso", "")).strip()
                 course_name = str(row.get("Nombre_Curso", "")).strip()
-                cred_teo = int(row.get("Cred_Teo") or 0)
-                cred_pra = int(row.get("Cred_Pra") or 0)
+                cred_teo = _int_or_zero(row.get("Cred_Teo"), "Cred_Teo")
+                cred_pra = _int_or_zero(row.get("Cred_Pra"), "Cred_Pra")
                 credits = cred_teo + cred_pra
 
                 if not career_code or not course_code:
-                    errors.append(f"Fila {i}: No_Carrera y No_Curso son obligatorios.")
+                    errors.append(f"Fila {row_number}: No_Carrera y No_Curso son obligatorios.")
                     continue
 
                 career, _ = Career.objects.get_or_create(
@@ -84,7 +96,7 @@ class InsertPensumService:
                     updated += 1
 
             except Exception as e:
-                errors.append(f"Fila {i}: {e}")
+                errors.append(f"Fila {row_number}: {e}")
 
         if processed_career_codes:
             Career.objects.filter(

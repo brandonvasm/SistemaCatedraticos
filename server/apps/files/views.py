@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from celery.result import AsyncResult
+from kombu.exceptions import OperationalError
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
@@ -6,17 +7,13 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import FileSerializer, FileCreateSerializer
 from .models import File
-from rest_framework import status
-from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 
 from .infrastructure.supabase_storage import SupabaseStorageService
 from .application.save_file_use_case import SaveFileUseCase
 from .application.validate_request_file import ValidateFileRequestUseCase
-from .application.process_excel import ProcessExcelUseCase
-from .application.insert_processed_file import InsertProcessedFileUseCase
+from .tasks import process_file_task
 
 # Create your views here.
 
@@ -89,61 +86,87 @@ class FileView(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='process')
     def process_file(self, request, pk=None):
         file_record = self.get_object()
-        file_type = file_record.format
-        file_path = file_record.url
-        file_download_url = self.storage_service.get_download_url(file_path, file_record.name)
 
-        process_use_case = ProcessExcelUseCase()
-        insert_use_case = InsertProcessedFileUseCase()
-        try:
-            with transaction.atomic():
-                basic_info, records = process_use_case.execute(
-                    file_path=file_download_url,
-                    file_type=file_type,
-                )
-                insert_result = insert_use_case.execute(
-                    file_type=file_type,
-                    records=records,
-                    semester_id=file_record.semester_id,
-                    faculty_id=file_record.faculty_id,
-                )
-
-                errors = insert_result.get("errors") or []
-                if errors:
-                    transaction.set_rollback(True)
-                    first_error = errors[0] if errors else ""
-                    return Response({
-                        "error": (
-                            f"No se pudo procesar '{file_record.name}': se encontraron "
-                            f"{len(errors)} errores en las filas. No se guardó ningún dato."
-                        ),
-                        "file_id": file_record.id,
-                        "file_name": file_record.name,
-                        "file_type": file_type,
-                        "first_error": first_error,
-                        "basic_info": basic_info,
-                        "records_count": len(records),
-                        "insert_result": insert_result,
-                    }, status=status.HTTP_400_BAD_REQUEST)
-
-                file_record.processed = True
-                file_record.processed_at = timezone.now()
-                file_record.save()
-                request.user.evaluation_count += 1
-                request.user.save()
-                return Response({
-                    "basic_info": basic_info,
-                    "records_count": len(records),
-                    "records": records,
-                    "insert_result": insert_result,
-                }, status=status.HTTP_200_OK)
-        except Exception as e:
-            self.storage_service.delete_file(file_path)
-            File.objects.filter(id=file_record.id).delete()
+        if file_record.processed:
             return Response({
-                "error": f"No se pudo procesar '{file_record.name}': {str(e)}",
+                "detail": "El archivo ya fue procesado.",
                 "file_id": file_record.id,
                 "file_name": file_record.name,
-                "file_type": file_type,
-                "message": "The file has been deleted from storage."
+                "file_type": file_record.format,
+                "processed": True,
+                "processed_at": file_record.processed_at,
+            }, status=status.HTTP_200_OK)
+
+        try:
+            task = process_file_task.delay(file_record.id, request.user.id)
+            print(f"[Celery][Files] API enqueued file_id={file_record.id} into Redis with task_id={task.id}")
+        except OperationalError as e:
+            return Response({
+                "error": "No se pudo enviar el procesamiento a la cola. Verifique que Redis/Celery esté disponible.",
+                "detail": str(e),
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as e:
+            return Response({
+                "error": f"No se pudo iniciar el procesamiento del archivo: {e}",
+                "file_id": file_record.id,
+                "file_name": file_record.name,
+                "file_type": file_record.format,
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            "detail": "El procesamiento del archivo fue enviado a la cola.",
+            "task_id": task.id,
+            "file_id": file_record.id,
+            "file_name": file_record.name,
+            "file_type": file_record.format,
+        }, status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=['get'], url_path='process-status')
+    def process_status(self, request, pk=None):
+        task_id = request.query_params.get("task_id")
+        if not task_id:
+            return Response({"error": "Debe enviar el parámetro task_id."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            task_result = AsyncResult(task_id)
+            task_state = task_result.state
+            task_info = task_result.info
+        except Exception as e:
+            print(f"[Celery][Files] Could not read task status task_id={task_id}: {e}")
+            return Response({
+                "task_id": task_id,
+                "state": "FAILURE",
+                "file_id": pk,
+                "status": "failed",
+                "error": (
+                    "No se pudo recuperar el detalle de este procesamiento. "
+                    "Reinicie el worker de Celery y procese el archivo nuevamente."
+                ),
+                "first_error": (
+                    "El resultado guardado en Redis no tiene el formato esperado. "
+                    "Esto puede pasar si la tarea fue procesada por un worker anterior."
+                ),
+            }, status=status.HTTP_200_OK)
+
+        response_data = {
+            "task_id": task_id,
+            "state": task_state,
+            "file_id": pk,
+        }
+
+        if isinstance(task_info, dict) and task_info.get("status") == "failed":
+            response_data["state"] = "FAILURE"
+            response_data.update(task_info)
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        if task_state == "SUCCESS":
+            response_data["result"] = task_result.result
+        elif task_state == "FAILURE":
+            if isinstance(task_info, dict):
+                response_data.update(task_info)
+            else:
+                response_data["error"] = str(task_result.result)
+        elif task_info:
+            response_data["meta"] = task_info
+
+        return Response(response_data, status=status.HTTP_200_OK)

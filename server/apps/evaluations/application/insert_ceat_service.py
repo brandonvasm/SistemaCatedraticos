@@ -1,4 +1,5 @@
 from datetime import date
+import math
 
 from django.db.models import Sum
 
@@ -13,23 +14,34 @@ _LEVEL3 = "Horas de Formación CEAT - Nivel 3 (autonomía)"
 _COMPLEMENTARY = "Horas de Formación CEAT - Complementarias"
 
 
+def _int_or_zero(value, field_name: str) -> int:
+    if value in (None, "") or (isinstance(value, float) and math.isnan(value)):
+        return 0
+
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} debe ser numérico.")
+
+
 class InsertCeatService:
     @staticmethod
     def execute(rows: list[dict], semester_id: int, faculty_id: int) -> dict:
         created = 0
         errors = []
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(rows, start=1):
+            row_number = row.get("__excel_row__", i)
             try:
                 teacher_code = str(row.get("Código Docente", "")).strip()
                 teacher_name = str(row.get("Nombre(s) y Apellidos", "")).strip()
-                level1 = int(row.get(_LEVEL1) or 0)
-                level2 = int(row.get(_LEVEL2) or 0)
-                level3 = int(row.get(_LEVEL3) or 0)
-                complementary = int(row.get(_COMPLEMENTARY) or 0)
+                level1 = _int_or_zero(row.get(_LEVEL1), _LEVEL1)
+                level2 = _int_or_zero(row.get(_LEVEL2), _LEVEL2)
+                level3 = _int_or_zero(row.get(_LEVEL3), _LEVEL3)
+                complementary = _int_or_zero(row.get(_COMPLEMENTARY), _COMPLEMENTARY)
 
                 if not teacher_code:
-                    errors.append(f"Fila {i}: Código Docente es obligatorio.")
+                    errors.append(f"Fila {row_number}: Código Docente es obligatorio.")
                     continue
 
                 teacher, _ = Teacher.objects.get_or_create(
@@ -74,7 +86,7 @@ class InsertCeatService:
                 )
 
             except Exception as e:
-                errors.append(f"Fila {i}: {e}")
+                errors.append(f"Fila {row_number}: {e}")
 
         Semester.objects.filter(id=semester_id).update(ceat_loaded=True)
 
