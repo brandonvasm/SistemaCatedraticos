@@ -274,8 +274,13 @@ def reporte_cursos(request):
 @permission_classes([IsSysAdminOrCoordinator])
 def reporte_usuarios(request):
 
+    faculty_id = get_faculty_id(request)
+
+    if not faculty_id:
+        return HttpResponse(status=403)
+
     data = sorted(
-        get_users_data(),
+        get_users_data(faculty_id),
         key=lambda x: x.get("evaluation_count", 0),
         reverse=True
     )
@@ -285,15 +290,57 @@ def reporte_usuarios(request):
 
     ws.title = "Usuarios"
 
+    center = Alignment(
+        horizontal="center",
+        vertical="center"
+    )
+
+    border = Border(
+        left=Side(style="thin", color="2A2A2A"),
+        right=Side(style="thin", color="2A2A2A"),
+        top=Side(style="thin", color="2A2A2A"),
+        bottom=Side(style="thin", color="2A2A2A"),
+    )
+
     ws.merge_cells("A1:G1")
 
     title = ws["A1"]
+
     title.value = "REPORTE DE USUARIOS"
-    title.font = Font(bold=True, size=16, color="FFFFFF")
-    title.fill = PatternFill(start_color="111827", end_color="111827", fill_type="solid")
-    title.alignment = Alignment(horizontal="center", vertical="center")
+
+    title.font = Font(
+        bold=True,
+        size=16,
+        color="FFFFFF"
+    )
+
+    title.fill = PatternFill(
+        start_color="111827",
+        end_color="111827",
+        fill_type="solid"
+    )
+
+    title.alignment = center
 
     ws.row_dimensions[1].height = 30
+
+    ws.merge_cells("A2:G2")
+
+    subtitle = ws["A2"]
+
+    subtitle.value = (
+        "Usuarios subrayados = usuarios inactivos"
+    )
+
+    subtitle.font = Font(
+        bold=True,
+        italic=True,
+        color="B91C1C"
+    )
+
+    subtitle.alignment = center
+
+    ws.row_dimensions[2].height = 22
 
     ws.append([
         "Ranking",
@@ -305,7 +352,26 @@ def reporte_usuarios(request):
         "Estado"
     ])
 
+    header_fill = PatternFill(
+        start_color="FACC15",
+        end_color="FACC15",
+        fill_type="solid"
+    )
+
+    header_font = Font(
+        bold=True,
+        color="000000"
+    )
+
+    for cell in ws[3]:
+
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+        cell.border = border
+
     for i, u in enumerate(data, start=1):
+
         ws.append([
             i,
             u["username"],
@@ -316,14 +382,31 @@ def reporte_usuarios(request):
             "Activo" if u["is_active"] else "Inactivo",
         ])
 
-    aplicar_estilos(ws)
+        current_row = ws.max_row
+
+        for cell in ws[current_row]:
+
+            cell.alignment = center
+            cell.border = border
+
+        if not u["is_active"]:
+
+            for cell in ws[current_row]:
+
+                cell.font = Font(
+                    bold=True,
+                    underline="single",
+                    color="000000"
+                )
+
+    auto_adjust_columns(ws)
 
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
     response["Content-Disposition"] = (
-        "attachment; filename=reporte_usuarios.xlsx"
+        'attachment; filename="reporte_usuarios.xlsx"'
     )
 
     wb.save(response)
@@ -652,12 +735,12 @@ def reporte_top_cursos(request):
 
         row[0].font = Font(
             bold=True,
-            color="FACC15"
+            color="000000"
         )
 
         row[2].font = Font(
             bold=True,
-            color="16A34A"
+            color="000000"
         )
 
     widths = {
@@ -784,9 +867,9 @@ def get_courses_evolution_data(request):
 
             cell.alignment = center
 
-        row[0].font = Font(bold=True, color="FACC15")
+        row[0].font = Font(bold=True, color="000000")
 
-        row[4].font = Font(bold=True, color="16A34A")
+        row[4].font = Font(bold=True, color="000000")
 
 
     ws.column_dimensions["A"].width = 15
