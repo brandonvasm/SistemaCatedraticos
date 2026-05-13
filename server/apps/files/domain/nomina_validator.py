@@ -131,6 +131,7 @@ class NominaValidator(BaseExcelValidator):
                 record.get("Observaciones del curso (Compartido, docente múltiple…)")
             )
         )
+
         record["Aula"] = self.normalize_code(record.get("Aula"))
         record["Edificio"] = self.normalize_code(record.get("Edificio"))
         record["Modalidad"] = self.normalize_academic_text(record.get("Modalidad"))

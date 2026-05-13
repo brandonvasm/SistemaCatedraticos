@@ -112,6 +112,7 @@ class FileView(viewsets.ModelViewSet):
                 if errors:
                     transaction.set_rollback(True)
                     first_error = errors[0] if errors else ""
+                    #print(errors)
                     return Response({
                         "error": (
                             f"Error processing '{file_record.name}': finished with "
@@ -125,6 +126,8 @@ class FileView(viewsets.ModelViewSet):
                         "records_count": len(records),
                         "insert_result": insert_result,
                     }, status=status.HTTP_400_BAD_REQUEST)
+                    self.storage_service.delete_file(file_path)
+                    File.objects.filter(id=file_record.id).delete()
 
                 file_record.processed = True
                 file_record.processed_at = timezone.now()
@@ -140,6 +143,7 @@ class FileView(viewsets.ModelViewSet):
         except Exception as e:
             self.storage_service.delete_file(file_path)
             File.objects.filter(id=file_record.id).delete()
+            #print(str(e))
             return Response({
                 "error": f"Error processing '{file_record.name}': {str(e)}",
                 "file_id": file_record.id,

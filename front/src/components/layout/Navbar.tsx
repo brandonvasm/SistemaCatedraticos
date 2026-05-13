@@ -52,7 +52,7 @@ export default function Navbar() {
               <span className="text-[7px] text-gray-500 group-hover:text-red-400 transition-colors">SEMESTRE ACTUAL</span>
               <span className="flex items-center gap-2 ">
                 <CalendarDays size={15} className="text-yellow-400" />
-                {semester ? `${semester.year}-${semester.number}` : "Cargando..."}
+                {semester ? `${semester.year}-${semester.number}` : "Sin semestre..."}
               </span>
             </div>
           </button>

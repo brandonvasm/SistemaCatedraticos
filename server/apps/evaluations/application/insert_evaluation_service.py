@@ -144,18 +144,7 @@ class InsertEvaluationService:
                 section_filters = {
                     "appointment_number": appointment_number,
                     "semester_id": semester_id,
-                    "teacher": teacher,
                 }
-
-                if course_name:
-                    section_filters["course__name"] = course_name
-                    section_filters["course__faculty_id"] = faculty_id
-
-                if section_number:
-                    section_filters["section_number"] = section_number
-
-                if shift:
-                    section_filters["shift"] = shift
 
                 try:
                     section = CourseSection.objects.get(**section_filters)
