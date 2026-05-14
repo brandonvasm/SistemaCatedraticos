@@ -84,7 +84,7 @@ export default function Recommendations({ teacherId }: { teacherId: string | num
         <div className="flex items-center gap-3 ml-1">
           <Activity className="text-gray-500" size={16} />
           <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">
-            Analisis del docente
+            Analisis del docente - promedio menor a 85
           </h2>
         </div>
 

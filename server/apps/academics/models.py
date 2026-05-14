@@ -13,20 +13,22 @@ class Career(models.Model):
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
 
     class Meta:
+        unique_together = (('name', 'faculty'))
         indexes = [
             models.Index(fields=['faculty', 'abbreviation'], name='career_faculty_abbr_idx'),
         ]
 
 
 class Course(models.Model):
-    code = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=20)
+    name = models.CharField(max_length=200, unique=True)
     credits = models.IntegerField(default=0)
     is_active = models.BooleanField(default=False)
     faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
     careers = models.ManyToManyField(Career, blank=True)
 
     class Meta:
+        unique_together = (('name', 'faculty'))
         indexes = [
             models.Index(fields=['faculty', 'name'], name='course_faculty_name_idx'),
             models.Index(fields=['faculty', 'is_active'], name='course_faculty_active_idx'),
@@ -60,6 +62,7 @@ class Semester(models.Model):
     )
 
     class Meta:
+        unique_together =  (('year', 'number', 'faculty'))
         indexes = [
             models.Index(fields=['faculty', 'year', 'number'], name='sem_fac_yr_num_idx'),
         ]
@@ -84,7 +87,7 @@ class CourseSection(models.Model):
     credits = models.IntegerField(null=True, blank=True)
 
     class Meta:
-        unique_together = (('course', 'section_number', 'shift'),)
+        unique_together = (('course', 'section_number', 'shift'), ('appointment_number', 'semester'))
         indexes = [
             models.Index(fields=['course', 'semester'], name='cs_crs_sem_idx'),
             models.Index(fields=['appointment_number'], name='coursesection_appointment_idx'),
@@ -98,6 +101,7 @@ class Contract(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
+        unique_together = (('teacher', 'faculty'))
         indexes = [
             models.Index(fields=['teacher', 'faculty'], name='contract_teacher_faculty_idx'),
             models.Index(fields=['faculty', 'is_active'], name='contract_faculty_active_idx'),
