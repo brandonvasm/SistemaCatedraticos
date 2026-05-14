@@ -6,10 +6,12 @@ import {
 } from "lucide-react";
 
 import { useState } from "react";
+
 import { useAuth } from "../../context/AuthContext";
 
 import ReportQuickCard from "./ReportQuickCard";
-import api from "../../api/axios";
+
+import { reportesServices } from "../../services/reportesServices";
 
 export default function QuickReports() {
 
@@ -20,42 +22,50 @@ export default function QuickReports() {
 
   const [loadingReport, setLoadingReport] = useState<string | null>(null);
 
-  const downloadFile = async (
-    url: string,
-    filename: string,
-    reportId: string
+  const descargarArchivo = (
+    blob: Blob,
+    filename: string
   ) => {
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+
+    link.download = filename;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleTopCoursesDownload = async () => {
+
+    if (!semesterId || !facultyId) return;
 
     try {
 
-      setLoadingReport(reportId);
+      setLoadingReport("top-courses");
 
-      const response = await api.get(url, {
-        responseType: "blob",
-      });
+      const blob =
+        await reportesServices.descargarTopCursos(
+          semesterId,
+          facultyId
+        );
 
-      const blob = new Blob([response.data]);
-
-      const link = document.createElement("a");
-
-      link.href = window.URL.createObjectURL(blob);
-
-      link.download = filename;
-
-      document.body.appendChild(link);
-
-      link.click();
-
-      link.remove();
-
-      window.URL.revokeObjectURL(link.href);
+      descargarArchivo(
+        blob,
+        `top_4_cursos_semestre_${semesterId}.xlsx`
+      );
 
     } catch (error) {
 
-      console.error(
-        "Error descargando reporte:",
-        error
-      );
+      console.error(error);
 
     } finally {
 
@@ -63,37 +73,60 @@ export default function QuickReports() {
     }
   };
 
-  const handleTopCoursesDownload = async () => {
-
-    if (!semesterId || !facultyId) return;
-
-    await downloadFile(
-      `/reports/curses-top-reports/?semester=${semesterId}&faculty=${facultyId}`,
-      `top_4_cursos_semestre_${semesterId}.xlsx`,
-      "top-courses"
-    );
-  };
-
   const handleEvolutionDownload = async () => {
 
     if (!facultyId) return;
 
-    await downloadFile(
-      `/reports/courses-evolution-reports/?faculty=${facultyId}`,
-      "evolucion_cursos.xlsx",
-      "course-evolution"
-    );
+    try {
+
+      setLoadingReport("course-evolution");
+
+      const blob =
+        await reportesServices.descargarEvolucionCursos(
+          facultyId
+        );
+
+      descargarArchivo(
+        blob,
+        "evolucion_cursos.xlsx"
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setLoadingReport(null);
+    }
   };
 
   const handleFilesDownload = async () => {
 
     if (!facultyId) return;
 
-    await downloadFile(
-      `/reports/files-reports/?faculty=${facultyId}`,
-      "reporte_files.xlsx",
-      "files-report"
-    );
+    try {
+
+      setLoadingReport("files-report");
+
+      const blob =
+        await reportesServices.descargarReporteArchivos(
+          facultyId
+        );
+
+      descargarArchivo(
+        blob,
+        "reporte_files.xlsx"
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setLoadingReport(null);
+    }
   };
 
   return (
@@ -193,4 +226,3 @@ export default function QuickReports() {
     </div>
   );
 }
-
