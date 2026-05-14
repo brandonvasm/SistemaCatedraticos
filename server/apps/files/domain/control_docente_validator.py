@@ -66,7 +66,7 @@ class ControlDocenteValidator(BaseExcelValidator):
 
         # Definir rango de evaluación
         start_column = "Asistencia reunón facultad"
-        end_column = "Zonas al 30%"
+        end_column = "Zonas al 60%"
 
         start_idx = headers.index(start_column)
         end_idx = headers.index(end_column)
@@ -106,14 +106,13 @@ class ControlDocenteValidator(BaseExcelValidator):
                 except (ValueError, TypeError):
                     continue
 
-                if num == 1:
-                    count_1 += 1
-                elif num == 0:
-                    count_0 += 1
-                elif num == 0.5:
+                if 0.5 <= num < 1:
                     count_05 += 1
-                elif not num.is_integer():
-                    count_decimals += 1
+                elif 0 <= num < 0.5:
+                    count_0 += 1
+                elif num >= 1:
+                    count_1 += 1
+                    
 
             # Agregar resultados al registro
             record["cantidad_1"] = count_1
