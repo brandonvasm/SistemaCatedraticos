@@ -197,14 +197,14 @@ class InsertControlService:
                     errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
                     continue
                 except Course.MultipleObjectsReturned:
-                    errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
+                    errors.append(f"Row {i}: multiple courses with name: {course_name} were returned.")
                     continue
 
                 try:
                     section = CourseSection.objects.get(
                         course=course,
                         section_number=section_number,
-                        shift=shift,
+                        semester_id=semester_id,
                     )
                 except CourseSection.DoesNotExist:
                     errors.append(

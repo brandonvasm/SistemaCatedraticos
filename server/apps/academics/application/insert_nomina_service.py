@@ -61,7 +61,7 @@ class InsertNominaService:
                     errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
                     continue
                 except Course.MultipleObjectsReturned:
-                    errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
+                    errors.append(f"Row {i}: multiple courses with name: {course_name} were returned.")
                     continue
 
                 career = course.careers.filter(abbreviation=career_abbr).first()
@@ -84,11 +84,12 @@ class InsertNominaService:
                 )
 
                 _, s_created = CourseSection.objects.update_or_create(
-                    course=course,
-                    section_number=section_number,
-                    shift=shift,
+                    appointment_number=appointment_number,
+                    semester_id=semester_id,
                     defaults={
-                        "semester_id": semester_id,
+                        "section_number": section_number,
+                        "course": course,
+                        "shift": shift,
                         "teacher": teacher,
                         "appointment_number": appointment_number,
                         "credits": credits,

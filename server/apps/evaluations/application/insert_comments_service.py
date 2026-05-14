@@ -1,17 +1,6 @@
 from apps.academics.models import Course, CourseSection, Semester
 from apps.evaluations.models import Comment
 
-_SHIFT_MAP = {
-    "matutina": "matutina",
-    "vespertina": "vespertina",
-    "fin de semana": "fin de semana",
-    "sabatina": "fin de semana",
-}
-
-
-def _normalize_shift(raw: str) -> str:
-    return _SHIFT_MAP.get(raw.strip().lower(), raw.strip().lower())
-
 
 class InsertCommentsService:
     @staticmethod
@@ -23,12 +12,11 @@ class InsertCommentsService:
             try:
                 course_name = str(row.get("Curso", "")).strip()
                 section_number = str(row.get("Sección", "")).strip()
-                shift = _normalize_shift(str(row.get("Jornada", "")))
-                teacher_name = str(row.get("Catedrático", "")).strip()
-                content = str(row.get("Comentario", "")).strip()
+                teacher_code = str(row.get("Código Docente", "")).strip()
+                comments: list[str] = row.get("Comentarios", [])
 
-                if not course_name or not content:
-                    errors.append(f"Row {i}: Curso and Comentario are required")
+                if not course_name or not comments:
+                    errors.append(f"Row {i}: Curso and Comentarios are required")
                     continue
 
                 try:
@@ -40,29 +28,33 @@ class InsertCommentsService:
                     errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
                     continue
 
-                if section_number and shift:
-                    sections = CourseSection.objects.filter(
-                        course=course,
-                        semester_id=semester_id,
-                        section_number=section_number,
-                        shift=shift,
-                    )
-                else:
-                    sections = CourseSection.objects.filter(
-                        course=course,
-                        semester_id=semester_id,
-                        teacher__name=teacher_name,
-                    )
+                section_filter = {
+                    "course": course,
+                    "semester_id": semester_id,
+                }
+
+                sections = None
+
+                if section_number:
+                    section_filter["section_number"] = section_number
+                    sections = CourseSection.objects.filter(**section_filter)
+
+                elif teacher_code:
+                    section_filter["teacher__code"] = teacher_code
+                    sections = CourseSection.objects.filter(**section_filter)
+                
 
                 if not sections.exists():
                     errors.append(
-                        f"Row {i}: section for '{course_name}' not found"
+                        f"Row {i}: section for '{course_name}' "
+                        f"(sección={section_number}, código={teacher_code}) not found"
                     )
                     continue
 
                 for section in sections:
-                    Comment.objects.create(course_section=section, content=content)
-                    created += 1
+                    for content in comments:
+                        Comment.objects.create(course_section=section, content=content)
+                        created += 1
 
             except Exception as e:
                 errors.append(f"Row {i}: {e}")

@@ -69,10 +69,10 @@ class InsertPensumService:
                 processed_career_codes.add(career_code)
 
                 course, c_created = Course.objects.update_or_create(
-                    code=course_code,
+                    name=course_name,
                     faculty_id=faculty_id,
                     defaults={
-                        "name": course_name,
+                        "code": course_code,
                         "credits": credits,
                     },
                 )
