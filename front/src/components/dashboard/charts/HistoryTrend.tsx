@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Activity, Loader2 } from "lucide-react";
+import { Activity, Loader2,Calendar, BarChart3 } from "lucide-react";
 import { chartService } from "../../../services/chartService";
 
 interface TrendData {
@@ -13,6 +13,8 @@ interface TrendData {
 export default function HistoryTrend({ facultyId }: { facultyId: number | undefined }) {
   const [history, setHistory] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const colors = ["#facc15", "#34d399", "#60a5fa", "#f87171", "#a78bfa"];
 
   useEffect(() => {
     if (facultyId) {
@@ -40,11 +42,7 @@ export default function HistoryTrend({ facultyId }: { facultyId: number | undefi
     const points = history.map((h, i) => {
       const x = (i / (history.length - 1)) * 100;
       const y = 100 - ((h.avg_score - yMin) / yRange) * 100;
-      
-
-
-      const hue = (i * 137.5) % 360; 
-      const color = `hsl(${hue}, 70%, 60%)`;
+      const color = colors[i % colors.length];
 
       return { x, y, value: h.avg_score, label: h.semester_label, color };
     });
@@ -59,8 +57,8 @@ export default function HistoryTrend({ facultyId }: { facultyId: number | undefi
   }, [history]);
 
   if (loading) return (
-    <div className="bg-[#1e2230]/60 border border-white/5 rounded-3xl p-8 h-[450px] flex items-center justify-center">
-      <Loader2 className="w-6 h-6 text-yellow-400 animate-spin opacity-20" />
+    <div className="bg-[#1e2230]/60 border border-white/5 rounded-[2.5rem] p-8 h-[520px] flex items-center justify-center backdrop-blur-2xl">
+      <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
     </div>
   );
 
@@ -68,87 +66,103 @@ export default function HistoryTrend({ facultyId }: { facultyId: number | undefi
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#1e2230]/60 border border-white/5 rounded-3xl p-8 shadow-2xl h-full relative overflow-hidden group w-full mx-auto"
+      className="bg-[#1e2230]/60 border border-white/5 rounded-[2.5rem] p-8 shadow-2xl h-[520px] flex flex-col backdrop-blur-2xl relative overflow-hidden group w-full mx-auto"
     >
-      <div className="flex justify-between items-start mb-12 relative z-10">
+      <div className="absolute -top-24 -left-24 w-64 h-64 bg-yellow-400/5 blur-[100px] rounded-full pointer-events-none" />
+
+      <div className="flex justify-between items-start mb-10 relative z-10">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-white/5 border border-white/10 rounded-2xl text-yellow-400">
-            <Activity size={20} />
+          <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-yellow-400">
+            <Activity size={24} />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white tracking-tight">
+            <h3 className="text-lg font-black text-white uppercase tracking-tight leading-none">
               Tendencia Histórica
             </h3>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
-              Evolución (general) de promedio por semestre
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-2">
+              Promedio últimos 4 semestres
             </p>
           </div>
         </div>
       </div>
 
-      <div className="relative h-[250px] mx-6 mb-10"> 
+
+      <div className="relative flex-1 ml-12 mr-6 mb-12 mt-4"> 
         <div className="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
           {chartProps?.yAxisLabels.map((val, i) => (
-            <div key={i} className="relative w-full border-t border-gray-700/30 border-dashed">
-              <span className="absolute -left-12 -top-2.5 text-xs font-bold text-gray-500 w-10 text-right tracking-tight">
+            <div key={i} className="relative w-full border-t border-white/5 border-dashed flex items-center">
+              <span className="absolute -left-12 text-[9px] font-black text-gray-600 uppercase tracking-tighter w-10 text-right pr-2">
                 {val.toFixed(1)}
               </span>
             </div>
           ))}
         </div>
 
-        <div className="relative h-full w-full px-4">
+        <div className="relative h-full w-full">
           <svg 
             viewBox="0 0 100 100" 
             preserveAspectRatio="none" 
             className="absolute inset-0 w-full h-full overflow-visible"
           >
             <motion.path
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 1.5, ease: "easeInOut" }}
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 2, ease: "easeInOut" }}
               d={chartProps?.lineD || ""} 
               fill="none"
               stroke="white"
-              strokeOpacity="0.1"
-              strokeWidth="2"
+              strokeOpacity="0.15"
+              strokeWidth="1.5"
               strokeLinecap="round"
             />
           </svg>
 
-          <div className="absolute inset-0 flex justify-between items-end pb-10">
+          <div className="absolute inset-0">
             {chartProps?.points.map((item, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center relative h-full group/container">
+              <div 
+                key={i} 
+                className="absolute flex flex-col items-center group/dot" 
+                style={{ left: `${item.x}%`, top: `${item.y}%`, transform: 'translate(-50%, -50%)' }}
+              >
                 <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: i * 0.1 }}
                   whileHover={{ scale: 1.4 }}
-                  className="absolute w-4 h-4 rounded-full z-30 shadow-lg cursor-pointer border-2 border-[#1e2230]"
+                  className="w-4 h-4 rounded-full z-30 border-[3px] border-[#1e2230] cursor-pointer shadow-2xl transition-transform"
                   style={{ 
-                    left: `${item.x}%`,
-                    top: `${item.y}%`,
                     backgroundColor: item.color,
-                    transform: 'translate(-50%, -50%)',
-                    boxShadow: `0 0 15px ${item.color}88` 
+                    boxShadow: `0 0 20px ${item.color}44` 
                   }}
-                >
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[9px] font-black py-1.5 px-3 rounded-lg opacity-0 group-hover/container:opacity-100 transition-all border border-white/10 shadow-2xl z-50 whitespace-nowrap">
-                    {(item.value ?? 0).toFixed(2)}
-                  </div>
-                </motion.div>
+                />
+                
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[#0f111a] text-white border border-white/10 px-3 py-1.5 rounded-xl opacity-0 group-hover/dot:opacity-100 transition-all pointer-events-none shadow-2xl z-50">
+                  <p className="text-[8px] font-black tracking-widest uppercase mb-0.5 text-gray-500">{item.label}</p>
+                  <p className="text-[11px] font-bold text-center leading-none">{(item.value ?? 0).toFixed(2)}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-4 pt-6 border-t border-white/5 relative z-10">
-        {chartProps?.points.map((item, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
-              {item.label}
-            </span>
+      <div className="mt-auto pt-6 border-t border-white/5 grid grid-cols-2 gap-4 relative z-10">
+        <div className="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/5">
+          <Calendar size={18} className="text-blue-400" />
+          <div>
+            <p className="text-[8px] text-gray-500 font-black uppercase tracking-tighter leading-none mb-1.5">Último Semestre</p>
+            <p className="text-[11px] font-bold text-white uppercase tracking-tight">
+              {history[history.length - 4]?.semester_label || "---"}
+            </p>
           </div>
-        ))}
+        </div>
+        <div className="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/5">
+          <BarChart3 size={18} className="text-yellow-400" />
+          <div>
+            <p className="text-[8px] text-gray-500 font-black uppercase tracking-tighter leading-none mb-1.5">Total Semestres</p>
+            <p className="text-[11px] font-bold text-white">{history.length} Semestres</p>
+          </div>
+        </div>
       </div>
     </motion.div>
   );

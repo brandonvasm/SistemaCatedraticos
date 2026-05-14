@@ -108,7 +108,7 @@ export default function PerformanceScatter({ teacherId }: { teacherId: string | 
         )}
 
         <div className="absolute -bottom-8 right-0 text-[9px] font-black text-gray-600 uppercase tracking-widest">
-          {maxCredits.toFixed(0)} CR
+          {maxCredits.toFixed(0)} CREDITOS
         </div>
       </div>
 

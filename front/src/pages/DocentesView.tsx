@@ -10,6 +10,7 @@ import type { TeacherStats } from "../types/teacher";
 export default function DocentesViews() {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [teachersData, setTeachersData] = useState<TeacherStats[]>([]);
+  const [loading, setLoading] = useState(true); 
   const { user } = useAuth();
 
   const facultyId = user?.faculty_id;
@@ -17,15 +18,21 @@ export default function DocentesViews() {
 
   useEffect(() => {
     if (facultyId) {
+      setLoading(true); 
       Promise.all([
         teacherService.getTeachersStats(facultyId, 1),
         courseService.getTopCourses(facultyId, semesterId!)
       ])
         .then(([teachersRes]) => {
           setTeachersData(teachersRes.teachers || []);
-  
         })
-        .catch(err => console.error("Error cargando analítica:", err));
+        .catch(err => {
+          console.error("Error cargando analítica:", err);
+          setTeachersData([]);
+        })
+        .finally(() => {
+          setLoading(false); 
+        });
     }
   }, [facultyId, semesterId]);
 
@@ -45,9 +52,7 @@ export default function DocentesViews() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
-
-          <PerformancePie teachers={teachersData} />
-
+          <PerformancePie teachers={teachersData} loading={loading} />
       </div>
 
       <Filters active={activeFilter} setActive={setActiveFilter} />
