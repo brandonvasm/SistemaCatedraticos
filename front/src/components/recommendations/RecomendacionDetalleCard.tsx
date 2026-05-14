@@ -9,7 +9,7 @@ export const RecomendacionDetalleCard = ({ titulo, tipo }: { titulo: string, tip
         <Icono size={22} className={tipo === 'docente' ? "text-yellow-400" : "text-blue-400"} />
       </div>
       <div className="space-y-2">
-        <h4 className="text-white font-black uppercase text-xs tracking-wider">{titulo}</h4>
+        <h4 className="text-white font-black text-xs tracking-wider">{titulo}</h4>
 
       </div>
     </div>

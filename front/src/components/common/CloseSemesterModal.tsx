@@ -11,10 +11,11 @@ interface Props {
 }
 
 export default function CloseSemesterModal({ isOpen, onClose, currentSemester }: Props) {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<'confirm' | 'create'>('confirm');
   const [loading, setLoading] = useState(false);
+  const [btnMsg, setBtnMsg] = useState("Abrir Nuevo Semestre");
 
   const currentYear = new Date().getFullYear();
   const [newSemester, setNewSemester] = useState({ 
@@ -28,6 +29,7 @@ export default function CloseSemesterModal({ isOpen, onClose, currentSemester }:
     setLoading(true);
     try {
       setStep('create');
+      setBtnMsg("Abrir Nuevo Semestre y cerrar el Anterior")
     } catch (error) {
       console.error("Error al cerrar el semestre:", error);
     } finally {
@@ -46,18 +48,25 @@ export default function CloseSemesterModal({ isOpen, onClose, currentSemester }:
     setLoading(true);
     try {
 
-      await semesterService.closeSemester();
-      await semesterService.createSemester({
+      if (currentSemester) {
+        await semesterService.closeSemester()
+      }
+
+      const createdSemester = await semesterService.createSemester({
         year: newSemester.year,
         number: newSemester.number,
         faculty: facultyId
       });
 
-     
-
-
 
       localStorage.setItem('semester_success', 'true');
+
+      if (!user) return
+
+      setUser({
+        ...user,
+        semester_id: createdSemester.id
+      })
      
       onClose();
       
@@ -82,7 +91,7 @@ export default function CloseSemesterModal({ isOpen, onClose, currentSemester }:
           <X size={20} />
         </button>
 
-        {step === 'confirm' ? (
+        {step === 'confirm' && currentSemester ? (
           <div className="space-y-8 animate-in fade-in zoom-in duration-300">
             <div className="flex flex-col items-center text-center">
               <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center justify-center text-red-500 mb-6 shadow-lg shadow-red-500/5">
@@ -180,7 +189,7 @@ export default function CloseSemesterModal({ isOpen, onClose, currentSemester }:
               onClick={handleCreateSemester}
               className="w-full px-6 py-5 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-400 transition-all flex items-center justify-center gap-3 shadow-xl"
             >
-              {loading ? "Iniciando..." : <>Abrir Nuevo Semestre y cerrar actual<ArrowRight size={16} /></>}
+              {loading ? "Iniciando..." : <>{btnMsg}<ArrowRight size={16} /></>}
             </button>
           </div>
         )}

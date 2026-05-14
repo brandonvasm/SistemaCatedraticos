@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Any
 
 import pandas as pd
@@ -55,7 +56,9 @@ class ComentariosValidator(BaseExcelValidator):
         current_shift = ""
         current_teacher = None
         current_teacher_code = ""
-        records: list[dict[str, Any]] = []
+
+        # Agrupa por sección: key = (curso, sección, jornada, código docente)
+        sections_map: dict[tuple, dict[str, Any]] = OrderedDict()
 
         # Recorre las filas después del encabezado
         for row in dataframe.iloc[self.HEADER_ROW_INDEX:].itertuples(
@@ -99,16 +102,21 @@ class ComentariosValidator(BaseExcelValidator):
             if current_course is None or current_teacher is None:
                 continue
 
-            # Arma el registro final
-            record = {
-                "Curso": current_course,
-                "Sección": current_section,
-                "Jornada": current_shift,
-                "Código Docente": current_teacher_code,
-                "Catedrático": current_teacher,
-                "Comentario": self.normalize_text(comment_value),
-            }
-            records.append(record)
+            # Agrega el comentario a la sección correspondiente
+            key = (current_course, current_section, current_shift, current_teacher_code)
+            if key not in sections_map:
+                sections_map[key] = {
+                    "Curso": current_course,
+                    "Sección": current_section,
+                    "Jornada": current_shift,
+                    "Código Docente": current_teacher_code,
+                    "Comentarios": [],
+                }
+            sections_map[key]["Comentarios"].append(
+                self.normalize_text(comment_value)
+            )
+
+        records = list(sections_map.values())
 
         # Define los encabezados finales del resultado
         final_headers = [
@@ -116,8 +124,7 @@ class ComentariosValidator(BaseExcelValidator):
             "Sección",
             "Jornada",
             "Código Docente",
-            "Catedrático",
-            "Comentario",
+            "Comentarios",
         ]
 
         # Retorna información general y los registros procesados
