@@ -895,12 +895,10 @@ def get_courses_evolution_data(request):
 
     return response
 
+
 @api_view(["GET"])
-
 @authentication_classes([CookieJWTAuthentication])
-
 @permission_classes([IsSysAdminOrCoordinator])
-
 def reporte_files_excel(request):
 
     faculty_id = get_faculty_id(request)
@@ -914,29 +912,58 @@ def reporte_files_excel(request):
     ws = wb.active
     ws.title = "Archivos"
 
+    ws.merge_cells("A1:E1")
 
-
-    ws.merge_cells("A1:F1")
     title = ws["A1"]
+
     title.value = "REPORTE DE ARCHIVOS"
-    title.font = Font(bold=True, size=16, color="FFFFFF")
+
+    title.font = Font(
+        bold=True,
+        size=16,
+        color="FFFFFF"
+    )
+
     title.fill = PatternFill(
         start_color="111827",
         end_color="111827",
         fill_type="solid"
     )
+
     title.alignment = Alignment(
         horizontal="center",
         vertical="center"
     )
+
     ws.row_dimensions[1].height = 30
 
+    ws.merge_cells("A2:E2")
 
+    summary = ws["A2"]
+
+    summary.value = f"TOTAL DE ARCHIVOS REGISTRADOS: {len(data)}"
+
+    summary.font = Font(
+        bold=True,
+        color="000000"
+    )
+
+    summary.fill = PatternFill(
+        start_color="E5E7EB",
+        end_color="E5E7EB",
+        fill_type="solid"
+    )
+
+    summary.alignment = Alignment(
+        horizontal="center",
+        vertical="center"
+    )
+
+    ws.row_dimensions[2].height = 24
 
     ws.append([
         "ID",
         "Nombre",
-        "URL",
         "Tamaño",
         "Procesado",
         "Fecha"
@@ -948,36 +975,41 @@ def reporte_files_excel(request):
         fill_type="solid"
     )
 
-    header_font = Font(bold=True, color="000000")
+    header_font = Font(
+        bold=True,
+        color="000000"
+    )
 
-    for cell in ws[2]:
+    for cell in ws[3]:
+
         cell.fill = header_fill
+
         cell.font = header_font
+
         cell.alignment = Alignment(
             horizontal="center",
             vertical="center"
         )
 
-
     for f in data:
+
         ws.append([
             f["id"],
             f["name"],
-            f["url"],
             f["size"],
             f["processed"],
             f["uploaded_at"],
         ])
 
-
     auto_adjust_columns(ws)
-
 
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    response["Content-Disposition"] = 'attachment; filename="reporte_files.xlsx"'
+    response["Content-Disposition"] = (
+        'attachment; filename="reporte_files.xlsx"'
+    )
 
     wb.save(response)
 
