@@ -51,8 +51,8 @@ export default function Navbar() {
       try {
         setLoadingSearch(true);
         const teacherResponse = await teacherService.getTeachersStats(
-          user?.faculty_id,
-          1
+          (user?.faculty_id ?? 0),
+          0
         );
         const teachers = teacherResponse.teachers || [];
         const courseResponse = await courseService.getCourses(1, 100);
@@ -209,7 +209,7 @@ export default function Navbar() {
               <p className="text-white text-[10px] font-black tracking-tight leading-none uppercase">
                 {user?.username || "Usuario"}
               </p>
-              <p className="text-yellow-400/70 text-[8px] uppercase font-bold tracking-[0.2em] mt-1 italic">
+              <p className="text-yellow-400/70 text-[8px] uppercase font-bold tracking-[0.2em] mt-1">
                 {userRole}
               </p>
             </div>

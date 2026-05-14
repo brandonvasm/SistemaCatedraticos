@@ -25,10 +25,9 @@ export default function CategoryDecisions({ facultyId }: Props) {
 
         const response = await teacherService.getTeachersStats(facultyId, 1);
 
-        console.log("RESPUESTA API:", response);
 
         const teachers: TeacherStats[] =
-          response.results ||
+          response.results || 
           response.data ||
           response.teachers ||
           response;
@@ -86,17 +85,10 @@ export default function CategoryDecisions({ facultyId }: Props) {
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8 relative z-10">
         <div>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">
-            Decisiones Automáticas por Categoría
-          </p>
-
-          <p className="text-gray-500 text-[10px] leading-tight font-medium">
-            Recomendaciones del sistema basadas en evaluaciones
+            Control para Decisiones
           </p>
         </div>
 
-        <button className="px-5 py-2.5 bg-yellow-400 text-black rounded-xl text-[10px] font-bold tracking-widest uppercase hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20">
-          Aplicar Todas
-        </button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 relative z-10">
