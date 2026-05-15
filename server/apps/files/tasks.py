@@ -112,6 +112,8 @@ def process_file_task(self, file_id: int, user_id: int) -> dict:
                     "insert_result": insert_result,
                 }
                 transaction.set_rollback(True)
+                SupabaseStorageService().delete_file(file_record.url)
+                File.objects.filter(id=file_record.id).delete()
                 return _fail_task(failure_payload)
 
             file_record.processed = True

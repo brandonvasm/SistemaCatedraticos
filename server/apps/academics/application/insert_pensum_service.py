@@ -63,7 +63,7 @@ class InsertPensumService:
         }
 
         desired_careers: dict[str, str] = {}
-        for row in rows:
+        for i, row in enumerate(rows):
             row_number = row.get("__excel_row__", i)
             code = str(row.get("No_Carrera", "")).strip()
             name = str(row.get("Nombre_Carrera", "")).strip()
@@ -110,6 +110,7 @@ class InsertPensumService:
 
         desired_courses: dict[str, dict] = {}
         for i, row in enumerate(rows):
+            row_number = row.get("__excel_row__", i)
             name = str(row.get("Nombre_Curso", "")).strip()
             code = str(row.get("No_Curso", "")).strip()
             cred_teo = _int_or_zero(row.get("Cred_Teo"), "Cred_Teo")
@@ -117,7 +118,7 @@ class InsertPensumService:
             if name and code:
                 desired_courses[name] = {"code": code, "credits": cred_teo + cred_pra}
             else:
-                errors.append(f"Fila {i}: Nombre_Curso y No_Curso son obligatorios.")
+                errors.append(f"Fila {row_number}: Nombre_Curso y No_Curso son obligatorios.")
                 continue
 
         new_course_names = set(desired_courses) - {k[0] for k in existing_courses}
@@ -153,10 +154,11 @@ class InsertPensumService:
 
         m2m_pairs: set[tuple[int, int]] = set()
         for i, row in enumerate(rows):
+            row_number = row.get("__excel_row__", i)
             career_code = str(row.get("No_Carrera", "")).strip()
             course_name = str(row.get("Nombre_Curso", "")).strip()
             if not career_code or not course_name:
-                errors.append(f"Fila {i}: No_Carrera y Nombre_Curso son obligatorios.")
+                errors.append(f"Fila {row_number}: No_Carrera y Nombre_Curso son obligatorios.")
                 continue
             career = careers_map.get((career_code, faculty_id))
             course = existing_courses.get((course_name, faculty_id))
@@ -164,7 +166,7 @@ class InsertPensumService:
                 m2m_pairs.add((course.id, career.id))
                 processed_career_codes.add(career_code)
             else:
-                errors.append(f"Fila {i}: La carrera o el curso no se encontró")
+                errors.append(f"Fila {row_number}: La carrera o el curso no se encontró")
                 continue
 
         if m2m_pairs:

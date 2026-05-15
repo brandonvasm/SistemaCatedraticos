@@ -87,7 +87,7 @@ class InsertCeatService:
             row_number = row.get("__excel_row__", i)
             try:
                 teacher_code = str(row.get("Código Docente", "")).strip()
-                teacher_name = str(row.get("Nombre(s) y Apellidos", "")).strip(
+                teacher_name = str(row.get("Nombre(s) y Apellidos", "")).strip()
                 level1 = _int_or_zero(row.get(_LEVEL1), _LEVEL1)
                 level2 = _int_or_zero(row.get(_LEVEL2), _LEVEL2)
                 level3 = _int_or_zero(row.get(_LEVEL3), _LEVEL3)
