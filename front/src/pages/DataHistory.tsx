@@ -42,6 +42,18 @@ export default function DataHistory() {
     fetchFiles();
   }, [fetchFiles]);
 
+  useEffect(() => {
+    const handleFilesUpdated = () => {
+      fetchFiles(false);
+    };
+
+    window.addEventListener('files-updated', handleFilesUpdated);
+
+    return () => {
+      window.removeEventListener('files-updated', handleFilesUpdated);
+    };
+  }, [fetchFiles]);
+
   const handleProcess = async (fileId: number) => {
     const fileToProcess = files.find(f => f.id === fileId);
     try {

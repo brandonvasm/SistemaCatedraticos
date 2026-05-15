@@ -7,11 +7,31 @@ from apps.files.application.insert_processed_file import InsertProcessedFileUseC
 from apps.files.application.process_excel import ProcessExcelUseCase
 from apps.files.infrastructure.supabase_storage import SupabaseStorageService
 from apps.files.models import File
+from apps.reports.models import Notification
 
 
 def _fail_task(payload: dict) -> dict:
     print(f"[Celery][Files] Task failed: {payload}")
     return payload
+
+
+def _create_processed_file_notification(file_record: File, user_id: int, records_count: int) -> None:
+    try:
+        Notification.objects.create(
+            subject="Archivo procesado",
+            message=(
+                f"El archivo '{file_record.name}' terminó de procesarse correctamente "
+                f"con {records_count} registros."
+            ),
+            focus="Carga de Datos",
+            type="success",
+            user_id=user_id,
+        )
+    except Exception as exc:
+        print(
+            "[Celery][Files] Could not create processed file notification "
+            f"file_id={file_record.id} user_id={user_id}: {exc}"
+        )
 
 
 @shared_task(bind=True)
@@ -102,6 +122,8 @@ def process_file_task(self, file_id: int, user_id: int) -> dict:
             user_model.objects.filter(id=user_id).update(
                 evaluation_count=models.F("evaluation_count") + 1
             )
+
+        _create_processed_file_notification(file_record, user_id, len(records))
 
         result_payload = {
             "status": "completed",
