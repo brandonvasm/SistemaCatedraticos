@@ -9,7 +9,7 @@ class PandasExcelReader:
         path = Path(file_path)
 
         if not path.exists():
-            raise FileNotFoundError(f"File does not exist: {path}")
+            raise FileNotFoundError(f"El archivo no existe: {path}")
 
         suffix = path.suffix.lower()
 
@@ -18,7 +18,7 @@ class PandasExcelReader:
         elif suffix == ".xls":
             engine = "xlrd"
         else:
-            raise ValueError(f"Unsupported Excel format: {suffix}")
+            raise ValueError(f"Formato de Excel no soportado: {suffix}")
 
         with pd.ExcelFile(path, engine=engine) as excel_file:
             selected_sheet = sheet_name or excel_file.sheet_names[0]

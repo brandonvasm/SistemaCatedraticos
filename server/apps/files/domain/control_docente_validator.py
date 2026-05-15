@@ -74,7 +74,10 @@ class ControlDocenteValidator(BaseExcelValidator):
         evaluation_headers = headers[start_idx:end_idx + 1]
 
         # Procesar filas
-        for row in dataframe.iloc[1:].itertuples(index=False, name=None):
+        for excel_index, row in dataframe.iloc[1:].iterrows():
+            row = tuple(row)
+            excel_row_number = excel_index + 1
+
             if self.is_empty_row(row):
                 continue
 
@@ -119,6 +122,7 @@ class ControlDocenteValidator(BaseExcelValidator):
             record["cantidad_0"] = count_0
             record["cantidad_0_5"] = count_05
             record["cantidad_decimales"] = count_decimals
+            record["__excel_row__"] = excel_row_number
 
             records.append(record)
 

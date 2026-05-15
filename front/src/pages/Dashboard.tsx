@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"; 
+import { useCallback, useEffect, useState } from "react"; 
 import { useNavigate } from "react-router-dom";
 import StatsSection from "../components/dashboard/stats/StatsSection"
 import TeachersGrid from "../components/dashboard/stats/TeachersGrid"
@@ -24,9 +24,9 @@ export default function Dashboard() {
 
   const facultyId = user?.faculty_id;
 
-  useEffect(() => {
+  const loadDashboardData = useCallback((showLoader = true) => {
     if (facultyId) {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       Promise.all([
         teacherService.getTeachersStats(facultyId, 1),
         courseService.getTopCourses(facultyId, user.semester_id)
@@ -40,6 +40,22 @@ export default function Dashboard() {
         .finally(() => setLoading(false));
     }
   }, [facultyId, user?.semester_id]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  useEffect(() => {
+    const handleFilesUpdated = () => {
+      loadDashboardData(false);
+    };
+
+    window.addEventListener('files-updated', handleFilesUpdated);
+
+    return () => {
+      window.removeEventListener('files-updated', handleFilesUpdated);
+    };
+  }, [loadDashboardData]);
 
   const topTeachers = [...teachers]
     .filter(t => t.promedio_general > 65) 

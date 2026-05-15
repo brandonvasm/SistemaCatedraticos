@@ -28,20 +28,20 @@ class InsertCommentsService:
 
         comments_to_create = []
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(rows, start=1):
             try:
                 course_name = str(row.get("Curso", "")).strip()
                 section_number = str(row.get("Sección", "")).strip()
                 teacher_code = str(row.get("Código Docente", "")).strip()
                 comments: list[str] = row.get("Comentarios", [])
-
+                  
                 if not course_name or not comments:
-                    errors.append(f"Row {i}: Curso and Comentarios are required")
+                    errors.append(f"Fila {i}: Curso y Comentario son obligatorios.")
                     continue
 
                 course = courses_map.get(course_name)
                 if course is None:
-                    errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
+                    errors.append(f"Fila {i}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
                     continue
 
                 sections = []
@@ -52,8 +52,7 @@ class InsertCommentsService:
 
                 if not sections:
                     errors.append(
-                        f"Row {i}: section for '{course_name}' "
-                        f"(sección={section_number}, código={teacher_code}) not found"
+                        f"Fila {i}: no se encontró una sección para el curso '{course_name}. (sección={section_number}, código={teacher_code}) no se encontró."
                     )
                     continue
 
@@ -63,7 +62,7 @@ class InsertCommentsService:
                         created += 1
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {i}: {e}")
 
         if comments_to_create:
             Comment.objects.bulk_create(comments_to_create)

@@ -1,5 +1,6 @@
 import re
 import unicodedata
+import math
 
 from apps.academics.models import Career, Course
 
@@ -35,6 +36,16 @@ def _career_key(value: str) -> str:
     return "".join(word[0] for word in words if word not in ignored_words)
 
 
+def _int_or_zero(value, field_name: str) -> int:
+    if value in (None, "") or (isinstance(value, float) and math.isnan(value)):
+        return 0
+
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} debe ser numérico.")
+
+
 class InsertPensumService:
     @staticmethod
     def execute(rows: list[dict], faculty_id: int) -> dict:
@@ -53,10 +64,14 @@ class InsertPensumService:
 
         desired_careers: dict[str, str] = {}
         for row in rows:
+            row_number = row.get("__excel_row__", i)
             code = str(row.get("No_Carrera", "")).strip()
             name = str(row.get("Nombre_Carrera", "")).strip()
-            if code:
+            if code and name:
                 desired_careers[code] = name
+            else:
+                errors.append(f"Fila {row_number}: No_Carrera y No_Carrera son obligatorios.")
+                continue
 
         new_career_codes = set(desired_careers) - {k[0] for k in existing_careers}
         if new_career_codes:
@@ -94,13 +109,16 @@ class InsertPensumService:
         }
 
         desired_courses: dict[str, dict] = {}
-        for row in rows:
+        for i, row in enumerate(rows):
             name = str(row.get("Nombre_Curso", "")).strip()
             code = str(row.get("No_Curso", "")).strip()
-            cred_teo = int(row.get("Cred_Teo") or 0)
-            cred_pra = int(row.get("Cred_Pra") or 0)
+            cred_teo = _int_or_zero(row.get("Cred_Teo"), "Cred_Teo")
+            cred_pra = _int_or_zero(row.get("Cred_Pra"), "Cred_Pra")
             if name and code:
                 desired_courses[name] = {"code": code, "credits": cred_teo + cred_pra}
+            else:
+                errors.append(f"Fila {i}: Nombre_Curso y No_Curso son obligatorios.")
+                continue
 
         new_course_names = set(desired_courses) - {k[0] for k in existing_courses}
         if new_course_names:
@@ -134,16 +152,20 @@ class InsertPensumService:
             Course.objects.bulk_update(courses_to_update, ["code", "credits"])
 
         m2m_pairs: set[tuple[int, int]] = set()
-        for row in rows:
+        for i, row in enumerate(rows):
             career_code = str(row.get("No_Carrera", "")).strip()
             course_name = str(row.get("Nombre_Curso", "")).strip()
             if not career_code or not course_name:
+                errors.append(f"Fila {i}: No_Carrera y Nombre_Curso son obligatorios.")
                 continue
             career = careers_map.get((career_code, faculty_id))
             course = existing_courses.get((course_name, faculty_id))
             if career and course:
                 m2m_pairs.add((course.id, career.id))
                 processed_career_codes.add(career_code)
+            else:
+                errors.append(f"Fila {i}: La carrera o el curso no se encontró")
+                continue
 
         if m2m_pairs:
             Through = Course.careers.through

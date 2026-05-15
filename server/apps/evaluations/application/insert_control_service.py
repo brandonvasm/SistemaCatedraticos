@@ -1,3 +1,5 @@
+import math
+
 from django.db.models import Avg, Count
 
 from apps.academics.models import Course, CourseSection, Semester
@@ -25,6 +27,19 @@ def _control_score(high: int, medium: int, low: int) -> float | None:
         return None
     return round(high / total * 100, 2)
 
+
+def _limit_text(value: object, max_length: int) -> str:
+    return str(value or "").strip()[:max_length]
+
+
+def _int_or_zero(value, field_name: str) -> int:
+    if value in (None, "") or (isinstance(value, float) and math.isnan(value)):
+        return 0
+
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} debe ser numérico.")
 
 def _bulk_upsert_teacher_course_history(semester_id: int, course_ids: set[int]) -> None:
     rows = list(
@@ -201,26 +216,26 @@ def _trigger_course_ai_analysis(processed_courses: set[int], semester_id: int) -
             try:
                 CourseGeneralRecomendationsAI.objects.create(
                     semester_id=semester_id,
-                    recomendation=recomendation,
+                    recomendation=_limit_text(recomendation, 100),
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
-                errors.append(f"AI save for general recommendation: {e}")
+                errors.append(f"No se pudo guardar la recomendación general generada por IA: {e}")
 
         for analysis in response["analyses"]:
             try:
                 CourseAnalysisAI.objects.create(
                     course_id=analysis["course_id"],
                     semester_id=semester_id,
-                    title=analysis["title"],
-                    course_overview=analysis["course_recomendation"],
-                    perception=analysis["perception"],
+                    title=_limit_text(analysis.get("title"), 40),
+                    course_overview=_limit_text(analysis.get("course_recomendation"), 100),
+                    perception=_limit_text(analysis.get("perception"), 20) or "neutral",
                     model_version=ai_client.model_version,
                 )
             except Exception as e:
-                errors.append(f"AI save for course {analysis['course_id']}: {e}")
+                errors.append(f"No se pudo guardar el análisis de IA del curso {analysis['course_id']}: {e}")
     except Exception as e:
-        errors.append(f"AI course analysis: {e}")
+        errors.append(f"No se pudo generar el análisis de cursos con IA: {e}")
 
     return errors
 
@@ -249,28 +264,29 @@ class InsertControlService:
         controls_to_create = []
         section_score_updates: dict[int, tuple[CourseSection, float | None]] = {}
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(rows, start=1):
+            row_number = row.get("__excel_row__", i)
             try:
                 course_name = str(row.get("Curso", "")).strip()
                 section_number = str(row.get("Sección", "")).strip()
                 shift = _normalize_shift(str(row.get("Jornada", "")))
-                high = int(row.get("cantidad_1") or 0)
-                medium = int(row.get("cantidad_0_5") or 0)
-                low = int(row.get("cantidad_0") or 0)
+                high = _int_or_zero(row.get("cantidad_1"), "cantidad_1")
+                medium = _int_or_zero(row.get("cantidad_0_5"), "cantidad_0_5")
+                low = _int_or_zero(row.get("cantidad_0"), "cantidad_0")
 
                 if not course_name or not section_number:
-                    errors.append(f"Row {i}: Curso and Sección are required")
+                    errors.append(f"Fila {row_number}: Curso y Sección son obligatorios.")
                     continue
 
                 course = courses_map.get(course_name)
                 if course is None:
-                    errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
+                    errors.append(f"Fila {row_number}: no se encontró el curso '{course_name}' en la facultad {faculty_id}.")
                     continue
 
                 section = sections_map.get((course.id, section_number))
                 if section is None:
                     errors.append(
-                        f"Row {i}: section {section_number}/{shift} for '{course_name}' not found"
+                        f"Fila {row_number}: no se encontró la sección {section_number}/{shift} para el curso '{course_name}'."
                     )
                     continue
 
@@ -289,7 +305,7 @@ class InsertControlService:
                 processed_courses.add(course.id)
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {row_number}: {e}")
 
         if controls_to_create:
             SectionControl.objects.bulk_create(controls_to_create)
@@ -303,17 +319,17 @@ class InsertControlService:
             try:
                 _bulk_upsert_teacher_course_history(semester_id, processed_courses)
             except Exception as e:
-                errors.append(f"TeacherCourseHistory bulk update: {e}")
+                errors.append(f"No se pudo actualizar el historial del curso {course_id}: {e}")
 
             try:
                 _bulk_upsert_course_history(semester_id, processed_courses)
             except Exception as e:
-                errors.append(f"CourseHistory bulk update: {e}")
+                errors.append(f"Error al actualizar cursos: {e}")
 
             try:
                 _update_semester_history(semester_id)
             except Exception as e:
-                errors.append(f"SemesterHistory update: {e}")
+                errors.append(f"No se pudo actualizar el historial del semestre: {e}")
 
         Semester.objects.filter(id=semester_id).update(control_loaded=True)
 

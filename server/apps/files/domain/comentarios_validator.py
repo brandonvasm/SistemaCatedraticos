@@ -61,10 +61,10 @@ class ComentariosValidator(BaseExcelValidator):
         sections_map: dict[tuple, dict[str, Any]] = OrderedDict()
 
         # Recorre las filas después del encabezado
-        for row in dataframe.iloc[self.HEADER_ROW_INDEX:].itertuples(
-            index=False,
-            name=None,
-        ):
+        for excel_index, row in dataframe.iloc[self.HEADER_ROW_INDEX:].iterrows():
+            row = tuple(row)
+            excel_row_number = excel_index + 1
+
             # Salta filas vacías
             if self.is_empty_row(row):
                 continue
@@ -110,6 +110,7 @@ class ComentariosValidator(BaseExcelValidator):
                     "Sección": current_section,
                     "Jornada": current_shift,
                     "Código Docente": current_teacher_code,
+                    "Catedrático": current_teacher,
                     "Comentarios": [],
                 }
             sections_map[key]["Comentarios"].append(

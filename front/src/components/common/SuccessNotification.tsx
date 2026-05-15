@@ -52,7 +52,6 @@ export default function SuccessNotification() {
             Se ha completado el cierre y la apertura del nuevo semestre académico
           </p>
         </div>
-
         <button 
           onClick={() => setShow(false)} 
           className="px-10 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[9px] text-gray-400 font-black uppercase tracking-widest transition-all"

@@ -42,11 +42,26 @@ export default function DataHistory() {
     fetchFiles();
   }, [fetchFiles]);
 
+  useEffect(() => {
+    const handleFilesUpdated = () => {
+      fetchFiles(false);
+    };
+
+    window.addEventListener('files-updated', handleFilesUpdated);
+
+    return () => {
+      window.removeEventListener('files-updated', handleFilesUpdated);
+    };
+  }, [fetchFiles]);
+
   const handleProcess = async (fileId: number) => {
     const fileToProcess = files.find(f => f.id === fileId);
     try {
       setProcessingId(fileId);
-      await fileService.processFile(fileId);
+      const response = await fileService.processFile(fileId);
+      if (response.task_id) {
+        await fileService.waitForProcess(fileId, response.task_id);
+      }
       
       if (user?.id) {
         await notificationService.createNotification({
@@ -59,9 +74,9 @@ export default function DataHistory() {
       }
 
       await fetchFiles(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Error al procesar el archivo");
+      alert(error.message || "Error al procesar el archivo");
     } finally {
       setProcessingId(null);
     }

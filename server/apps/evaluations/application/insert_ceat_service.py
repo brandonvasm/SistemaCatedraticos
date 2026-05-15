@@ -1,4 +1,5 @@
 from datetime import date
+import math
 
 from django.db.models import Sum
 
@@ -10,6 +11,16 @@ _LEVEL1 = "Horas de Formación CEAT - Nivel 1 (iniciación)"
 _LEVEL2 = "Horas de Formación CEAT - Nivel 2 (transición)"
 _LEVEL3 = "Horas de Formación CEAT - Nivel 3 (autonomía)"
 _COMPLEMENTARY = "Horas de Formación CEAT - Complementarias"
+
+
+def _int_or_zero(value, field_name: str) -> int:
+    if value in (None, "") or (isinstance(value, float) and math.isnan(value)):
+        return 0
+
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} debe ser numérico.")
 
 
 class InsertCeatService:
@@ -72,16 +83,18 @@ class InsertCeatService:
         training_to_create = []
         load_data: dict[int, dict] = {}
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(rows, start=1):
+            row_number = row.get("__excel_row__", i)
             try:
                 teacher_code = str(row.get("Código Docente", "")).strip()
-                level1 = int(row.get(_LEVEL1) or 0)
-                level2 = int(row.get(_LEVEL2) or 0)
-                level3 = int(row.get(_LEVEL3) or 0)
-                complementary = int(row.get(_COMPLEMENTARY) or 0)
+                teacher_name = str(row.get("Nombre(s) y Apellidos", "")).strip(
+                level1 = _int_or_zero(row.get(_LEVEL1), _LEVEL1)
+                level2 = _int_or_zero(row.get(_LEVEL2), _LEVEL2)
+                level3 = _int_or_zero(row.get(_LEVEL3), _LEVEL3)
+                complementary = _int_or_zero(row.get(_COMPLEMENTARY), _COMPLEMENTARY)
 
                 if not teacher_code:
-                    errors.append(f"Row {i}: Código Docente is required")
+                    errors.append(f"Fila {row_number}: Código Docente es obligatorio.")
                     continue
 
                 teacher = existing_teachers.get(teacher_code)
@@ -108,7 +121,7 @@ class InsertCeatService:
                 }
 
             except Exception as e:
-                errors.append(f"Row {i}: {e}")
+                errors.append(f"Fila {row_number}: {e}")
 
         if training_to_create:
             TrainingHours.objects.bulk_create(training_to_create)

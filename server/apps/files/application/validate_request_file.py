@@ -4,7 +4,7 @@ class ValidateFileRequestUseCase:
 
     def execute(self):
         if not self.is_valid_excel(self.file_obj):
-            raise Exception("File too large or invalid file format (Excel files only)")
+            raise Exception("El archivo es demasiado grande o tiene un formato inválido. Solo se permiten archivos de Excel de hasta 5 MB.")
 
     def is_valid_excel(self, file_obj):
         extension = file_obj.name.split('.')[-1].lower()
