@@ -8,6 +8,26 @@ class InsertCommentsService:
         created = 0
         errors = []
 
+        course_names = {str(row.get("Curso", "")).strip() for row in rows}
+        courses_map = {
+            c.name: c
+            for c in Course.objects.filter(name__in=course_names, faculty_id=faculty_id)
+        }
+
+        sections_qs = CourseSection.objects.filter(
+            semester_id=semester_id,
+            course__name__in=course_names,
+        ).select_related("teacher")
+
+        sections_by_number: dict[tuple[int, str], list] = {}
+        sections_by_teacher: dict[tuple[int, str], list] = {}
+        for s in sections_qs:
+            sections_by_number.setdefault((s.course_id, s.section_number), []).append(s)
+            if s.teacher:
+                sections_by_teacher.setdefault((s.course_id, s.teacher.identity_code), []).append(s)
+
+        comments_to_create = []
+
         for i, row in enumerate(rows):
             try:
                 course_name = str(row.get("Curso", "")).strip()
@@ -19,32 +39,18 @@ class InsertCommentsService:
                     errors.append(f"Row {i}: Curso and Comentarios are required")
                     continue
 
-                try:
-                    course = Course.objects.get(name=course_name, faculty_id=faculty_id)
-                except Course.DoesNotExist:
+                course = courses_map.get(course_name)
+                if course is None:
                     errors.append(f"Row {i}: course '{course_name}' not found in faculty {faculty_id}")
                     continue
-                except Course.MultipleObjectsReturned:
-                    errors.append(f"Row {i}: multiple courses named '{course_name}' in faculty {faculty_id}")
-                    continue
 
-                section_filter = {
-                    "course": course,
-                    "semester_id": semester_id,
-                }
-
-                sections = None
-
+                sections = []
                 if section_number:
-                    section_filter["section_number"] = section_number
-                    sections = CourseSection.objects.filter(**section_filter)
-
+                    sections = sections_by_number.get((course.id, section_number), [])
                 elif teacher_code:
-                    section_filter["teacher__code"] = teacher_code
-                    sections = CourseSection.objects.filter(**section_filter)
-                
+                    sections = sections_by_teacher.get((course.id, teacher_code), [])
 
-                if not sections.exists():
+                if not sections:
                     errors.append(
                         f"Row {i}: section for '{course_name}' "
                         f"(sección={section_number}, código={teacher_code}) not found"
@@ -53,11 +59,14 @@ class InsertCommentsService:
 
                 for section in sections:
                     for content in comments:
-                        Comment.objects.create(course_section=section, content=content)
+                        comments_to_create.append(Comment(course_section=section, content=content))
                         created += 1
 
             except Exception as e:
                 errors.append(f"Row {i}: {e}")
+
+        if comments_to_create:
+            Comment.objects.bulk_create(comments_to_create)
 
         Semester.objects.filter(id=semester_id).update(comments_loaded=True)
 
