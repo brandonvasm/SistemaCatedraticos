@@ -4,7 +4,7 @@ import { notificationService } from "../../services/notificationService";
 import type { NotificationPayload } from "../../types/notification";
 
 type CardProps = {
-  icon: any;
+  icon: React.ElementType; 
   title: string;
   value: number;
   variant?: "yellow" | "green" | "red" | "neutral";
@@ -48,24 +48,23 @@ export default function StatsCards() {
       try {
         const data: NotificationPayload[] = await notificationService.getNotifications();
         
-        const perfData = data.filter((n: NotificationPayload) => 
-          n.focus?.toLowerCase().includes('rendimiento')
-        );
+        const results = data.reduce((acc, n) => {
+          const focus = n.focus?.toLowerCase() || "";
+          const subject = n.subject?.toLowerCase() || "";
 
-        const rest = data.filter((n: NotificationPayload) => 
-          !n.focus?.toLowerCase().includes('rendimiento')
-        );
+          if (focus.includes('rendimiento') || subject.includes('excelencia')) {
+            acc.performance++;
+          } 
+          else if (n.type === 'warning' || n.type === 'error' || focus.includes('critica')) {
+            acc.warning++;
+          } 
+          else {
+            acc.success++;
+          }
+          return acc;
+        }, { total: data.length, warning: 0, success: 0, performance: 0 });
 
-        setStats({
-          total: data.length,
-          performance: perfData.length,
-          warning: rest.filter((n: NotificationPayload) => 
-            n.type === 'warning' || n.type === 'error'
-          ).length,
-          success: rest.filter((n: NotificationPayload) => 
-            n.type === 'success'
-          ).length
-        });
+        setStats(results);
       } catch (error) {
         console.error("Error al cargar stats:", error);
       }

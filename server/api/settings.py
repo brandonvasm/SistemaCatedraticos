@@ -27,10 +27,16 @@ load_dotenv()
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+IS_PRODUCTION = os.environ.get('RENDER', False)
 
-ALLOWED_HOSTS = []
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = not IS_PRODUCTION
+
+ALLOWED_HOSTS = (
+    [os.getenv('RENDER_EXTERNAL_HOSTNAME', '')]
+    if IS_PRODUCTION
+    else ['*']
+)
 
 
 # Application definition
@@ -58,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -131,8 +138,8 @@ SIMPLE_JWT = {
     'AUTH_COOKIE': 'access_token',
 
     'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE': 'Lax',
-    'AUTH_COOKIE_SECURE': False, # False porque estás en HTTP local
+    'AUTH_COOKIE_SAMESITE': 'None' if IS_PRODUCTION else 'Lax',
+    'AUTH_COOKIE_SECURE': IS_PRODUCTION,
     'AUTH_COOKIE_PATH': '/',
 }
 
@@ -140,8 +147,10 @@ SIMPLE_JWT = {
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False # change on deployment
-CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = IS_PRODUCTION
+SESSION_COOKIE_SAMESITE = 'None' if IS_PRODUCTION else 'Lax'
+CSRF_COOKIE_SECURE = IS_PRODUCTION
+CSRF_COOKIE_SAMESITE = 'None' if IS_PRODUCTION else 'Lax'
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -174,11 +183,7 @@ REST_FRAMEWORK = {
 CORS_ALLOW_CREDENTIALS = True
 
 # 2. Direcciones de Frontend (Vite/React)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-
-]
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -196,8 +201,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
-
-IS_PRODUCTION = os.environ.get('RENDER', False)
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 if IS_PRODUCTION:
     CACHES = {

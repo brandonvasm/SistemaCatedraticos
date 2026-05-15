@@ -17,7 +17,6 @@ export default function CategoryCard({
   percent,
   bg,
   border,
-  textColor,
   barColor,
 }: Props) {
   const navigate = useNavigate();

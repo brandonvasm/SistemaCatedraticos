@@ -47,9 +47,9 @@ class GeminiAIClient(AIClient):
 
         prompt = f"""
         Analiza los datos de los cursos y brinda una recomendación crítica para mejorar por cada uno y 3 generales de la lista.
-        Considera que un punteo de 85 o menos requiere una alerta de mejora. Y un punteo de 70 o menos es una alerta crítica.
+        Considera que un punteo de 85 o menos requiere una alerta de mejora. Y un punteo de 78 o menos es una alerta crítica.
         El titulo no debe superar los 40 caracteres, la recomendación del curso no debe superar los 100 caracteres.
-        La percepción puede ser: (positive, neutral, negative).
+        La percepción puede ser: (positivo, neutral, negativo).
         Nota: El punteo del curso se basa en el promedio de los punteos de control de sus secciones y
         el punteo de control es el porcentaje de responsabilidades entregadas a tiempo por los docentes en el curso.
         La tendencia del curso se basa en la evolución del punteo de control desde el semestre anterior: Es positiva si el punteo de control ha mejorado, negativa si ha empeorado. Y puede ser nula.
@@ -65,9 +65,9 @@ class GeminiAIClient(AIClient):
 
         prompt = f"""
         Analiza los datos de los docentes y brinda una recomendación crítica para mejorar por cada uno y 3 generales de la lista.
-        Considera que un punteo de 85 o menos requiere una alerta de mejora. Y un punteo de 70 o menos es una alerta crítica.
+        Considera que un punteo de 85 o menos requiere una alerta de mejora neutral. Y un punteo de 78 o menos es una alerta crítica.
         El titulo no debe superar los 40 caracteres, la recomendación del perfil no debe superar los 100 caracteres.
-        La percepción puede ser: (positive, neutral, negative).
+        La percepción puede ser: (positivo, neutral, negativo).
         Nota: El punteo del docente se basa en el promedio de los punteos en evaluaciones por parte de estudiantes.
         La tendencia del docente se basa en la evolución del punteo desde el semestre anterior: Es positiva si el punteo ha mejorado, negativa si ha empeorado. Y puede ser nula.
         Se envía la cantidad de creditos manejados. Representan la carga académica.
@@ -83,7 +83,7 @@ class GeminiAIClient(AIClient):
         prompt = f"""
         Analiza los comentarios del docente y brinda una recomendación.
         La recomendación del comentario no debe superar los 100 caracteres.
-        La percepción puede ser: (positive, neutral, negative) en base a la totalidad de comentarios.
+        La percepción puede ser: (positivo, neutral, negativo) en base a la totalidad de comentarios.
         El punteo debe ser de 0 a 100 segun la calidad de los comentarios.
         Comentarios: 
         {comment_data}

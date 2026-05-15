@@ -2,6 +2,8 @@ import { FileText, Download, Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
 
+import { reportesServices } from "../../services/reportesServices";
+
 type Props = {
   title: string;
   desc: string;
@@ -24,37 +26,36 @@ export default function ReportItem({
   const [loading, setLoading] = useState(false);
 
   const descargar = async () => {
-    if (!user) {
-      console.error("Usuario no autenticado");
-      return;
-    }
 
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/reports/${endpoint}/`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
 
-      if (!response.ok) throw new Error("Error al descargar");
+      const blob = await reportesServices.descargarReporte(endpoint);
 
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
 
       const a = document.createElement("a");
+
       a.href = url;
       a.download = `${endpoint}.xlsx`;
+
+      document.body.appendChild(a);
+
       a.click();
 
+      a.remove();
+
       window.URL.revokeObjectURL(url);
+
     } catch (error) {
+
       console.error(error);
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
@@ -76,6 +77,7 @@ export default function ReportItem({
         </div>
 
         <div>
+
           <p className="font-black text-white uppercase text-sm">
             {title}
           </p>
@@ -91,6 +93,7 @@ export default function ReportItem({
           <p className="text-[10px] text-yellow-400 mt-1 uppercase">
             Facultad: {user?.faculty_name || "N/A"}
           </p>
+
         </div>
 
       </div>
@@ -106,11 +109,12 @@ export default function ReportItem({
           font-black
           uppercase
           transition-all
-          ${loading 
-            ? "bg-gray-400 cursor-not-allowed text-black" 
+          ${loading
+            ? "bg-gray-400 cursor-not-allowed text-black"
             : "bg-yellow-400 text-black hover:bg-yellow-300"}
         `}
       >
+
         {loading ? (
           <>
             <Loader2 size={14} className="animate-spin" />
@@ -122,6 +126,7 @@ export default function ReportItem({
             Descargar
           </>
         )}
+
       </button>
 
     </div>

@@ -8,15 +8,21 @@ type Props = {
 
 export default function Filters({ notifications, onFilterChange }: Props) {
   const stats = useMemo(() => {
-    const excellence = notifications.filter(n => n.focus?.toLowerCase().includes('rendimiento')).length;
-    const rest = notifications.filter(n => !n.focus?.toLowerCase().includes('rendimiento'));
-    
-    return {
-      all: notifications.length,
-      excellence,
-      critical: rest.filter(n => n.type === 'warning' || n.type === 'error').length,
-      success: rest.filter(n => n.type === 'success').length,
-    };
+    return notifications.reduce((acc, n) => {
+      const focus = n.focus?.toLowerCase() || "";
+      const subject = n.subject?.toLowerCase() || "";
+      
+      if (focus.includes('rendimiento') || subject.includes('excelencia')) {
+        acc.excellence++;
+      } 
+      else if (n.type === 'warning' || n.type === 'error' || focus.includes('critica')) {
+        acc.critical++;
+      } 
+      else {
+        acc.success++;
+      }
+      return acc;
+    }, { all: notifications.length, excellence: 0, critical: 0, success: 0 });
   }, [notifications]);
 
   const filterOptions = [
@@ -38,7 +44,7 @@ export default function Filters({ notifications, onFilterChange }: Props) {
       <div className="absolute -top-24 -right-24 w-56 h-56 bg-yellow-400/[0.03] blur-[100px] rounded-full pointer-events-none" />
 
       <p className="mb-5 text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] relative z-10">
-        NOTIFICACIONES
+        Filtros de búsqueda
       </p>
 
       <div className="flex flex-wrap gap-3 relative z-10">

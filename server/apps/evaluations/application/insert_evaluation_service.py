@@ -98,7 +98,7 @@ def _trigger_teacher_ai_analysis(processed_teachers: set[int], semester_id: int)
 
         if not teachers_data:
             return errors
-        
+
         ai_client = GeminiAIClient()
         response = ai_client.generate_teacher_profile_analysis(teachers_data)
         for recomendation in response["recomendations"]:
@@ -136,14 +136,29 @@ class InsertEvaluationService:
         errors = []
         processed_teachers: set[int] = set()
 
+        teacher_codes = {str(row.get("Código", "")).strip() for row in rows}
+        appointment_numbers = {str(row.get("No. Nombramiento", "")).strip() for row in rows}
+
+        teachers_map = {
+            t.identity_code: t
+            for t in Teacher.objects.filter(identity_code__in=teacher_codes)
+        }
+        sections_map = {
+            s.appointment_number: s
+            for s in CourseSection.objects.filter(
+                semester_id=semester_id,
+                appointment_number__in=appointment_numbers,
+            ).select_related("course")
+        }
+
+        evaluations_to_create = []
+        history_scores: dict[tuple[int, int], float] = {}
+
         for i, row in enumerate(rows, start=1):
             row_number = row.get("__excel_row__", i)
             try:
                 teacher_code = str(row.get("Código", "")).strip()
                 appointment_number = str(row.get("No. Nombramiento", "")).strip()
-                course_name = str(row.get("Curso", "")).strip()
-                section_number = str(row.get("Sección", "")).strip()
-                shift = _normalize_shift(str(row.get("Jornada", "")))
                 score_raw = row.get("Resultado")
                 submitted_raw = row.get("Estudiantes que realizaron la evaluación")
                 assigned_raw = row.get("Estudiantes Asignados")
@@ -156,60 +171,65 @@ class InsertEvaluationService:
                 submitted = _int_or_zero(submitted_raw, "Estudiantes que realizaron la evaluación")
                 assigned = _int_or_zero(assigned_raw, "Estudiantes Asignados")
 
-                try:
-                    teacher = Teacher.objects.get(identity_code=teacher_code)
-                except Teacher.DoesNotExist:
+                teacher = teachers_map.get(teacher_code)
+                if teacher is None:
                     errors.append(f"Fila {row_number}: no se encontró el docente con código '{teacher_code}'. Cargue la nómina antes de procesar evaluaciones.")
                     continue
 
-                section_filters = {
-                    "appointment_number": appointment_number,
-                    "semester_id": semester_id,
-                    "teacher": teacher,
-                }
-
-                if course_name:
-                    section_filters["course__name"] = course_name
-                    section_filters["course__faculty_id"] = faculty_id
-
-                if section_number:
-                    section_filters["section_number"] = section_number
-
-                if shift:
-                    section_filters["shift"] = shift
-
-                try:
-                    section = CourseSection.objects.get(**section_filters)
-                except CourseSection.DoesNotExist:
+                section = sections_map.get(appointment_number)
+                if section is None:
                     errors.append(
                         f"Fila {row_number}: no se encontró una sección para el nombramiento '{appointment_number}'. Cargue la nómina antes de procesar evaluaciones."
                     )
                     continue
-                except CourseSection.MultipleObjectsReturned:
-                    errors.append(
-                        f"Fila {row_number}: hay varias secciones para el nombramiento '{appointment_number}'. Revise la nómina para evitar duplicados."
-                    )
-                    continue
 
-                StudentEvaluation.objects.create(
+                evaluations_to_create.append(StudentEvaluation(
                     course_section=section,
                     score=score,
                     submitted_count=submitted,
                     assigned_students=assigned,
                     performance_level=_performance_level(score),
-                )
-                created += 1
+                ))
 
-                TeacherCourseHistory.objects.update_or_create(
-                    teacher=teacher,
-                    semester_id=semester_id,
-                    course=section.course,
-                    defaults={"student_score": score},
-                )
+                history_scores[(teacher.id, section.course_id)] = score
                 processed_teachers.add(teacher.id)
 
             except Exception as e:
                 errors.append(f"Fila {row_number}: {e}")
+
+        if evaluations_to_create:
+            StudentEvaluation.objects.bulk_create(evaluations_to_create)
+            created = len(evaluations_to_create)
+
+        if history_scores:
+            teacher_ids = {k[0] for k in history_scores}
+            course_ids = {k[1] for k in history_scores}
+            existing_map = {
+                (r.teacher_id, r.course_id): r
+                for r in TeacherCourseHistory.objects.filter(
+                    semester_id=semester_id,
+                    teacher_id__in=teacher_ids,
+                    course_id__in=course_ids,
+                )
+            }
+            to_create = []
+            to_update = []
+            for (teacher_id, course_id), score in history_scores.items():
+                record = existing_map.get((teacher_id, course_id))
+                if record:
+                    record.student_score = score
+                    to_update.append(record)
+                else:
+                    to_create.append(TeacherCourseHistory(
+                        teacher_id=teacher_id,
+                        semester_id=semester_id,
+                        course_id=course_id,
+                        student_score=score,
+                    ))
+            if to_update:
+                TeacherCourseHistory.objects.bulk_update(to_update, ["student_score"])
+            if to_create:
+                TeacherCourseHistory.objects.bulk_create(to_create)
 
         Semester.objects.filter(id=semester_id).update(evaluation_loaded=True)
 

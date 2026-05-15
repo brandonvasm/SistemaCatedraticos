@@ -45,7 +45,7 @@ export default function TeacherCardDetail({ teacher }: Props) {
             </span>
           </div>
           <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mt-0.5">
-            PROMEDIO
+            PROMEDIO DEL CURSO
           </p>
         </div>
 
