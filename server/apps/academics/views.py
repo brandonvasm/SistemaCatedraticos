@@ -448,7 +448,7 @@ class TeacherStatsListView(APIView):
                 "all_teachers_data": all_teachers_data,
                 "promedio_global": promedio_global_facultad
             }
-            cache.set(cache_key, cached_data, 600) 
+            cache.set(cache_key, cached_data, 60) 
         
         all_teachers_data = cached_data["all_teachers_data"]
         promedio_global_facultad = cached_data["promedio_global"]
