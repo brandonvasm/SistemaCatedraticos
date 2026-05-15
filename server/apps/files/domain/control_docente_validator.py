@@ -99,12 +99,12 @@ class ControlDocenteValidator(BaseExcelValidator):
                 value = record.get(header)
 
                 if self.is_blank(value):
-                    continue
+                    raise ValueError("Uno o mas campos de las calificaciones está en blanco.")
 
                 try:
                     num = float(value)
                 except (ValueError, TypeError):
-                    continue
+                    raise ValueError("Un valor de las filas no es una calificacion valida.")
 
                 if 0.5 <= num < 1:
                     count_05 += 1

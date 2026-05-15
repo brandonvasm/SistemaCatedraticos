@@ -43,48 +43,125 @@ class InsertPensumService:
         errors = []
         processed_career_codes: set[str] = set()
 
-        for i, row in enumerate(rows):
-            try:
-                career_name = str(row.get("Nombre_Carrera", "")).strip()
-                career_code = str(row.get("No_Carrera", "")).strip()
-                course_code = str(row.get("No_Curso", "")).strip()
-                course_name = str(row.get("Nombre_Curso", "")).strip()
-                cred_teo = int(row.get("Cred_Teo") or 0)
-                cred_pra = int(row.get("Cred_Pra") or 0)
-                credits = cred_teo + cred_pra
+        career_codes = {str(row.get("No_Carrera", "")).strip() for row in rows if row.get("No_Carrera")}
+        course_names = {str(row.get("Nombre_Curso", "")).strip() for row in rows if row.get("Nombre_Curso")}
 
-                if not career_code or not course_code:
-                    errors.append(f"Row {i}: No_Carrera and No_Curso are required")
-                    continue
+        existing_careers: dict[tuple[str, int], Career] = {
+            (c.code, c.faculty_id): c
+            for c in Career.objects.filter(code__in=career_codes, faculty_id=faculty_id)
+        }
 
-                career, _ = Career.objects.get_or_create(
-                    code=career_code,
-                    faculty_id=faculty_id,
-                    defaults={"name": career_name, "abbreviation": _career_key(career_name)},
-                )
-                if career.name != career_name and career_name:
-                    career.name = career_name
-                    career.save(update_fields=["name"])
+        desired_careers: dict[str, str] = {}
+        for row in rows:
+            code = str(row.get("No_Carrera", "")).strip()
+            name = str(row.get("Nombre_Carrera", "")).strip()
+            if code:
+                desired_careers[code] = name
 
+        new_career_codes = set(desired_careers) - {k[0] for k in existing_careers}
+        if new_career_codes:
+            Career.objects.bulk_create(
+                [
+                    Career(
+                        code=code,
+                        faculty_id=faculty_id,
+                        name=desired_careers[code],
+                        abbreviation=_career_key(desired_careers[code]),
+                    )
+                    for code in new_career_codes
+                ],
+                ignore_conflicts=True,
+            )
+            existing_careers = {
+                (c.code, c.faculty_id): c
+                for c in Career.objects.filter(code__in=career_codes, faculty_id=faculty_id)
+            }
+
+        careers_name_update = []
+        for code, name in desired_careers.items():
+            career = existing_careers.get((code, faculty_id))
+            if career and name and career.name != name:
+                career.name = name
+                careers_name_update.append(career)
+        if careers_name_update:
+            Career.objects.bulk_update(careers_name_update, ["name"])
+
+        careers_map = existing_careers  
+
+        existing_courses: dict[tuple[str, int], Course] = {
+            (c.name, c.faculty_id): c
+            for c in Course.objects.filter(name__in=course_names, faculty_id=faculty_id)
+        }
+
+        desired_courses: dict[str, dict] = {}
+        for row in rows:
+            name = str(row.get("Nombre_Curso", "")).strip()
+            code = str(row.get("No_Curso", "")).strip()
+            cred_teo = int(row.get("Cred_Teo") or 0)
+            cred_pra = int(row.get("Cred_Pra") or 0)
+            if name and code:
+                desired_courses[name] = {"code": code, "credits": cred_teo + cred_pra}
+
+        new_course_names = set(desired_courses) - {k[0] for k in existing_courses}
+        if new_course_names:
+            Course.objects.bulk_create(
+                [
+                    Course(
+                        name=name,
+                        faculty_id=faculty_id,
+                        code=desired_courses[name]["code"],
+                        credits=desired_courses[name]["credits"],
+                    )
+                    for name in new_course_names
+                ],
+                ignore_conflicts=True,
+            )
+            created = len(new_course_names)
+            existing_courses = {
+                (c.name, c.faculty_id): c
+                for c in Course.objects.filter(name__in=course_names, faculty_id=faculty_id)
+            }
+
+        courses_to_update = []
+        for name, data in desired_courses.items():
+            course = existing_courses.get((name, faculty_id))
+            if course and (course.code != data["code"] or course.credits != data["credits"]):
+                course.code = data["code"]
+                course.credits = data["credits"]
+                courses_to_update.append(course)
+                updated += 1
+        if courses_to_update:
+            Course.objects.bulk_update(courses_to_update, ["code", "credits"])
+
+        m2m_pairs: set[tuple[int, int]] = set()
+        for row in rows:
+            career_code = str(row.get("No_Carrera", "")).strip()
+            course_name = str(row.get("Nombre_Curso", "")).strip()
+            if not career_code or not course_name:
+                continue
+            career = careers_map.get((career_code, faculty_id))
+            course = existing_courses.get((course_name, faculty_id))
+            if career and course:
+                m2m_pairs.add((course.id, career.id))
                 processed_career_codes.add(career_code)
 
-                course, c_created = Course.objects.update_or_create(
-                    name=course_name,
-                    faculty_id=faculty_id,
-                    defaults={
-                        "code": course_code,
-                        "credits": credits,
-                    },
-                )
-                course.careers.add(career)
-
-                if c_created:
-                    created += 1
-                else:
-                    updated += 1
-
-            except Exception as e:
-                errors.append(f"Row {i}: {e}")
+        if m2m_pairs:
+            Through = Course.careers.through
+            course_ids = {p[0] for p in m2m_pairs}
+            career_ids = {p[1] for p in m2m_pairs}
+            existing_m2m = set(
+                Through.objects.filter(
+                    course_id__in=course_ids,
+                    career_id__in=career_ids,
+                ).values_list("course_id", "career_id")
+            )
+            new_links = [
+                Through(course_id=cid, career_id=carid)
+                for (cid, carid) in m2m_pairs
+                if (cid, carid) not in existing_m2m
+            ]
+            if new_links:
+                Through.objects.bulk_create(new_links, ignore_conflicts=True)
 
         if processed_career_codes:
             Career.objects.filter(

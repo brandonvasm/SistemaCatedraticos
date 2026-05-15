@@ -187,7 +187,7 @@ export default function Navbar() {
               </span>
               <span className="flex items-center gap-2">
                 <CalendarDays size={15} className="text-yellow-400" />
-                {semester ? `${semester.year}-${semester.number}` : "Cargando..."}
+                {semester ? `${semester.year}-${semester.number}` : "Sin semestre..."}
               </span>
             </div>
           </button>

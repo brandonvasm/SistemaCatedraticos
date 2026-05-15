@@ -6,7 +6,6 @@ from apps.academics.models import Contract, CourseSection, Semester, Teacher
 from apps.evaluations.models import TrainingHours
 from apps.historical.models import TeacherLoadHistory
 
-# CeatValidator builds headers by joining top and bottom rows with " - "
 _LEVEL1 = "Horas de Formación CEAT - Nivel 1 (iniciación)"
 _LEVEL2 = "Horas de Formación CEAT - Nivel 2 (transición)"
 _LEVEL3 = "Horas de Formación CEAT - Nivel 3 (autonomía)"
@@ -19,10 +18,63 @@ class InsertCeatService:
         created = 0
         errors = []
 
+        all_codes = {str(row.get("Código Docente", "")).strip() for row in rows if row.get("Código Docente")}
+
+        existing_teachers = {
+            t.identity_code: t
+            for t in Teacher.objects.filter(identity_code__in=all_codes)
+        }
+        new_teacher_codes = all_codes - existing_teachers.keys()
+        if new_teacher_codes:
+            names_by_code = {
+                str(row.get("Código Docente", "")).strip(): str(row.get("Nombre(s) y Apellidos", "")).strip()
+                for row in rows
+                if str(row.get("Código Docente", "")).strip() in new_teacher_codes
+            }
+            Teacher.objects.bulk_create(
+                [
+                    Teacher(identity_code=code, name=names_by_code.get(code, ""), created_at=date.today())
+                    for code in new_teacher_codes
+                ],
+                ignore_conflicts=True,
+            )
+            existing_teachers = {
+                t.identity_code: t
+                for t in Teacher.objects.filter(identity_code__in=all_codes)
+            }
+
+        all_teacher_ids = {t.id for t in existing_teachers.values()}
+
+        existing_contracts = set(
+            Contract.objects.filter(
+                teacher_id__in=all_teacher_ids, faculty_id=faculty_id
+            ).values_list("teacher_id", flat=True)
+        )
+        new_contracts = [
+            Contract(teacher=t, faculty_id=faculty_id, is_active=True)
+            for t in existing_teachers.values()
+            if t.id not in existing_contracts
+        ]
+        if new_contracts:
+            Contract.objects.bulk_create(new_contracts, ignore_conflicts=True)
+
+        credits_by_teacher = {
+            d["teacher_id"]: d["total"] or 0
+            for d in CourseSection.objects.filter(
+                teacher_id__in=all_teacher_ids,
+                semester_id=semester_id,
+                credits__isnull=False,
+            )
+            .values("teacher_id")
+            .annotate(total=Sum("credits"))
+        }
+
+        training_to_create = []
+        load_data: dict[int, dict] = {}
+
         for i, row in enumerate(rows):
             try:
                 teacher_code = str(row.get("Código Docente", "")).strip()
-                teacher_name = str(row.get("Nombre(s) y Apellidos", "")).strip()
                 level1 = int(row.get(_LEVEL1) or 0)
                 level2 = int(row.get(_LEVEL2) or 0)
                 level3 = int(row.get(_LEVEL3) or 0)
@@ -32,18 +84,12 @@ class InsertCeatService:
                     errors.append(f"Row {i}: Código Docente is required")
                     continue
 
-                teacher, _ = Teacher.objects.get_or_create(
-                    identity_code=teacher_code,
-                    defaults={"name": teacher_name, "created_at": date.today()},
-                )
+                teacher = existing_teachers.get(teacher_code)
+                if teacher is None:
+                    errors.append(f"Row {i}: teacher '{teacher_code}' could not be resolved")
+                    continue
 
-                Contract.objects.get_or_create(
-                    teacher=teacher,
-                    faculty_id=faculty_id,
-                    defaults={"is_active": True},
-                )
-
-                TrainingHours.objects.create(
+                training_to_create.append(TrainingHours(
                     teacher=teacher,
                     faculty_id=faculty_id,
                     initiation_count=level1,
@@ -51,30 +97,48 @@ class InsertCeatService:
                     autonomy_count=level3,
                     complementary_count=complementary,
                     semester_id=semester_id,
-                )
+                ))
                 created += 1
 
-                managed_credits = (
-                    CourseSection.objects.filter(
-                        teacher=teacher,
-                        semester_id=semester_id,
-                        credits__isnull=False,
-                    ).aggregate(total=Sum("credits"))["total"] or 0
-                )
-
                 total_hours = level1 + level2 + level3 + complementary
-
-                TeacherLoadHistory.objects.update_or_create(
-                    teacher=teacher,
-                    semester_id=semester_id,
-                    defaults={
-                        "total_training_hours": total_hours,
-                        "managed_credits": managed_credits,
-                    },
-                )
+                managed_credits = credits_by_teacher.get(teacher.id, 0)
+                load_data[teacher.id] = {
+                    "total_training_hours": total_hours,
+                    "managed_credits": managed_credits,
+                }
 
             except Exception as e:
                 errors.append(f"Row {i}: {e}")
+
+        if training_to_create:
+            TrainingHours.objects.bulk_create(training_to_create)
+
+        if load_data:
+            teacher_ids = set(load_data.keys())
+            existing_loads = {
+                r.teacher_id: r
+                for r in TeacherLoadHistory.objects.filter(
+                    semester_id=semester_id, teacher_id__in=teacher_ids
+                )
+            }
+            to_create = []
+            to_update = []
+            for teacher_id, defaults in load_data.items():
+                record = existing_loads.get(teacher_id)
+                if record:
+                    record.total_training_hours = defaults["total_training_hours"]
+                    record.managed_credits = defaults["managed_credits"]
+                    to_update.append(record)
+                else:
+                    to_create.append(TeacherLoadHistory(
+                        teacher_id=teacher_id,
+                        semester_id=semester_id,
+                        **defaults,
+                    ))
+            if to_update:
+                TeacherLoadHistory.objects.bulk_update(to_update, ["total_training_hours", "managed_credits"])
+            if to_create:
+                TeacherLoadHistory.objects.bulk_create(to_create)
 
         Semester.objects.filter(id=semester_id).update(ceat_loaded=True)
 
