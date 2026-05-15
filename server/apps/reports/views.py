@@ -414,95 +414,214 @@ def reporte_usuarios(request):
     return response
 
 @api_view(["GET"])
+
 @authentication_classes([CookieJWTAuthentication])
+
 @permission_classes([IsSysAdminOrCoordinator])
+
 def reporte_general(request):
 
     faculty_id = get_faculty_id(request)
 
     if not faculty_id:
+
         return HttpResponse(status=403)
 
     teachers = get_teachers_stats(faculty_id)
+
     courses = get_courses_data(faculty_id)
+
     users = get_users_data()
 
     wb = Workbook()
 
-    # DOCENTES
     ws1 = wb.active
 
     ws1.title = "Docentes"
 
+    ws1.merge_cells("A1:D1")
+
+    title_cell = ws1["A1"]
+
+    title_cell.value = "REPORTE DE DOCENTES"
+
+    title_cell.font = Font(
+
+        bold=True,
+
+        size=16,
+
+        color="FFFFFF"
+
+    )
+
+    title_cell.alignment = Alignment(
+
+        horizontal="center",
+
+        vertical="center"
+
+    )
+
     ws1.append([
+
         "Docente",
+
         "Cursos",
+
         "Promedio",
+
         "Tendencia (%)"
+
     ])
 
     for t in teachers:
+
         ws1.append([
+
             t["teacher_name"],
+
             ", ".join(t["cursos_impartidos"]),
+
             t["promedio_general"],
+
             t["tendencia_mejora"],
+
         ])
 
     aplicar_estilos(ws1)
 
-    # CURSOS
     ws2 = wb.create_sheet("Cursos")
 
+    ws2.merge_cells("A1:E1")
+
+    title_cell = ws2["A1"]
+
+    title_cell.value = "REPORTE DE CURSOS"
+
+    title_cell.font = Font(
+
+        bold=True,
+
+        size=16,
+
+        color="FFFFFF"
+
+    )
+
+    title_cell.alignment = Alignment(
+
+        horizontal="center",
+
+        vertical="center"
+
+    )
+
     ws2.append([
+
         "Código",
+
         "Nombre",
+
         "Créditos",
+
         "Score",
+
         "Trend (%)"
+
     ])
 
     for c in courses:
+
         ws2.append([
+
             c["code"],
+
             c["name"],
+
             c["credits"],
+
             c["score"],
+
             c["trend"],
+
         ])
 
     aplicar_estilos(ws2)
 
-    # USUARIOS
+
     ws3 = wb.create_sheet("Usuarios")
 
+    ws3.merge_cells("A1:F1")
+
+    title_cell = ws3["A1"]
+
+    title_cell.value = "REPORTE DE USUARIOS"
+
+    title_cell.font = Font(
+
+        bold=True,
+
+        size=16,
+
+        color="FFFFFF"
+
+    )
+
+    title_cell.alignment = Alignment(
+
+        horizontal="center",
+
+        vertical="center"
+
+    )
+
     ws3.append([
+
         "Usuario",
+
         "Correo",
+
         "Rol",
+
         "Facultad",
+
         "Evaluaciones",
+
         "Estado"
+
     ])
 
     for u in users:
+
         ws3.append([
+
             u["username"],
+
             u["email"],
+
             u["role"],
+
             u["faculty"],
+
             u.get("evaluation_count", 0),
+
             "Activo" if u["is_active"] else "Inactivo",
+
         ])
 
     aplicar_estilos(ws3)
 
     response = HttpResponse(
+
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
     )
 
     response["Content-Disposition"] = (
+
         "attachment; filename=reporte_general.xlsx"
+
     )
 
     wb.save(response)
