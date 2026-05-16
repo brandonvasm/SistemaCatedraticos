@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -12,6 +14,7 @@ from openpyxl.styles import (
 )
 
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -21,7 +24,6 @@ from rest_framework.decorators import (
     permission_classes,
 )
 
-from django.shortcuts import get_object_or_404
 
 from apps.users.infrastructure.authentication import (
     CookieJWTAuthentication,
@@ -188,14 +190,16 @@ def reporte_docentes(request):
     ])
 
     for t in data:
-        ws.append([
-            t["teacher_name"],
-            ", ".join(t["cursos_impartidos"]),
-            t["promedio_general"],
-            t["tendencia_mejora"],
-            t["evaluaciones_total"],
-            t["recomendado_vs_otros"],
-        ])
+        ws.append(
+            [
+                t["teacher_name"],
+                ", ".join(t["cursos_impartidos"]),
+                t["promedio_general"],
+                t["tendencia_mejora"],
+                t["evaluaciones_total"],
+                t["recomendado_vs_otros"],
+            ]
+        )
 
     aplicar_estilos(ws)
 
@@ -247,13 +251,15 @@ def reporte_cursos(request):
     ])
 
     for c in data:
-        ws.append([
-            c["code"],
-            c["name"],
-            c["credits"],
-            c["score"],
-            c["trend"],
-        ])
+        ws.append(
+            [
+                c["code"],
+                c["name"],
+                c["credits"],
+                c["score"],
+                c["trend"],
+            ]
+        )
 
     aplicar_estilos(ws)
 
@@ -630,14 +636,8 @@ def reporte_general(request):
 
 
 class NotificationListCreateView(APIView):
-
-    authentication_classes = [
-        CookieJWTAuthentication
-    ]
-
-    permission_classes = [
-        IsSysAdminOrCoordinator
-    ]
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsSysAdminOrCoordinator]
 
     def get(self, request):
 
@@ -688,15 +688,8 @@ class NotificationListCreateView(APIView):
 
 
 class NotificationDetailView(APIView):
-
-
-    authentication_classes = [
-        CookieJWTAuthentication
-    ]
-
-    permission_classes = [
-        IsSysAdminOrCoordinator
-    ]
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsSysAdminOrCoordinator]
 
     def get(self, request, pk):
 
