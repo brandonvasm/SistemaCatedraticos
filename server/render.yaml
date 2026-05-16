@@ -3,8 +3,12 @@ services:
     name: faculty-engine-api
     runtime: python
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
-    startCommand: gunicorn api.wsgi:application --bind 0.0.0.0:$PORT --workers 2
+    startCommand: bash -c "python manage.py migrate && gunicorn api.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: DJANGO_SETTINGS_MODULE
+        value: api.settings
       - key: DJANGO_SECRET_KEY
         sync: false
       - key: DB_NAME
@@ -75,8 +79,7 @@ services:
           name: faculty-engine-redis
           property: connectionString
 
-databases:
-  - name: faculty-engine-redis
-    type: redis
+  - type: redis
+    name: faculty-engine-redis
     plan: free
     maxmemoryPolicy: allkeys-lru
