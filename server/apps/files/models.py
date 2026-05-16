@@ -8,9 +8,13 @@ class File(models.Model):
         ("comments", "Comentarios"),
         ("control", "Control docente"),
         ("evaluation", "Evaluacion docente"),
+        ("pensum", "Pensum"),
+        ("roster", "Nomina")
     ]
 
-    url = models.URLField(max_length=500, null=False)
+    name = models.CharField(max_length=255)
+
+    url = models.URLField(max_length=500, null=True, blank=True)
 
     size = models.IntegerField()
 
@@ -28,6 +32,12 @@ class File(models.Model):
 
     semester = models.ForeignKey(
         "academics.Semester",
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    faculty = models.ForeignKey(
+        "academics.Faculty",
         on_delete=models.CASCADE
     )
 
