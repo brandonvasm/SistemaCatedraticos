@@ -73,13 +73,13 @@ export const teacherService = {
     return response.data;
 },
 
-  analyzeComments: async (teacherId: number, commentTexts: string[]): Promise<TeacherProfileAnalysis> => {
-      const response = await api.post(`/analytics/teacher-comments-analysis/`, {
-        teacher_id: teacherId,
-        comments: commentTexts
-      });
-      return response.data;
-},
+  analyzeComments: async (teacherId: number, commentTexts: string[]): Promise<any> => {
+    const response = await api.post(`/analytics/teacher-comments-analysis/`, {
+      teacher_id: teacherId,
+      comments: commentTexts
+    });
+    return response.data; 
+  },
 
 
   getGeneralRecommendations: async (): Promise<{ recommendations: string[] }> => {
@@ -103,7 +103,12 @@ getTrainingHours: async (teacherId: number): Promise<TrainingHourRecord[]> => {
       console.error(`Error en getTrainingHours (${teacherId}):`, error);
       return [];
     }
-  }
+  },
+
+  getAnalysisStatus: async (taskId: string) => {
+    const response = await api.get(`/analytics/teacher-comments-analysis/tasks/${taskId}/`);
+    return response.data;
+  },
 
 
 

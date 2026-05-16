@@ -52,6 +52,7 @@ export interface CommentData {
 export interface TeacherProfileAnalysis {
   id: number;
   ai_score: number; 
+  task_id?: string;
   comment_overview: string; 
   comment?: string; 
   model_version: string;

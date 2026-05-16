@@ -2,7 +2,25 @@ import CourseRow from "./CourseRow";
 import { useEffect, useState } from "react";
 import { courseService } from "../../services/courseService";
 import type { CourseTable } from "../../types/courseTable";
-import { ChevronLeft, ChevronRight, Search, Filter, ArrowUpDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Filter, ArrowUpDown, Info, Sigma } from "lucide-react";
+
+const FormulaTooltip = ({ title, formula, description }: { title: string, formula: string, description: string }) => (
+  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 p-5 bg-[#0f111a] border border-white/10 rounded-3xl opacity-0 group-hover/tip:opacity-100 transition-all duration-300 pointer-events-none z-[100] shadow-[0_10px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5 text-center">
+    <div className="relative flex items-center justify-between mb-2 pb-2 border-b border-white/5">
+      <p className="text-[10px] font-black text-yellow-400 uppercase tracking-tighter">{title}</p>
+      <Sigma size={10} className="text-gray-600" />
+    </div>
+    <div className="relative bg-black/40 rounded-lg p-3 mb-3 border border-white/5">
+      <code className="text-emerald-400 font-mono text-[9px] block leading-relaxed ">
+        {formula}
+      </code>
+    </div>
+    <p className="text-[9px] text-gray-400 leading-tight tracking-normal font-medium">
+      {description}
+    </p>
+    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0f111a] border-l border-t border-white/10 rotate-45" />
+  </div>
+);
 
 export default function CoursesTable() {
   const [search, setSearch] = useState("");
@@ -49,10 +67,8 @@ export default function CoursesTable() {
   ).sort();
 
   const filtered = courses.filter((c) => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
-                        c.code.toLowerCase().includes(search.toLowerCase());
-    const matchCareer = selectedCareer === "Todos" || 
-                        c.careers.some(car => car.name === selectedCareer);
+    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase());
+    const matchCareer = selectedCareer === "Todos" || c.careers.some(car => car.name === selectedCareer);
     return matchSearch && matchCareer;
   });
 
@@ -138,16 +154,39 @@ export default function CoursesTable() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <table className="min-w-[1250px] w-full border-collapse">
-          <thead className="bg-white/[0.02] text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+          <thead className="bg-white/[0.02] text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5 relative z-20">
             <tr>
               <th className="px-6 py-5 w-[280px] text-left">Curso</th>
               <th className="px-6 py-5 w-[220px] text-center font-black">Carrera(s)</th>
               <th className="px-6 py-5 w-[140px] text-center">Código</th>
               <th className="px-6 py-5 w-[100px] text-center">Créditos</th>
-              <th className="px-6 py-5 w-[120px] text-center">Promedio</th>
-              <th className="px-6 py-5 w-[120px] text-center">Tendencia</th>
+              
+              <th className="px-6 py-5 w-[120px] text-center relative group/tip">
+                <div className="flex items-center justify-center gap-1 cursor-help">
+                  <span className="border-b border-dotted border-gray-700 group-hover/tip:border-yellow-400 transition-colors">Promedio</span>
+                  <Info size={10} className="text-gray-700" />
+                </div>
+                <FormulaTooltip 
+                  title="Promedio del Curso"
+                  formula="Sum(control_score) / Total_Secciones"
+                  description="Media aritmética basada en el rendimiento de todas las secciones activas del curso."
+                />
+              </th>
+
+              <th className="px-6 py-5 w-[120px] text-center relative group/tip">
+                <div className="flex items-center justify-center gap-1 cursor-help">
+                  <span className="border-b border-dotted border-gray-700 group-hover/tip:border-yellow-400 transition-colors">Tendencia</span>
+                  <Info size={10} className="text-gray-700" />
+                </div>
+                <FormulaTooltip 
+                  title="Tendencia de Rendimiento"
+                  formula="((Hist_Act - Hist_Ant) / Hist_Ant) * 100"
+                  description="Variación porcentual del promedio histórico actual frente al semestre anterior."
+                />
+              </th>
+
               <th className="px-6 py-5 w-[140px] text-center">Acciones</th>
             </tr>
           </thead>
@@ -164,13 +203,13 @@ export default function CoursesTable() {
         {loading && (
           <div className="py-20 flex flex-col items-center gap-4">
             <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Sincronizando registros...</p>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Sincronizando cursos...</p>
           </div>
         )}
 
         {!loading && sorted.length === 0 && (
           <div className="py-20 text-center">
-            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Sin registros encontrados</p>
+            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em]">Sin cursos encontrados</p>
           </div>
         )}
       </div>

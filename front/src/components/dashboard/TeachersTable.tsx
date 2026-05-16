@@ -2,7 +2,29 @@ import { useEffect, useState } from "react";
 import { TeacherRow } from "./TeacherRow";
 import { teacherService } from "../../services/teacherService";
 import type { TeacherStats } from "../../types/teacher";
-import { ChevronLeft, ChevronRight, Loader2, SearchX, Search, ArrowUpDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, SearchX, Search, ArrowUpDown, Sigma, Info } from "lucide-react";
+
+const FormulaTooltip = ({ title, formula, description }: { title: string, formula: string, description: string }) => (
+  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 p-5 bg-[#0f111a] border border-white/10 rounded-3xl opacity-0 group-hover/tip:opacity-100 transition-all duration-300 pointer-events-none z-[100] shadow-[0_10px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5">
+    
+    <div className="relative flex items-center justify-between mb-2 pb-2 border-b border-white/5">
+      <p className="text-[10px] font-black text-yellow-400 uppercase tracking-tighter">{title}</p>
+      <Sigma size={10} className="text-gray-600" />
+    </div>
+
+    <div className="relative bg-black/40 rounded-lg p-3 mb-3 border border-white/5 flex items-center justify-center">
+      <code className="text-emerald-400 font-mono text-[9px] block text-center leading-relaxed">
+        {formula}
+      </code>
+    </div>
+
+    <p className="text-[9px] text-gray-400 leading-tight">
+      {description}
+    </p>
+
+    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0f111a] border-l border-t border-white/10 rotate-45" />
+  </div>
+);
 
 export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId: number }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,7 +40,6 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
       try {
         setLoading(true);
         const data = await teacherService.getTeachersStats(facultyId, currentPage);
-      
         setTeachers(data.teachers_paginated || []);
         setTotalCount(data.count || 0);
       } catch (error) {
@@ -27,7 +48,6 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
         setLoading(false);
       }
     };
-
     if (facultyId) fetchTeachers();
   }, [facultyId, currentPage]);
 
@@ -55,7 +75,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="w-full bg-[#0f111a]/50 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-2xl shadow-2xl text-white">
+    <div className="w-full bg-[#0f111a]/80 border border-white/10 p-8 rounded-[2.5rem] shadow-2xl text-white">
       
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -68,7 +88,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="relative group/status cursor-help p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl backdrop-blur-md">
+          <div className="relative group/status cursor-help p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
             <div className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]"></span>
@@ -79,7 +99,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
             </div>
           </div>
 
-          <div className="px-5 py-2.5 bg-white/[0.03] rounded-xl border border-white/5 backdrop-blur-md">
+          <div className="px-5 py-2.5 bg-white/[0.03] rounded-xl border border-white/5">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
               DOCENTES TOTALES: <span className="text-yellow-400 ml-2 text-xs">{totalCount}</span>
             </p>
@@ -93,7 +113,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
           <input
             type="text"
             placeholder="BUSCAR DOCENTE..."
-            className="w-full border-none py-4 pl-12 pr-6 rounded-2xl text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase bg-white/[0.03] focus:bg-white/[0.05] transition-all"
+            className="w-full bg-white/[0.01] border border-white/5 py-4 pl-12 pr-6 rounded-2xl text-[10px] font-bold text-white outline-none placeholder:text-gray-600 tracking-widest uppercase focus:bg-white/[0.03] transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -112,36 +132,56 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <table className="min-w-[1250px] w-full border-collapse">
-          <thead className="bg-white/[0.02] text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+          <thead className="bg-white/[0.01] text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5 relative z-20">
             <tr>
               <th className="px-6 py-5 text-left">Docente</th>
               <th className="px-6 py-5 w-[400px] text-center">Cursos</th>
-              <th className="px-6 py-5 text-center">Promedio</th>
+              
               <th className="px-6 py-5 text-center relative group/tip">
-                <span className="cursor-help border-b border-dotted border-gray-700 group-hover/tip:border-yellow-400/50 transition-colors">
-                  Tendencia
-                </span>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-4 py-3 bg-[#1a1d29] border border-white/10 rounded-xl opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 shadow-2xl text-center">
-                  <p className="text-[9px] text-white leading-relaxed lowercase first-letter:uppercase tracking-normal font-medium ">
-                    Comparativa porcentual del desempeño actual frente al histórico del docente.
-                  </p>
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1d29] border-r border-b border-white/10 rotate-45" />
+                <div className="flex items-center justify-center gap-1 cursor-help">
+                  <span className="border-b border-dotted border-gray-700 group-hover/tip:border-yellow-400 transition-colors">
+                    Promedio
+                  </span>
+                  <Info size={10} className="text-gray-700" />
                 </div>
+                <FormulaTooltip 
+                  title="Promedio General"
+                  formula="Media(puntuacion_actual)"
+                  description="Promedio de los puntajes obtenidos en el semestre activo."
+                />
               </th>
+
+              <th className="px-6 py-5 text-center relative group/tip">
+                <div className="flex items-center justify-center gap-1 cursor-help">
+                  <span className="border-b border-dotted border-gray-700 group-hover/tip:border-yellow-400 transition-colors">
+                    Tendencia
+                  </span>
+                  <Info size={10} className="text-gray-700" />
+                </div>
+                <FormulaTooltip 
+                  title="Tendencia de Mejora"
+                  formula="((S_act - S_ant) / S_ant) * 100"
+                  description="Progreso porcentual frente al semestre anterior del docente."
+                />
+              </th>
+
               <th className="px-6 py-5 text-center">Evaluaciones</th>
               <th className="px-6 py-5 text-center relative group/tip">
-                <span className="cursor-help border-b border-dotted border-gray-700 group-hover/tip:border-yellow-400/50 transition-colors">
-                  Recomendacion
-                </span>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-4 py-3 bg-[#1a1d29] border border-white/10 rounded-xl opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 shadow-2xl text-center">
-                  <p className="text-[9px] text-white leading-relaxed lowercase first-letter:uppercase tracking-normal font-medium ">
-                    Nivel de sugerencia basado en métricas de rendimiento y satisfacción estudiantil.
-                  </p>
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1d29] border-r border-b border-white/10 rotate-45" />
+                <div className="flex items-center justify-center gap-1 cursor-help">
+                  <span className="border-b border-dotted border-gray-700 group-hover/tip:border-yellow-400 transition-colors">
+                    Recomendacion
+                  </span>
+                  <Info size={10} className="text-gray-700" />
                 </div>
+                <FormulaTooltip 
+                  title="Recomendado vs Otros"
+                  formula="((P_docente - P_facultad) / P_facultad) * 100"
+                  description="Comparativa porcentual contra el promedio de la facultad."
+                />
               </th>
+
               <th className="px-6 py-5 text-center">Estado</th>
               <th className="px-6 py-5 text-center">Acciones</th>
             </tr>
@@ -149,7 +189,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
 
           <tbody className="divide-y divide-white/5">
             {!loading && sortedTeachers.map((t) => (
-              <tr key={t.teacher_id} className="group hover:bg-white/[0.03] transition-all duration-300 whitespace-nowrap">
+              <tr key={t.teacher_id} className="group hover:bg-white/[0.01] transition-all duration-300 whitespace-nowrap">
                 <TeacherRow teacher={t} />
               </tr>
             ))}
@@ -159,7 +199,7 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
         {loading && (
           <div className="py-20 flex flex-col items-center gap-4">
             <Loader2 className="animate-spin text-yellow-400" size={32} />
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Sincronizando registros...</p>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Sincronizando docentes...</p>
           </div>
         )}
 
@@ -173,49 +213,32 @@ export const TeachersTable = ({ filter, facultyId }: { filter: string; facultyId
         )}
       </div>
 
-
       <div className="mt-8 flex flex-col sm:flex-row items-center justify-center border-t border-white/5 pt-8 gap-6">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1 || loading}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all"
           >
-            <ChevronLeft size={14} strokeWidth={3} />
-            Anterior
+            <ChevronLeft size={14} strokeWidth={3} /> Anterioe
           </button>
-
-          <div className="flex items-center gap-2">
-            {[...Array(totalPages)].map((_, i) => {
-              const pageNum = i + 1;
-              if (pageNum === 1 || pageNum === totalPages || (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)) {
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${
-                      currentPage === pageNum 
-                      ? "bg-yellow-400 text-black shadow-[0_0_20px_rgba(250,204,21,0.3)]" 
-                      : "bg-white/5 text-gray-500 hover:bg-white/10"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
-                return <span key={pageNum} className="text-gray-700 mx-1">...</span>;
-              }
-              return null;
-            })}
+          <div className="flex gap-2">
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${currentPage === i + 1 ? "bg-yellow-400 text-black shadow-lg" : "bg-white/5 text-gray-500 hover:bg-white/10"}`}
+              >
+                {i + 1}
+              </button>
+            ))}
           </div>
-
           <button
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || loading}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all"
           >
-            Siguiente
-            <ChevronRight size={14} strokeWidth={3} />
+            Siguiente <ChevronRight size={14} strokeWidth={3} />
           </button>
         </div>
       </div>

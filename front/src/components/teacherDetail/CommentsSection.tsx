@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Loader2, Sparkles, ChevronRight, MessageSquare } from "lucide-react";
+import { Loader2, Sparkles, MessageSquare } from "lucide-react";
 import { teacherService } from "../../services/teacherService";
-import type { CommentData, TeacherProfileAnalysis } from "../../types/teacher";
+import type { CommentData } from "../../types/teacher";
 
 export default function CommentsSection({ teacherId }: { teacherId: string | undefined }) {
   const [comments, setComments] = useState<CommentData[]>([]);
-  const [analysis, setAnalysis] = useState<TeacherProfileAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<any | null>(null);
   
   const [loadingComments, setLoadingComments] = useState(true);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
@@ -20,28 +20,46 @@ export default function CommentsSection({ teacherId }: { teacherId: string | und
         const resComments = await teacherService.getTeacherComments(teacherId);
         const rawTexts: string[] = resComments.comentarios || [];
         
-        const formatted: CommentData[] = rawTexts.map((text, i) => ({
+        setComments(rawTexts.map((text, i) => ({
           id: i,
           text,
           rating: 0, 
           sentiment: "neutral",
           date: new Date().toISOString()
-        }));
-        
-        setComments(formatted);
+        })));
         setLoadingComments(false);
 
         if (rawTexts.length > 0) {
           setLoadingAnalysis(true);
-          const resAnalysis = await teacherService.analyzeComments(
+          const response = await teacherService.analyzeComments(
             parseInt(teacherId), 
             rawTexts
           );
-          setAnalysis(resAnalysis);
+
+          if (response.task_id) {
+            let completed = false;
+            let attempts = 0;
+            const maxAttempts = 20; 
+
+            while (!completed && attempts < maxAttempts) {
+              const check = await teacherService.getAnalysisStatus(response.task_id);
+              
+              if (check.state === 'SUCCESS' && check.result?.analysis) {
+                setAnalysis(check.result.analysis); 
+                completed = true;
+              } else if (check.state === 'FAILURE') {
+                console.error("La tarea de Celery falló");
+                completed = true;
+              } else {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                attempts++;
+              }
+            }
+          }
           setLoadingAnalysis(false);
         }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error en la carga de datos:", error);
         setLoadingComments(false);
         setLoadingAnalysis(false);
       }
@@ -79,27 +97,29 @@ export default function CommentsSection({ teacherId }: { teacherId: string | und
           <motion.div 
             initial={{ width: 0 }} 
             animate={{ width: `${stats.goodPercent}%` }} 
+            transition={{ duration: 1.5, ease: "easeOut" }}
             className="bg-emerald-400 h-full shadow-[0_0_8px_rgba(52,211,153,0.4)]" 
           />
           <motion.div 
             initial={{ width: 0 }} 
             animate={{ width: `${stats.badPercent}%` }} 
+            transition={{ duration: 1.5, ease: "easeOut" }}
             className="bg-red-500/30 h-full" 
           />
         </div>
 
         {loadingAnalysis ? (
-          <div className="flex items-center gap-3 p-4 bg-yellow-400/5 border border-yellow-400/10 rounded-2xl animate-pulse">
+          <div className="flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl animate-pulse">
             <Sparkles className="text-yellow-400" size={12} />
-            <span className="text-[9px] text-yellow-400/70 font-black uppercase tracking-widest">
-              Analizando...
+            <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">
+              Generando análisis con IA...
             </span>
           </div>
         ) : (
           analysis?.comment && (
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               className="p-5 bg-gradient-to-r from-white/[0.03] to-transparent rounded-[2rem] border-l-2 border-yellow-400/30 backdrop-blur-sm"
             >
               <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] font-black mb-2">
@@ -118,30 +138,22 @@ export default function CommentsSection({ teacherId }: { teacherId: string | und
           <h3 className="text-[12px] font-black text-white uppercase tracking-[0.5em]">
             Comentarios
           </h3>
-          <span className="absolute -top-1 -right-8 text-[16px] font-black text-yellow-400/40 tracking-normal">
+          <span className="absolute -top-1 -right-8 text-[16px] font-black text-yellow-400/40">
             /{comments.length.toString().padStart(2, '0')}
           </span>
         </div>
-        
-        {comments.length > 1 && (
-          <div className="flex items-center gap-2 text-gray-600">
-            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Deslizar</span>
-            <ChevronRight size={10} className="animate-pulse" />
-          </div>
-        )}
       </div>
 
       <div className="relative">
-        <div className="flex overflow-x-auto gap-6 pb-6 pt-2 custom-scrollbar snap-x snap-mandatory h-[150px] items-stretch">
+        <div className="flex overflow-x-auto gap-6 pb-6 pt-2 custom-scrollbar snap-x snap-mandatory">
           {comments.length > 0 ? (
-            comments.map((c, _) => (
+            comments.map((c) => (
               <motion.div
                 key={c.id}
                 whileHover={{ scale: 1.02 }}
-                className="flex-none w-[280px] snap-start bg-[#0f111a]/40 border border-white/5 p-6 rounded-[2.5rem] hover:border-yellow-400/10 transition-all duration-500 relative flex flex-col justify-center overflow-hidden"
+                className="flex-none w-[280px] snap-start bg-[#0f111a]/40 border border-white/5 p-6 rounded-[2.5rem] relative flex flex-col justify-center min-h-[120px]"
               >
-                <MessageSquare className="absolute -bottom-2 -right-2 text-white/[0.02]" size={60} />
-                
+                <MessageSquare className="absolute -bottom-2 -right-2 text-white/[0.01]" size={60} />
                 <p className="text-[12px] text-gray-400 leading-relaxed font-medium line-clamp-3 relative z-10">
                   {c.text}
                 </p>
@@ -157,13 +169,9 @@ export default function CommentsSection({ teacherId }: { teacherId: string | und
 
       <style dangerouslySetInnerHTML={{ __html: `
         .custom-scrollbar::-webkit-scrollbar { height: 2px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { 
           background: rgba(255, 255, 255, 0.05); 
           border-radius: 10px; 
-        }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb { 
-          background: rgba(250, 204, 21, 0.1); 
         }
       `}} />
     </div>
