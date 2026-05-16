@@ -128,13 +128,17 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = os.getenv("CELERY_TIMEZONE", "UTC")
 CELERY_TASK_TRACK_STARTED = True
 
-CELERY_BROKER_USE_SSL = {
-    "ssl_cert_reqs": ssl.CERT_NONE
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "socket_timeout": 5,
+    "socket_connect_timeout": 5,
+    "retry_on_timeout": False,
+    "max_retries": 1,
 }
 
-CELERY_REDIS_BACKEND_USE_SSL = {
-    "ssl_cert_reqs": ssl.CERT_NONE
-}
+if CELERY_BROKER_URL.startswith("rediss://"):
+    ssl_config = {"ssl_cert_reqs": ssl.CERT_NONE}
+    CELERY_BROKER_USE_SSL = ssl_config
+    CELERY_REDIS_BACKEND_USE_SSL = ssl_config
 
 # Authentication model
 AUTH_USER_MODEL = "users.User"
