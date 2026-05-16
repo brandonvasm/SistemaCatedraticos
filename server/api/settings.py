@@ -15,6 +15,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from datetime import timedelta
+import ssl
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -128,11 +129,11 @@ CELERY_TIMEZONE = os.getenv("CELERY_TIMEZONE", "UTC")
 CELERY_TASK_TRACK_STARTED = True
 
 CELERY_BROKER_USE_SSL = {
-    "ssl_cert_reqs": None
+    "ssl_cert_reqs": ssl.CERT_NONE
 }
 
 CELERY_REDIS_BACKEND_USE_SSL = {
-    "ssl_cert_reqs": None
+    "ssl_cert_reqs": ssl.CERT_NONE
 }
 
 # Authentication model
