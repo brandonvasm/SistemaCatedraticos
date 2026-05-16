@@ -65,6 +65,7 @@ export default function DataHistory() {
     await fetchFiles(false);
   } catch (error: any) {
     console.error("Error en procesamiento:", error);
+    alert("Error en procesamiento: " + error)
     
     setFiles(prev => prev.filter(f => f.id !== fileId));
     
