@@ -127,6 +127,14 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = os.getenv("CELERY_TIMEZONE", "UTC")
 CELERY_TASK_TRACK_STARTED = True
 
+CELERY_BROKER_USE_SSL = {
+    "ssl_cert_reqs": None
+}
+
+CELERY_REDIS_BACKEND_USE_SSL = {
+    "ssl_cert_reqs": None
+}
+
 # Authentication model
 AUTH_USER_MODEL = "users.User"
 
