@@ -18,7 +18,6 @@ export default function ReportItem({
   desc,
   date,
   format,
-  size,
   endpoint,
 }: Props) {
 

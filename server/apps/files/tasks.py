@@ -125,6 +125,11 @@ def process_file_task(self, file_id: int, user_id: int) -> dict:
                 evaluation_count=models.F("evaluation_count") + 1
             )
 
+        from django.core.cache import cache
+        cache_key = f"teacher_stats_full_data_fac_{file_record.faculty_id}_sem_{file_record.semester_id}"
+        cache.delete(cache_key)
+        print(f"[Celery] Caché invalidada para facultad {file_record.faculty_id} semestre {file_record.semester_id}")
+
         _create_processed_file_notification(file_record, user_id, len(records))
 
         result_payload = {

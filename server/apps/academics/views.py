@@ -282,6 +282,12 @@ class CloseSemesterView(APIView):
                         [semester.id]
                     )
 
+            
+            from django.core.cache import cache
+            cache_key = f"teacher_stats_full_data_fac_{faculty_id}_sem_{semester.id}"
+            cache.delete(cache_key)
+
+
             return Response(
                 {"message": f"Semestre {semester.year}-{semester.number} cerrado y datos limpiados exitosamente."},
                 status=status.HTTP_200_OK
@@ -379,7 +385,8 @@ class TeacherStatsListView(APIView):
             )
 
     
-        cache_key = f"teacher_stats_full_data_fac_{faculty_id}"
+        semester_id = request.query_params.get('semester_id')
+        cache_key = f"teacher_stats_full_data_fac_{faculty_id}_sem_{semester_id}"
         cached_data = cache.get(cache_key)
 
         if not cached_data:
