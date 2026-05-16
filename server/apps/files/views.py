@@ -8,7 +8,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import FileSerializer, FileCreateSerializer
 from .models import File
 from django.db import transaction
+from django.http import JsonResponse
+import redis, os
 from drf_spectacular.utils import extend_schema
+from django.conf import settings
 
 from .infrastructure.supabase_storage import SupabaseStorageService
 from .application.save_file_use_case import SaveFileUseCase
@@ -170,3 +173,17 @@ class FileView(viewsets.ModelViewSet):
             response_data["meta"] = task_info
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='redis-conn')
+    def test_redis(self, request):
+        try:
+            r = redis.from_url(
+                settings.CELERY_BROKER_URL,
+                ssl_cert_reqs=None,
+                socket_connect_timeout=5,
+                socket_timeout=5,
+            )
+            r.ping()
+            return JsonResponse({"status": "ok", "redis": "connected"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "detail": str(e)})
