@@ -3,6 +3,7 @@ from collections import defaultdict
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.users.infrastructure.authentication import CookieJWTAuthentication
@@ -14,7 +15,7 @@ from .models import CourseHistory
 
 class CourseHistoryViewSet(viewsets.ViewSet):
     authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsSysAdminOrCoordinator]
+    permission_classes = [IsAuthenticated, IsSysAdminOrCoordinator]
 
     @extend_schema(
         summary="Course evolution",
@@ -30,9 +31,21 @@ class CourseHistoryViewSet(viewsets.ViewSet):
                                 "course_id": 1,
                                 "course_name": "Math",
                                 "semester_ratings": [
-                                    {"rating": 4.5, "semester_year": 2024, "semester_number": 1},
-                                    {"rating": 3.8, "semester_year": 2024, "semester_number": 2},
-                                    {"rating": 4.1, "semester_year": 2025, "semester_number": 1},
+                                    {
+                                        "rating": 4.5,
+                                        "semester_year": 2024,
+                                        "semester_number": 1,
+                                    },
+                                    {
+                                        "rating": 3.8,
+                                        "semester_year": 2024,
+                                        "semester_number": 2,
+                                    },
+                                    {
+                                        "rating": 4.1,
+                                        "semester_year": 2025,
+                                        "semester_number": 1,
+                                    },
                                 ],
                             }
                         ],
@@ -56,7 +69,12 @@ class CourseHistoryViewSet(viewsets.ViewSet):
         ratings_by_course = defaultdict(list)
 
         for entry in histories:
-            print(entry.course_id, entry.control_avg_score, entry.semester.year, entry.semester.number)
+            print(
+                entry.course_id,
+                entry.control_avg_score,
+                entry.semester.year,
+                entry.semester.number,
+            )
             course_names[entry.course_id] = entry.course.name
             ratings_by_course[entry.course_id].append(
                 {
@@ -77,15 +95,16 @@ class CourseHistoryViewSet(viewsets.ViewSet):
 
         return Response(CourseEvolutionSerializer(data, many=True).data)
 
+
 class CourseDetailHistoryViewSet(viewsets.ViewSet):
     authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsSysAdminOrCoordinator]
+    permission_classes = [IsAuthenticated, IsSysAdminOrCoordinator]
 
     @extend_schema(
         summary="Evolucion de Curso Individual",
         responses={
             200: OpenApiResponse(
-                response=CourseEvolutionSerializer, 
+                response=CourseEvolutionSerializer,
                 description="Specific course evolution and scores",
                 examples=[
                     OpenApiExample(
@@ -94,8 +113,16 @@ class CourseDetailHistoryViewSet(viewsets.ViewSet):
                             "course_id": 1,
                             "course_name": "Math",
                             "semester_ratings": [
-                                {"rating": 4.5, "semester_year": 2024, "semester_number": 1},
-                                {"rating": 3.8, "semester_year": 2024, "semester_number": 2},
+                                {
+                                    "rating": 4.5,
+                                    "semester_year": 2024,
+                                    "semester_number": 1,
+                                },
+                                {
+                                    "rating": 3.8,
+                                    "semester_year": 2024,
+                                    "semester_number": 2,
+                                },
                             ],
                         },
                     )
@@ -104,16 +131,12 @@ class CourseDetailHistoryViewSet(viewsets.ViewSet):
         },
         tags=["Course History"],
     )
-
     @action(detail=True, methods=["get"], url_path="evolution")
     def evolution(self, request, pk=None):
         user_faculty = request.user.faculty_id
 
         histories = (
-            CourseHistory.objects.filter(
-                course_id=pk,
-                course__faculty=user_faculty
-            )
+            CourseHistory.objects.filter(course_id=pk, course__faculty=user_faculty)
             .select_related("course", "semester")
             .order_by("semester__year", "semester__number")
         )
@@ -126,7 +149,7 @@ class CourseDetailHistoryViewSet(viewsets.ViewSet):
 
         for entry in histories:
             course_name = entry.course.name
-            
+
             semester_ratings.append(
                 {
                     "rating": entry.control_avg_score,
@@ -140,6 +163,5 @@ class CourseDetailHistoryViewSet(viewsets.ViewSet):
             "course_name": course_name,
             "semester_ratings": semester_ratings,
         }
-
 
         return Response(CourseEvolutionSerializer(data).data)

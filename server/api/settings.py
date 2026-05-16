@@ -11,10 +11,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
-from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,17 +36,16 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django_filters',
-    'rest_framework',
-    'drf_spectacular',
-    'corsheaders',
-
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_filters",
+    "rest_framework",
+    "drf_spectacular",
+    "corsheaders",
     "apps.users",
     "apps.academics",
     "apps.files",
@@ -66,7 +65,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
 
 
 ROOT_URLCONF = "api.urls"
@@ -116,22 +114,21 @@ AUTH_USER_MODEL = "users.User"
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'AUTH_COOKIE': 'access_token',
-
-    'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE': 'Lax',
-    'AUTH_COOKIE_SECURE': False, # False porque estás en HTTP local
-    'AUTH_COOKIE_PATH': '/',
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "AUTH_COOKIE": "access_token",
+    "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_SAMESITE": "Lax",
+    "AUTH_COOKIE_SECURE": False,  # False porque estás en HTTP local
+    "AUTH_COOKIE_PATH": "/",
 }
 
 # Security settings for cookies
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False # change on deployment
+SESSION_COOKIE_SECURE = False  # change on deployment
 CSRF_COOKIE_SECURE = False
 
 # Password validation
@@ -153,13 +150,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'apps.users.infrastructure.authentication.CookieJWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "apps.users.infrastructure.authentication.CookieJWTAuthentication",
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 CORS_ALLOW_CREDENTIALS = True
@@ -168,7 +163,6 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-
 ]
 
 # Internationalization
@@ -188,20 +182,29 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-IS_PRODUCTION = os.environ.get('RENDER', False)
+IS_PRODUCTION = os.environ.get("RENDER", False)
 
 if IS_PRODUCTION:
     CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'production-unique-cache',
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "production-unique-cache",
         }
     }
 else:
-   
     CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'dev-cache',
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "dev-cache",
         }
     }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Sistema Catedráticos API",
+    "DESCRIPTION": "Documentación del Sistema de Evaluación de Catedráticos",
+    "VERSION": "1.0.0",
+    # 🚨 Esto obligará a que solo usuarios autenticados vean la documentación
+    "SERVE_PERMISSIONS": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}

@@ -1,22 +1,22 @@
-from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
-
-from apps.users.infrastructure.authentication import CookieJWTAuthentication
-from apps.users.infrastructure.permissions import IsSysAdminOrCoordinator
-
-from .models import Notification
-from .serializers import NotificationSerializer
 
 from apps.academics.services.course_service import get_courses_data
 from apps.academics.services.teacher_service import get_teachers_stats
+from apps.users.infrastructure.authentication import CookieJWTAuthentication
+from apps.users.infrastructure.permissions import IsSysAdminOrCoordinator
 from apps.users.service.user_service import get_users_data
+
+from .models import Notification
+from .serializers import NotificationSerializer
 
 
 def aplicar_estilos(ws):
@@ -71,20 +71,28 @@ def reporte_docentes(request):
     ws = wb.active
     ws.title = "Docentes"
 
-    ws.append([
-        "Docente", "Cursos", "Promedio",
-        "Tendencia (%)", "Evaluaciones", "Recomendado (%)"
-    ])
+    ws.append(
+        [
+            "Docente",
+            "Cursos",
+            "Promedio",
+            "Tendencia (%)",
+            "Evaluaciones",
+            "Recomendado (%)",
+        ]
+    )
 
     for t in data:
-        ws.append([
-            t["teacher_name"],
-            ", ".join(t["cursos_impartidos"]),
-            t["promedio_general"],
-            t["tendencia_mejora"],
-            t["evaluaciones_total"],
-            t["recomendado_vs_otros"],
-        ])
+        ws.append(
+            [
+                t["teacher_name"],
+                ", ".join(t["cursos_impartidos"]),
+                t["promedio_general"],
+                t["tendencia_mejora"],
+                t["evaluaciones_total"],
+                t["recomendado_vs_otros"],
+            ]
+        )
 
     aplicar_estilos(ws)
 
@@ -112,13 +120,15 @@ def reporte_cursos(request):
     ws.append(["Código", "Nombre", "Créditos", "Score", "Trend (%)"])
 
     for c in data:
-        ws.append([
-            c["code"],
-            c["name"],
-            c["credits"],
-            c["score"],
-            c["trend"],
-        ])
+        ws.append(
+            [
+                c["code"],
+                c["name"],
+                c["credits"],
+                c["score"],
+                c["trend"],
+            ]
+        )
 
     aplicar_estilos(ws)
 
@@ -134,30 +144,29 @@ def reporte_cursos(request):
 @login_required
 def reporte_usuarios(request):
     data = sorted(
-        get_users_data(),
-        key=lambda x: x.get("evaluation_count", 0),
-        reverse=True
+        get_users_data(), key=lambda x: x.get("evaluation_count", 0), reverse=True
     )
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Usuarios"
 
-    ws.append([
-        "Ranking", "Usuario", "Correo",
-        "Rol", "Facultad", "Evaluaciones", "Estado"
-    ])
+    ws.append(
+        ["Ranking", "Usuario", "Correo", "Rol", "Facultad", "Evaluaciones", "Estado"]
+    )
 
     for i, u in enumerate(data, start=1):
-        ws.append([
-            i,
-            u["username"],
-            u["email"],
-            u["role"],
-            u["faculty"],
-            u.get("evaluation_count", 0),
-            "Activo" if u["is_active"] else "Inactivo",
-        ])
+        ws.append(
+            [
+                i,
+                u["username"],
+                u["email"],
+                u["role"],
+                u["faculty"],
+                u.get("evaluation_count", 0),
+                "Activo" if u["is_active"] else "Inactivo",
+            ]
+        )
 
     aplicar_estilos(ws)
 
@@ -188,12 +197,14 @@ def reporte_general(request):
     ws1.append(["Docente", "Cursos", "Promedio", "Tendencia (%)"])
 
     for t in teachers:
-        ws1.append([
-            t["teacher_name"],
-            ", ".join(t["cursos_impartidos"]),
-            t["promedio_general"],
-            t["tendencia_mejora"],
-        ])
+        ws1.append(
+            [
+                t["teacher_name"],
+                ", ".join(t["cursos_impartidos"]),
+                t["promedio_general"],
+                t["tendencia_mejora"],
+            ]
+        )
 
     aplicar_estilos(ws1)
 
@@ -202,13 +213,15 @@ def reporte_general(request):
     ws2.append(["Código", "Nombre", "Créditos", "Score", "Trend (%)"])
 
     for c in courses:
-        ws2.append([
-            c["code"],
-            c["name"],
-            c["credits"],
-            c["score"],
-            c["trend"],
-        ])
+        ws2.append(
+            [
+                c["code"],
+                c["name"],
+                c["credits"],
+                c["score"],
+                c["trend"],
+            ]
+        )
 
     aplicar_estilos(ws2)
 
@@ -217,14 +230,16 @@ def reporte_general(request):
     ws3.append(["Usuario", "Correo", "Rol", "Facultad", "Evaluaciones", "Estado"])
 
     for u in users:
-        ws3.append([
-            u["username"],
-            u["email"],
-            u["role"],
-            u["faculty"],
-            u.get("evaluation_count", 0),
-            "Activo" if u["is_active"] else "Inactivo",
-        ])
+        ws3.append(
+            [
+                u["username"],
+                u["email"],
+                u["role"],
+                u["faculty"],
+                u.get("evaluation_count", 0),
+                "Activo" if u["is_active"] else "Inactivo",
+            ]
+        )
 
     aplicar_estilos(ws3)
 
@@ -236,9 +251,10 @@ def reporte_general(request):
     wb.save(response)
     return response
 
+
 class NotificationListCreateView(APIView):
     authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsSysAdminOrCoordinator]
+    permission_classes = [IsAuthenticated, IsSysAdminOrCoordinator]
 
     def get(self, request):
         qs = Notification.objects.all()
@@ -247,16 +263,18 @@ class NotificationListCreateView(APIView):
             qs = qs.filter(user_id=user_id)
         serializer = NotificationSerializer(qs, many=True)
         return Response(serializer.data)
-    
+
     @extend_schema(
         summary="crear notificación",
         description="Crea una nueva notificación",
-        parameters=[OpenApiParameter(
-            name="notification",
-            description="Datos de la notificación a crear",
-            required=True,
-            type=NotificationSerializer,
-        )]
+        parameters=[
+            OpenApiParameter(
+                name="notification",
+                description="Datos de la notificación a crear",
+                required=True,
+                type=NotificationSerializer,
+            )
+        ],
     )
     def post(self, request):
         serializer = NotificationSerializer(data=request.data)
@@ -268,7 +286,7 @@ class NotificationListCreateView(APIView):
 
 class NotificationDetailView(APIView):
     authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsSysAdminOrCoordinator]
+    permission_classes = [IsAuthenticated, IsSysAdminOrCoordinator]
 
     def get(self, request, pk):
         notification = get_object_or_404(Notification, pk=pk)
@@ -277,7 +295,9 @@ class NotificationDetailView(APIView):
 
     def patch(self, request, pk):
         notification = get_object_or_404(Notification, pk=pk)
-        serializer = NotificationSerializer(notification, data=request.data, partial=True)
+        serializer = NotificationSerializer(
+            notification, data=request.data, partial=True
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

@@ -1,9 +1,11 @@
 from collections import defaultdict
-from rest_framework.pagination import PageNumberPagination
+
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
 
 from apps.historical.models import CourseHistory
 from apps.users.infrastructure.authentication import CookieJWTAuthentication
@@ -15,12 +17,13 @@ from .serializers import CourseListResponseSerializer
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 8
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 100
+
 
 class CourseListView(APIView):
     authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsSysAdminOrCoordinator]
+    permission_classes = [IsAuthenticated, IsSysAdminOrCoordinator]
 
     @extend_schema(
         summary="List courses with evaluation score and performance trend",
@@ -28,9 +31,8 @@ class CourseListView(APIView):
     )
     def get(self, request):
         queryset = Course.objects.filter(
-            faculty=request.user.faculty_id,
-            is_active=True
-        ).order_by('id')
+            faculty=request.user.faculty_id, is_active=True
+        ).order_by("id")
 
         courses = list(queryset)
         course_ids = [c.id for c in courses]
@@ -90,36 +92,28 @@ class CourseListView(APIView):
                 }
             )
 
-        page_param = request.query_params.get('page')
+        page_param = request.query_params.get("page")
 
         if page_param:
             paginator = StandardResultsSetPagination()
             paginated_data = paginator.paginate_queryset(courses_data, request)
             return paginator.get_paginated_response(paginated_data)
 
-        return Response({
-            "total": len(courses_data),
-            "courses": courses_data
-        })
+        return Response({"total": len(courses_data), "courses": courses_data})
+
 
 class CourseDetailView(APIView):
     authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsSysAdminOrCoordinator]
+    permission_classes = [IsAuthenticated, IsSysAdminOrCoordinator]
 
     @extend_schema(
         summary="detalles de cursos individuales",
     )
-
     def get(self, request, pk):
-        course = get_object_or_404(
-            Course,
-            id=pk,
-            faculty_id=request.user.faculty_id
-        )
+        course = get_object_or_404(Course, id=pk, faculty_id=request.user.faculty_id)
 
         sections = CourseSection.objects.filter(
-            course_id=course.id,
-            control_score__isnull=False
+            course_id=course.id, control_score__isnull=False
         ).values("control_score")
 
         scores = [section["control_score"] for section in sections]
@@ -147,13 +141,17 @@ class CourseDetailView(APIView):
             .distinct()
         )
 
-        return Response({
-            "id": course.id,
-            "code": course.code,
-            "name": course.name,
-            "credits": course.credits,
-            "is_active": course.is_active,
-            "careers": [{"id": c["career_id"], "name": c["career__name"]} for c in careers],
-            "score": course_score,
-            "trend": trend,
-        })
+        return Response(
+            {
+                "id": course.id,
+                "code": course.code,
+                "name": course.name,
+                "credits": course.credits,
+                "is_active": course.is_active,
+                "careers": [
+                    {"id": c["career_id"], "name": c["career__name"]} for c in careers
+                ],
+                "score": course_score,
+                "trend": trend,
+            }
+        )
