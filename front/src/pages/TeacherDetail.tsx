@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import teachers from "../data/teachers";
+
 import Header from "../components/teacherDetail/Header";
 import StatsCards from "../components/teacherDetail/StatsCards";
 import Tabs from "../components/teacherDetail/Tabs";
@@ -21,7 +21,6 @@ export default function TeacherDetail() {
   const [courses, setCourses] = useState<Courses[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const teacherLocal = teachers.find((t) => t.id === id);
 
   useEffect(() => {
     async function loadData() {
@@ -58,7 +57,7 @@ export default function TeacherDetail() {
 
       <div className="px-6 py-6 max-w-[1300px] mx-auto space-y-8">
         <div className="bg-[#0f111a]/50 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-2xl shadow-xl">
-          <Header teacher={teacherAPI || teacherLocal} />
+          <Header teacher={teacherAPI} />
           <div className="mt-8">
             <StatsCards teacher={teacherAPI} />
           </div>
