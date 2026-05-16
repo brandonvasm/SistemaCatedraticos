@@ -61,10 +61,10 @@ class NominaValidator(BaseExcelValidator):
         current_teacher_code = ""
         current_title = ""
 
-        for row in dataframe.iloc[self.HEADER_ROW_INDEX:].itertuples(
-            index=False,
-            name=None,
-        ):
+        for excel_index, row in dataframe.iloc[self.HEADER_ROW_INDEX:].iterrows():
+            row = tuple(row)
+            excel_row_number = excel_index + 1
+
             values = row[
                 self.START_COLUMN_INDEX - 1:self.START_COLUMN_INDEX - 1 + self.TOTAL_COLUMNS
             ]
@@ -103,6 +103,7 @@ class NominaValidator(BaseExcelValidator):
             record["Título académico"] = current_title
             record["Docente"] = current_teacher
             record["Código docente"] = current_teacher_code
+            record["__excel_row__"] = excel_row_number
             self._normalize_record(record)
             records.append(record)
 
@@ -131,6 +132,7 @@ class NominaValidator(BaseExcelValidator):
                 record.get("Observaciones del curso (Compartido, docente múltiple…)")
             )
         )
+
         record["Aula"] = self.normalize_code(record.get("Aula"))
         record["Edificio"] = self.normalize_code(record.get("Edificio"))
         record["Modalidad"] = self.normalize_academic_text(record.get("Modalidad"))

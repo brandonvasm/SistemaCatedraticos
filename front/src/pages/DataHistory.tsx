@@ -19,15 +19,10 @@ export default function DataHistory() {
 
   const fetchFiles = useCallback(async (showFullLoader = true) => {
     if (!user) return;
-
     try {
       if (showFullLoader) setIsLoading(true);
       else setIsRefreshing(true);
-
-      const filters = {
-         semester: user.semester_id,
-      };
-
+      const filters = { semester: user.semester_id };
       const data = await fileService.getAllFiles(filters);
       setFiles(data);
     } catch (error) {
@@ -42,36 +37,58 @@ export default function DataHistory() {
     fetchFiles();
   }, [fetchFiles]);
 
-  const handleProcess = async (fileId: number) => {
-    const fileToProcess = files.find(f => f.id === fileId);
-    try {
-      setProcessingId(fileId);
-      await fileService.processFile(fileId);
-      
-      if (user?.id) {
-        await notificationService.createNotification({
-          subject: "Archivo Procesado",
-          message: `El archivo "${fileToProcess?.name}" ha sido procesado e integrado al sistema correctamente.`,
-          focus: "Historial de Datos",
-          type: "success",
-          user: user.id
-        });
-      }
+  useEffect(() => {
+    const handleFilesUpdated = () => { fetchFiles(false); };
+    window.addEventListener('files-updated', handleFilesUpdated);
+    return () => { window.removeEventListener('files-updated', handleFilesUpdated); };
+  }, [fetchFiles]);
 
-      await fetchFiles(false);
-    } catch (error) {
-      console.error(error);
-      alert("Error al procesar el archivo");
-    } finally {
-      setProcessingId(null);
+  const handleProcess = async (fileId: number) => {
+  const fileToProcess = files.find(f => f.id === fileId);
+  try {
+    setProcessingId(fileId);
+    const response = await fileService.processFile(fileId);
+    
+    if (response.task_id) {
+      await fileService.waitForProcess(fileId, response.task_id);
     }
-  };
+    
+    if (user?.id) {
+      await notificationService.createNotification({
+        subject: "Archivo Procesado",
+        message: `El archivo "${fileToProcess?.name}" ha sido procesado e integrado al sistema correctamente.`,
+        focus: "Historial de Datos",
+        type: "success",
+        user: user.id
+      });
+    }
+    await fetchFiles(false);
+  } catch (error: any) {
+    console.error("Error en procesamiento:", error);
+    alert("Error en procesamiento: " + error)
+    
+    setFiles(prev => prev.filter(f => f.id !== fileId));
+    
+    await fetchFiles(false);
+
+    if (user?.id) {
+      await notificationService.createNotification({
+        subject: "Error de Formato",
+        message: `El archivo "${fileToProcess?.name}" no es válido y fue descartado.`,
+        focus: "Historial de Datos",
+        type: "error",
+        user: user.id
+      });
+    }
+  } finally {
+    setProcessingId(null);
+  }
+};
 
   const handleDownload = async (fileId: number, fileName: string) => {
     try {
       setDownloadingId(fileId);
       const downloadUrl = await fileService.getDownloadUrl(fileId);
-      
       if (downloadUrl) {
         const link = document.createElement('a');
         link.href = downloadUrl;
@@ -80,16 +97,6 @@ export default function DataHistory() {
         document.body.appendChild(link);
         link.click();
         link.remove();
-
-        if (user?.id) {
-          await notificationService.createNotification({
-            subject: "Descarga de Archivo",
-            message: `El usuario ha descargado una copia local del archivo: "${fileName}".`,
-            focus: "Historial de Datos / Exportación",
-            type: "info",
-            user: user.id
-          });
-        }
       }
     } catch (error) {
       console.error(error);
@@ -101,22 +108,9 @@ export default function DataHistory() {
   const handleDelete = async () => {
     if (!showConfirm) return;
     const idToDelete = showConfirm.id;
-    const nameToDelete = showConfirm.name;
-
     try {
       setDeletingId(idToDelete);
       await fileService.deleteFile(idToDelete);
-      
-      if (user?.id) {
-        await notificationService.createNotification({
-          subject: "Archivo Eliminado",
-          message: `Se ha eliminado permanentemente el archivo "${nameToDelete}" del historial.`,
-          focus: "Historial de Datos",
-          type: "warning",
-          user: user.id
-        });
-      }
-
       setFiles(prev => prev.filter(f => f.id !== idToDelete));
     } catch (error) {
       console.error(error);
@@ -133,7 +127,6 @@ export default function DataHistory() {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-      
       <ConfirmDeleteModal 
         isOpen={showConfirm !== null}
         onClose={() => setShowConfirm(null)}
@@ -190,17 +183,24 @@ export default function DataHistory() {
         </div>
       </div>
 
-      <div className="glass-card relative overflow-hidden bg-white/[0.01] border-white/5 rounded-[3rem] shadow-2xl border">
-        <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-        <div className="overflow-x-auto text-white">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-white/[0.03]">
-                <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] text-left">Documento</th>
-                <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] text-left">Estado / Carga</th>
-                <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] text-right">Acciones</th>
-              </tr>
-            </thead>
+      <div className="glass-card relative overflow-hidden bg-white/[0.01] border-white/5 rounded-[3rem] shadow-2xl border min-h-[450px]">
+        <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent z-10" />
+        
+        <div className="overflow-x-auto overflow-y-auto max-h-[600px] text-white custom-scrollbar">
+        <table className="w-full border-collapse">
+        <thead className="sticky top-0 z-20">
+            <tr className="bg-[#0b101f]/95 backdrop-blur-[80px] border-b border-white/10 shadow-2xl">
+              <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] text-left">
+                Documento
+              </th>
+              <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] text-left">
+                Estado / Carga
+              </th>
+              <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] text-right">
+                Acciones
+              </th>
+            </tr>
+          </thead>
             <tbody className="divide-y divide-white/5">
               {isLoading ? (
                 <tr>
@@ -249,7 +249,6 @@ export default function DataHistory() {
                             <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:block">Procesar</span>
                           </button>
                         )}
-
                         <button 
                           onClick={() => handleDownload(file.id, file.name)}
                           disabled={downloadingId === file.id || deletingId !== null || processingId === file.id}
@@ -257,7 +256,6 @@ export default function DataHistory() {
                         >
                           {downloadingId === file.id ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
                         </button>
-
                         <button 
                           onClick={() => setShowConfirm({ id: file.id, name: file.name })}
                           disabled={deletingId !== null || downloadingId !== null || processingId === file.id}

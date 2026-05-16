@@ -15,6 +15,8 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+from datetime import timedelta
+import ssl
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,10 +29,16 @@ load_dotenv()
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+IS_PRODUCTION = os.environ.get('IS_PRODUCTION', 'false').lower() == 'true'
 
-ALLOWED_HOSTS = []
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = not IS_PRODUCTION
+
+ALLOWED_HOSTS = (
+    [os.getenv('RENDER_EXTERNAL_HOSTNAME', '')]
+    if IS_PRODUCTION
+    else ['*']
+)
 
 
 # Application definition
@@ -57,6 +65,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -109,27 +118,51 @@ SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET_NAME")
 # AI settings
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Celery settings
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = os.getenv("CELERY_TIMEZONE", "UTC")
+CELERY_TASK_TRACK_STARTED = True
+
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "socket_timeout": 5,
+    "socket_connect_timeout": 5,
+    "retry_on_timeout": False,
+    "max_retries": 1,
+}
+
+if CELERY_BROKER_URL.startswith("rediss://"):
+    ssl_config = {"ssl_cert_reqs": ssl.CERT_NONE}
+    CELERY_BROKER_USE_SSL = ssl_config
+    CELERY_REDIS_BACKEND_USE_SSL = ssl_config
+
 # Authentication model
 AUTH_USER_MODEL = "users.User"
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "AUTH_COOKIE": "access_token",
-    "AUTH_COOKIE_HTTP_ONLY": True,
-    "AUTH_COOKIE_SAMESITE": "Lax",
-    "AUTH_COOKIE_SECURE": False,  # False porque estás en HTTP local
-    "AUTH_COOKIE_PATH": "/",
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'AUTH_COOKIE': 'access_token',
+
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_SAMESITE': 'None' if IS_PRODUCTION else 'Lax',
+    'AUTH_COOKIE_SECURE': IS_PRODUCTION,
+    'AUTH_COOKIE_PATH': '/',
 }
 
 # Security settings for cookies
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False  # change on deployment
-CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = IS_PRODUCTION
+SESSION_COOKIE_SAMESITE = 'None' if IS_PRODUCTION else 'Lax'
+CSRF_COOKIE_SECURE = IS_PRODUCTION
+CSRF_COOKIE_SAMESITE = 'None' if IS_PRODUCTION else 'Lax'
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -160,10 +193,7 @@ REST_FRAMEWORK = {
 CORS_ALLOW_CREDENTIALS = True
 
 # 2. Direcciones de Frontend (Vite/React)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -181,8 +211,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
-
-IS_PRODUCTION = os.environ.get("RENDER", False)
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 if IS_PRODUCTION:
     CACHES = {
@@ -203,7 +232,6 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Sistema Catedráticos API",
     "DESCRIPTION": "Documentación del Sistema de Evaluación de Catedráticos",
     "VERSION": "1.0.0",
-    # 🚨 Esto obligará a que solo usuarios autenticados vean la documentación
     "SERVE_PERMISSIONS": [
         "rest_framework.permissions.IsAuthenticated",
     ],

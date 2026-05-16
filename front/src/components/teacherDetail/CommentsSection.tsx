@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, MessageSquare } from "lucide-react";
 import { teacherService } from "../../services/teacherService";
-import type { CommentData, TeacherProfileAnalysis } from "../../types/teacher";
+import type { CommentData } from "../../types/teacher";
 
 export default function CommentsSection({ teacherId }: { teacherId: string | undefined }) {
   const [comments, setComments] = useState<CommentData[]>([]);
-  const [analysis, setAnalysis] = useState<TeacherProfileAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<any | null>(null);
   
   const [loadingComments, setLoadingComments] = useState(true);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
@@ -20,28 +20,46 @@ export default function CommentsSection({ teacherId }: { teacherId: string | und
         const resComments = await teacherService.getTeacherComments(teacherId);
         const rawTexts: string[] = resComments.comentarios || [];
         
-        const formatted: CommentData[] = rawTexts.map((text, i) => ({
+        setComments(rawTexts.map((text, i) => ({
           id: i,
           text,
           rating: 0, 
           sentiment: "neutral",
           date: new Date().toISOString()
-        }));
-        
-        setComments(formatted);
+        })));
         setLoadingComments(false);
 
         if (rawTexts.length > 0) {
           setLoadingAnalysis(true);
-          const resAnalysis = await teacherService.analyzeComments(
+          const response = await teacherService.analyzeComments(
             parseInt(teacherId), 
             rawTexts
           );
-          setAnalysis(resAnalysis);
+
+          if (response.task_id) {
+            let completed = false;
+            let attempts = 0;
+            const maxAttempts = 20; 
+
+            while (!completed && attempts < maxAttempts) {
+              const check = await teacherService.getAnalysisStatus(response.task_id);
+              
+              if (check.state === 'SUCCESS' && check.result?.analysis) {
+                setAnalysis(check.result.analysis); 
+                completed = true;
+              } else if (check.state === 'FAILURE') {
+                console.error("La tarea de Celery falló");
+                completed = true;
+              } else {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                attempts++;
+              }
+            }
+          }
           setLoadingAnalysis(false);
         }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error en la carga de datos:", error);
         setLoadingComments(false);
         setLoadingAnalysis(false);
       }
@@ -62,78 +80,100 @@ export default function CommentsSection({ teacherId }: { teacherId: string | und
 
   if (loadingComments) return (
     <div className="flex flex-col items-center justify-center p-20">
-      <Loader2 className="w-8 h-8 animate-spin text-yellow-400 opacity-20" />
+      <Loader2 className="w-6 h-6 animate-spin text-yellow-400 opacity-20" />
     </div>
   );
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-3">
-        <div className="flex justify-between text-[11px] font-black text-gray-400 tracking-widest uppercase">
+    <div className="space-y-10 animate-in fade-in duration-700">
+      
+      <div className="space-y-4">
+        <div className="flex justify-between text-[11px] font-black tracking-[0.2em] uppercase px-1">
           <span className="text-emerald-400">Positivo {stats.goodPercent}%</span>
           <span className="text-red-400">Crítico {stats.badPercent}%</span>
         </div>
         
-        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden flex">
+        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden flex">
           <motion.div 
             initial={{ width: 0 }} 
             animate={{ width: `${stats.goodPercent}%` }} 
-            className="bg-emerald-400 h-full" 
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="bg-emerald-400 h-full shadow-[0_0_8px_rgba(52,211,153,0.4)]" 
           />
           <motion.div 
             initial={{ width: 0 }} 
             animate={{ width: `${stats.badPercent}%` }} 
-            className="bg-red-400 h-full" 
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="bg-red-500/30 h-full" 
           />
         </div>
 
-
         {loadingAnalysis ? (
-          <div className="flex items-center gap-3 p-4 bg-yellow-400/5 border border-yellow-400/10 rounded-2xl animate-pulse">
-            <Sparkles className="text-yellow-400" size={14} />
-            <span className="text-[10px] text-yellow-400/70 font-black uppercase tracking-widest">
-              Analizando comentarios... esto tomará unos segundos
+          <div className="flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl animate-pulse">
+            <Sparkles className="text-yellow-400" size={12} />
+            <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">
+              Generando análisis con IA...
             </span>
           </div>
-        ) : analysis?.comment && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 bg-white/5 rounded-2xl border border-white/5"
-          >
-            <p className="text-[10px] text-gray-400 leading-relaxed uppercase tracking-widest font-bold mb-1">
-              Resumen de la IA
-            </p>
-            <p className="text-[11px] text-gray-500 leading-relaxed italic">
-              {analysis.comment}
-            </p>
-          </motion.div>
+        ) : (
+          analysis?.comment && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-5 bg-gradient-to-r from-white/[0.03] to-transparent rounded-[2rem] border-l-2 border-yellow-400/30 backdrop-blur-sm"
+            >
+              <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] font-black mb-2">
+                Resumen de la IA
+              </p>
+              <p className="text-[11px] text-gray-400 leading-relaxed italic font-medium">
+                "{analysis.comment}"
+              </p>
+            </motion.div>
+          )
         )}
       </div>
 
-      <div className="grid gap-4">
-        {comments.length > 0 ? (
-          comments.map((c, i) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="bg-[#0f111a]/50 border border-white/10 p-6 rounded-[2rem] hover:border-white/20 transition-all"
-            >
-              <p className="text-[13px] text-gray-300 leading-relaxed font-medium">
-                {c.text}
-              </p>
-            </motion.div>
-          ))
-        ) : (
-          <div className="flex flex-col items-center justify-center p-16 bg-[#0f111a]/30 border border-dashed border-white/5 rounded-[3rem]">
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">
-              Sin comentarios
-            </p>
-          </div>
-        )}
+      <div className="flex items-end justify-between px-1 border-b border-white/5 pb-4">
+        <div className="relative">
+          <h3 className="text-[12px] font-black text-white uppercase tracking-[0.5em]">
+            Comentarios
+          </h3>
+          <span className="absolute -top-1 -right-8 text-[16px] font-black text-yellow-400/40">
+            /{comments.length.toString().padStart(2, '0')}
+          </span>
+        </div>
       </div>
+
+      <div className="relative">
+        <div className="flex overflow-x-auto gap-6 pb-6 pt-2 custom-scrollbar snap-x snap-mandatory">
+          {comments.length > 0 ? (
+            comments.map((c) => (
+              <motion.div
+                key={c.id}
+                whileHover={{ scale: 1.02 }}
+                className="flex-none w-[280px] snap-start bg-[#0f111a]/40 border border-white/5 p-6 rounded-[2.5rem] relative flex flex-col justify-center min-h-[120px]"
+              >
+                <MessageSquare className="absolute -bottom-2 -right-2 text-white/[0.01]" size={60} />
+                <p className="text-[12px] text-gray-400 leading-relaxed font-medium line-clamp-3 relative z-10">
+                  {c.text}
+                </p>
+              </motion.div>
+            ))
+          ) : (
+            <div className="w-full flex items-center justify-center py-10 opacity-20 border border-dashed border-white/10 rounded-[2.5rem]">
+              <p className="text-[10px] font-black uppercase tracking-widest">Sin comentarios</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar { height: 2px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+          background: rgba(255, 255, 255, 0.05); 
+          border-radius: 10px; 
+        }
+      `}} />
     </div>
   );
 }

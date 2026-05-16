@@ -282,6 +282,12 @@ class CloseSemesterView(APIView):
                         [semester.id]
                     )
 
+            
+            from django.core.cache import cache
+            cache_key = f"teacher_stats_full_data_fac_{faculty_id}_sem_{semester.id}"
+            cache.delete(cache_key)
+
+
             return Response(
                 {"message": f"Semestre {semester.year}-{semester.number} cerrado y datos limpiados exitosamente."},
                 status=status.HTTP_200_OK
@@ -379,7 +385,8 @@ class TeacherStatsListView(APIView):
             )
 
     
-        cache_key = f"teacher_stats_full_data_fac_{faculty_id}"
+        semester_id = request.query_params.get('semester_id')
+        cache_key = f"teacher_stats_full_data_fac_{faculty_id}_sem_{semester_id}"
         cached_data = cache.get(cache_key)
 
         if not cached_data:
@@ -448,7 +455,7 @@ class TeacherStatsListView(APIView):
                 "all_teachers_data": all_teachers_data,
                 "promedio_global": promedio_global_facultad
             }
-            cache.set(cache_key, cached_data, 600) 
+            cache.set(cache_key, cached_data, 60) 
         
         all_teachers_data = cached_data["all_teachers_data"]
         promedio_global_facultad = cached_data["promedio_global"]
@@ -664,37 +671,23 @@ class TeacherCourseListView(APIView):
                     "code": getattr(s.course, "code", f"C-{s.course.id}"),
                     "name": s.course.name,
                     "credits": getattr(s.course, "credits", 0),
+                    "score": round(s.control_score, 2) if s.control_score is not None else 0.0,
                 }
 
         course_ids = list(courses_map.keys())
 
-        controls = SectionControl.objects.filter(
-            course_section__teacher_id=pk
-        ).select_related("course_section__course")
-
-        scores_by_course = defaultdict(list)
-        for ctrl in controls:
-            high, mid, low = ctrl.high_count, ctrl.medium_count, ctrl.low_count
-            total = high + mid + low
-            score = (total / high * 100) if high > 0 else 0.0
-            scores_by_course[ctrl.course_section.course_id].append(score)
         histories = TeacherCourseHistory.objects.filter(
             teacher_id=pk, course_id__in=course_ids
         ).order_by("course_id", "-semester_id")
 
         history_map = defaultdict(list)
         for h in histories:
-            history_map[h.course_id].append(h.student_score)
+            history_map[h.course_id].append(h.control_avg_score)
 
         result = []
         for c_id, info in courses_map.items():
-            course_scores = scores_by_course.get(c_id, [])
-            avg_score = (
-                sum(course_scores) / len(course_scores) if course_scores else 0.0
-            )
-
             trend_str = "N/A"
-            c_hist = history_map.get(c_id, [])
+            c_hist = [s for s in history_map.get(c_id, []) if s is not None]
             if len(c_hist) >= 2 and c_hist[1] > 0:
                 diff = round(((c_hist[0] - c_hist[1]) / c_hist[1]) * 100, 2)
                 trend_str = f"{diff}%"
@@ -705,7 +698,7 @@ class TeacherCourseListView(APIView):
                     "code": info["code"],
                     "name": info["name"],
                     "credits": info["credits"],
-                    "score": round(avg_score, 2),
+                    "score": info["score"],
                     "trend": trend_str,
                 }
             )
@@ -719,41 +712,26 @@ class CourseTeachersStatsView(APIView):
         responses={200: OpenApiTypes.OBJECT},
     )
     def get(self, request, pk):
-        from django.shortcuts import get_object_or_404
-
-        controls = SectionControl.objects.filter(
-            course_section__course_id=pk
-        ).select_related("course_section__teacher")
-
-        teacher_scores = defaultdict(list)
-        teacher_names = {}
-
-        for control in controls:
-            teacher = control.course_section.teacher
-            if not teacher:
-                continue
-
-            high = control.high_count
-            mid = control.medium_count
-            low = control.low_count
-
-            punteo = ((high + mid + low) / high) * 100 if high > 0 else 0.0
-
-            if teacher.id not in teacher_scores:
-                teacher_scores[teacher.id] = []
-                teacher_names[teacher.id] = teacher.name
-
-            teacher_scores[teacher.id].append(punteo)
+        teachers = (
+            CourseSection.objects
+            .filter(course_id=pk)
+            .values(
+                "teacher_id",
+                "teacher__name",
+            )
+            .annotate(
+                average_rating=Avg("studentevaluation__score")
+            )
+            .order_by("-average_rating")
+        )
 
         result = [
             {
-                "teacher_id": t_id,
-                "teacher_name": teacher_names[t_id],
-                "average_rating": round(sum(scores) / len(scores), 2),
+                "teacher_id": t["teacher_id"],
+                "teacher_name": f"{t['teacher__name']}",
+                "average_rating": round(t["average_rating"], 2) if t["average_rating"] else 0,
             }
-            for t_id, scores in teacher_scores.items()
+            for t in teachers
         ]
-
-        result.sort(key=lambda x: x["average_rating"], reverse=True)
 
         return Response(result, status=status.HTTP_200_OK)

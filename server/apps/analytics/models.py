@@ -1,9 +1,9 @@
 from django.db import models
 
 class PerceptionChoices(models.TextChoices):
-    POSITIVE = "positive", "Positive"
+    POSITIVE = "positivo", "Positivo"
     NEUTRAL = "neutral", "Neutral"
-    NEGATIVE = "negative", "Negative"
+    NEGATIVE = "negativo", "Negativo"
 
 # Create your models here.
 class TeacherCommentsAnalysisAI(models.Model):

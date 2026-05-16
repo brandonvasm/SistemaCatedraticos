@@ -16,7 +16,7 @@ class BaseExcelValidator:
         dataframe: pd.DataFrame,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         raise NotImplementedError(
-            "Each validator must implement validate_and_transform()."
+            "Cada validador debe implementar validate_and_transform()."
         )
 
     # Valida que los encabezados requeridos estén presentes
@@ -29,7 +29,7 @@ class BaseExcelValidator:
         # Lanza error si faltan columnas obligatorias
         if missing_headers:
             raise ValueError(
-                f"Missing required headers: {', '.join(missing_headers)}"
+                f"Faltan columnas obligatorias en el archivo: {', '.join(missing_headers)}"
             )
 
     @staticmethod

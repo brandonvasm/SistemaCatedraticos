@@ -69,12 +69,6 @@ class CourseHistoryViewSet(viewsets.ViewSet):
         ratings_by_course = defaultdict(list)
 
         for entry in histories:
-            print(
-                entry.course_id,
-                entry.control_avg_score,
-                entry.semester.year,
-                entry.semester.number,
-            )
             course_names[entry.course_id] = entry.course.name
             ratings_by_course[entry.course_id].append(
                 {

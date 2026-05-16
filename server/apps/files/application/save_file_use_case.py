@@ -26,4 +26,4 @@ class SaveFileUseCase:
             serializer.save()
             return serializer.instance
         else:
-            raise Exception("Error saving file record: " + str(serializer.errors))
+            raise Exception("No se pudo guardar el registro del archivo: " + str(serializer.errors))

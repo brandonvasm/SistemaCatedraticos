@@ -20,7 +20,11 @@ export interface TeacherStatsResponse {
   count: number;
   teachers: TeacherStats[];          
   teachers_paginated: TeacherStats[]; 
-  promedio_global_facultad: number;   
+  promedio_global_facultad: number; 
+  results?: TeacherStats[];
+  data?: TeacherStats[]; 
+  
+
 }
 
 export interface TeacherRowProps {
@@ -48,6 +52,7 @@ export interface CommentData {
 export interface TeacherProfileAnalysis {
   id: number;
   ai_score: number; 
+  task_id?: string;
   comment_overview: string; 
   comment?: string; 
   model_version: string;

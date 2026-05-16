@@ -92,8 +92,7 @@ class CourseListView(APIView):
                 }
             )
 
-        page_param = request.query_params.get("page")
-
+        page_param = request.query_params.get('page')
         if page_param:
             paginator = StandardResultsSetPagination()
             paginated_data = paginator.paginate_queryset(courses_data, request)

@@ -25,13 +25,26 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [uploadingStatus, setUploadingStatus] = useState<Record<string, boolean>>({});
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, boolean>>({});
-  const [uploadedFileNames, setUploadedFileNames] = useState<Record<string, string>>({});
-  const [fileIds, setFileIds] = useState<Record<string, number>>({});
+  const [uploadedFileNames, setUploadedFileNames] = useState<Record<string, string[]>>({});
+  const [fileIds, setFileIds] = useState<Record<string, number[]>>({});
 
   if (!isOpen) return null;
 
-  const handleUpload = async (id: string, file: File) => {
+  const resetUploadedFiles = () => {
+    setUploadingStatus({});
+    setUploadedFiles({});
+    setUploadedFileNames({});
+    setFileIds({});
+  };
+
+  const isMultipleUpload = (id: string) => id === 'pensum';
+
+  const handleUpload = async (id: string, files: FileList | File[], append = false) => {
     if (uploadingStatus[id] || !user) return;
+
+    const selectedFiles = isMultipleUpload(id) ? Array.from(files) : Array.from(files).slice(0, 1);
+    if (selectedFiles.length === 0) return;
+
     setUploadingStatus(prev => ({ ...prev, [id]: true }));
     setError(null);
 
@@ -40,17 +53,30 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
       const userId = user.id;
       const facultyId = user.faculty_id || user.faculty_id|| 0;
 
-      const response = await fileService.uploadFile(
-        file, 
-        id, 
-        semesterId, 
-        userId, 
-        facultyId
-      );
+      const uploadedIds: number[] = [];
 
-      setFileIds(prev => ({ ...prev, [id]: response.id }));
+      for (const file of selectedFiles) {
+        const response = await fileService.uploadFile(
+          file,
+          id,
+          semesterId,
+          userId,
+          facultyId
+        );
+        uploadedIds.push(response.id);
+      }
+
+      setFileIds(prev => ({
+        ...prev,
+        [id]: append ? [...(prev[id] || []), ...uploadedIds] : uploadedIds,
+      }));
       setUploadedFiles(prev => ({ ...prev, [id]: true }));
-      setUploadedFileNames(prev => ({ ...prev, [id]: file.name }));
+      setUploadedFileNames(prev => ({
+        ...prev,
+        [id]: append
+          ? [...(prev[id] || []), ...selectedFiles.map(file => file.name)]
+          : selectedFiles.map(file => file.name),
+      }));
     } catch (err: any) {
       const msg = err.response?.data?.error || err.message || 'Error en carga';
       setError(`${id.toUpperCase()}: ${msg.toUpperCase()}`);
@@ -61,19 +87,77 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
 
 
   const handleFinalProcess = async () => {
-    const idsToProcess = Object.values(fileIds);
-    if (idsToProcess.length === 0) return;
-    window.dispatchEvent(new CustomEvent('show-bg-processing'));
+    const filesToProcess = FILE_REQUIREMENTS
+      .flatMap(file => {
+        const ids = fileIds[file.id] || [];
+        return ids.map((fileId, index) => ({
+          ...file,
+          fileId,
+          name: ids.length > 1 ? `${file.name} ${index + 1}` : file.name,
+        }));
+      });
+
+    if (filesToProcess.length === 0) return;
+
+    window.dispatchEvent(new CustomEvent('show-bg-processing', {
+      detail: {
+        message: `Preparando ${filesToProcess.length} archivos`,
+                description: 'El sistema está iniciando el procesamiento de los datos',
+      }
+    }));
     onClose();
 
     try {
-      for (const id of idsToProcess) {
-        await fileService.processFile(id);
+      for (let index = 0; index < filesToProcess.length; index += 1) {
+        const file = filesToProcess[index];
+        const response = await fileService.processFile(file.fileId);
+
+        if (!response.task_id) {
+          window.dispatchEvent(new CustomEvent('show-bg-processing', {
+            detail: {
+              message: `Procesando ${index + 1}/${filesToProcess.length}: ${file.name}`,
+                            description: response.detail || 'El archivo ya fue procesado',
+            }
+          }));
+          continue;
+        }
+
+        await fileService.waitForProcess(file.fileId, response.task_id, {
+          onStatus: (status) => {
+            window.dispatchEvent(new CustomEvent('show-bg-processing', {
+              detail: {
+                message: `Procesando ${index + 1}/${filesToProcess.length}: ${file.name}`,
+                description: getStatusDescription(status.meta?.step || status.state),
+              }
+            }));
+          }
+        });
       }
+      resetUploadedFiles();
       window.dispatchEvent(new CustomEvent('processing-finished'));
-    } catch (err) {
+      window.dispatchEvent(new CustomEvent('files-updated'));
+    } catch (err: any) {
       console.error("Error en procesamiento:", err);
+      window.dispatchEvent(new CustomEvent('processing-failed', {
+        detail: {
+          title: 'No se pudo procesar el archivo',
+          message: err.message || 'No se pudo completar el procesamiento de archivos',
+        }
+      }));
     }
+  };
+
+  const getStatusDescription = (step: string) => {
+    const descriptions: Record<string, string> = {
+      downloading_file: 'Procesando archivo',
+      processing_excel: 'Procesando archivo',
+      inserting_records: 'Procesando archivo',
+      PENDING: 'Procesando archivo',
+      STARTED: 'Procesando archivo',
+      PROGRESS: 'Procesando archivo',
+    };
+
+    return descriptions[step] || 'Procesando archivo';
   };
 
   const modalContent = (
@@ -130,10 +214,14 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                         <h4 className={`text-[12px] font-black tracking-widest uppercase ${uploadedFiles[file.id] ? 'text-yellow-400' : 'text-white'}`}>
                           {file.name}
                         </h4>
-                        {uploadedFileNames[file.id] && (
-                          <p className="mt-1 text-[9px] font-bold text-gray-500 truncate max-w-[200px]">
-                            {uploadedFileNames[file.id]}
-                          </p>
+                        {uploadedFileNames[file.id]?.length > 0 && (
+                          <div className="mt-1 space-y-0.5 max-w-[220px]">
+                            {uploadedFileNames[file.id].map((name, index) => (
+                              <p key={`${name}-${index}`} className="text-[9px] font-bold text-gray-500 truncate">
+                                {name}
+                              </p>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -141,11 +229,37 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                   </div>
                   
                   {!uploadingStatus[file.id] && (
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <label className="cursor-pointer inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-yellow-400 hover:text-black transition-all">
                         {uploadedFiles[file.id] ? <><RefreshCw size={12} /> Reemplazar</> : 'Seleccionar'}
-                        <input type="file" className="hidden" accept=".xlsx,.xls" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(file.id, f); }} />
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".xlsx,.xls"
+                          multiple={isMultipleUpload(file.id)}
+                          onChange={(e) => {
+                            const selectedFiles = e.target.files;
+                            if (selectedFiles?.length) handleUpload(file.id, selectedFiles);
+                            e.target.value = '';
+                          }}
+                        />
                       </label>
+                      {file.id === 'pensum' && uploadedFiles[file.id] && (
+                        <label className="cursor-pointer inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-yellow-400 hover:text-black transition-all">
+                          <Upload size={12} /> Agregar
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".xlsx,.xls"
+                            multiple
+                            onChange={(e) => {
+                              const selectedFiles = e.target.files;
+                              if (selectedFiles?.length) handleUpload(file.id, selectedFiles, true);
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
+                      )}
                     </div>
                   )}
                 </div>
@@ -154,7 +268,7 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
                 <button onClick={onClose} className="flex-1 py-4 rounded-2xl bg-white/5 text-gray-500 font-black text-[9px] uppercase tracking-[0.3em] hover:bg-white/10 border border-white/5">
                   Cancelar
                 </button>
-                <button onClick={handleFinalProcess} disabled={Object.keys(uploadedFiles).length === 0} className="flex-[2] bg-yellow-400 hover:bg-yellow-500 text-black font-black py-4 rounded-2xl text-[9px] uppercase tracking-[0.3em] transition-all shadow-lg shadow-yellow-400/10">
+                <button onClick={handleFinalProcess} disabled={!Object.values(fileIds).some(ids => ids.length > 0)} className="flex-[2] bg-yellow-400 hover:bg-yellow-500 text-black font-black py-4 rounded-2xl text-[9px] uppercase tracking-[0.3em] transition-all shadow-lg shadow-yellow-400/10">
                   FINALIZAR
                 </button>
               </div>

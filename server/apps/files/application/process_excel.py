@@ -43,7 +43,7 @@ class ProcessExcelUseCase:
     def _resolve_to_local_path(self, file_path: str | Path) -> tuple[Path, Path | None]:
         if isinstance(file_path, Path):
             if not file_path.exists():
-                raise FileNotFoundError(f"File not found: {file_path}")
+                raise FileNotFoundError(f"No se encontró el archivo: {file_path}")
             return file_path, None
 
         parsed = urlparse(file_path)
@@ -53,13 +53,13 @@ class ProcessExcelUseCase:
         if not parsed.scheme or len(parsed.scheme) == 1:
             local_path = Path(file_path)
             if not local_path.exists():
-                raise FileNotFoundError(f"File not found: {local_path}")
+                raise FileNotFoundError(f"No se encontró el archivo: {local_path}")
             return local_path, None
 
         if parsed.scheme == "file":
             local_path = Path(parsed.path)
             if not local_path.exists():
-                raise FileNotFoundError(f"File not found: {local_path}")
+                raise FileNotFoundError(f"No se encontró el archivo: {local_path}")
             return local_path, None
 
         if parsed.scheme in {"http", "https"}:
@@ -67,8 +67,8 @@ class ProcessExcelUseCase:
             return temp_file_path, temp_file_path
 
         raise ValueError(
-            f"Unsupported path scheme: '{parsed.scheme}'. "
-            "Supported schemes: local paths, file://, http://, https://"
+            f"El tipo de ruta no es compatible: '{parsed.scheme}'. "
+            "Use una ruta local, file://, http:// o https://."
         )
 
     def _download_remote_file(self, url: str) -> Path:
@@ -92,6 +92,6 @@ class ProcessExcelUseCase:
         validator = validators.get(file_type)
 
         if validator is None:
-            raise ValueError(f"Unsupported file type: {file_type}")
+            raise ValueError(f"Tipo de archivo no soportado: {file_type}")
 
         return validator

@@ -1,10 +1,13 @@
+import type { ReactNode } from "react";
 import { Download } from "lucide-react";
 
 type Props = {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   desc: string;
   variant?: "yellow" | "green";
+  disabled?: boolean;
+  onClick?: () => void;
 };
 
 export default function ReportQuickCard({
@@ -12,6 +15,8 @@ export default function ReportQuickCard({
   title,
   desc,
   variant = "yellow",
+  disabled = false,
+  onClick,
 }: Props) {
   const variants = {
     yellow:
@@ -34,27 +39,16 @@ export default function ReportQuickCard({
         hover:border-white/20
         hover:scale-[1.04]
         transition-all duration-300
-        cursor-pointer
         overflow-hidden
       "
     >
-      {/* glow decorativo */}
+      {/* glow */}
       <div className="absolute -top-20 -right-20 w-40 h-40 bg-yellow-400/[0.03] blur-[80px] rounded-full pointer-events-none" />
 
-      {/* overlay hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
       {/* icon */}
-      <div
-        className={`
-          w-fit
-          p-3
-          rounded-2xl
-          mb-5
-          shadow-inner
-          ${variants[variant]}
-        `}
-      >
+      <div className={`w-fit p-3 rounded-2xl mb-5 shadow-inner ${variants[variant]}`}>
         {icon}
       </div>
 
@@ -69,6 +63,8 @@ export default function ReportQuickCard({
 
       {/* button */}
       <button
+        onClick={onClick}
+        disabled={disabled}
         className="
           w-full
           bg-white/[0.03]
@@ -83,6 +79,8 @@ export default function ReportQuickCard({
           hover:text-white
           active:scale-95
           transition-all
+          disabled:opacity-40
+          disabled:cursor-not-allowed
         "
       >
         <Download size={14} />

@@ -1,4 +1,15 @@
 import { Download, Send, BarChart } from "lucide-react";
+import type { ReactNode } from "react";
+
+type CardVariant = "yellow" | "green";
+
+interface CardProps {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  variant?: CardVariant;
+  onClick?: () => void;
+}
 
 export default function MassOperations() {
   return (
@@ -16,16 +27,13 @@ export default function MassOperations() {
       "
     >
       <div className="absolute -top-24 -right-24 w-56 h-56 bg-yellow-400/[0.03] blur-[100px] rounded-full pointer-events-none" />
-
       <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
-
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
       <div className="mb-6 relative z-10">
         <h2 className="text-[11px] font-black text-white tracking-tight uppercase">
           Operaciones Masivas
         </h2>
-
         <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-2">
           Acciones globales sobre el sistema
         </p>
@@ -38,14 +46,12 @@ export default function MassOperations() {
           description="Descargar base completa"
           variant="yellow"
         />
-
         <Card
           icon={<Send size={20} />}
           title="Notificaciones"
           description="Enviar avisos masivos"
           variant="green"
         />
-
         <Card
           icon={<BarChart size={20} />}
           title="Análisis"
@@ -57,21 +63,15 @@ export default function MassOperations() {
   );
 }
 
-function Card({
-  icon,
-  title,
-  description,
-  variant = "yellow",
-}: any) {
-  const variants = {
-    yellow:
-      "bg-yellow-400/10 text-yellow-400 border border-yellow-400/20",
-    green:
-      "bg-green-500/10 text-green-500 border border-green-500/20",
+function Card({ icon, title, description, variant = "yellow", onClick }: CardProps) {
+  const variants: Record<CardVariant, string> = {
+    yellow: "bg-yellow-400/10 text-yellow-400 border border-yellow-400/20",
+    green: "bg-green-500/10 text-green-500 border border-green-500/20",
   };
 
   return (
     <div
+      onClick={onClick}
       className="
         group
         bg-white/[0.02]
@@ -93,7 +93,7 @@ function Card({
           mb-4
           shadow-inner
           group-hover:scale-110
-          transition
+          transition-all
           ${variants[variant]}
         `}
       >

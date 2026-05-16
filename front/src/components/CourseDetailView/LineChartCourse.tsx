@@ -108,6 +108,7 @@ export default function LineChartCourse({ courseId }: { courseId?: string }) {
               <Line
                 type="monotone"
                 dataKey="rating"
+                name = "punteo"
                 stroke="#facc15"
                 strokeWidth={4}
                 dot={{ fill: "#facc15", r: 4, strokeWidth: 2, stroke: "#111" }}
