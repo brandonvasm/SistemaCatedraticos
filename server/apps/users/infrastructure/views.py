@@ -46,8 +46,8 @@ class AuthViewSet(viewsets.ViewSet):
             key=settings.SIMPLE_JWT['AUTH_COOKIE'],
             value=result['access'],
             httponly=True,
-            secure=settings.SESSION_COOKIE_SECURE,
-            samesite='Lax',
+            secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+            samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
             max_age=3600,  # 1 hour
         )
     
