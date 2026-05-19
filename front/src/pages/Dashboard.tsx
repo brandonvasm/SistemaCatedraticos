@@ -81,18 +81,18 @@ export default function Dashboard() {
     <div className="relative z-0 space-y-10 animate-in fade-in duration-700">
       
       <SuccessNotification />
-
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div>
-          <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-tight">Dashboard General</h1>
-          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mt-4 ml-1">
+          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tighter uppercase leading-tight">
+            Dashboard General
+          </h1>
+          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mt-2 sm:mt-4 ml-1">
             VISTA COMPLETA - {user?.faculty_name || "EVALUACIONES"}
           </p>
         </div>
-
         <button 
           onClick={() => setIsImportOpen(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-yellow-400 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 transition-all active:scale-95 shadow-xl shadow-yellow-400/10 border-none"
+          className="flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 bg-yellow-400 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 transition-all active:scale-95 shadow-xl shadow-yellow-400/10 border-none flex-shrink-0"
         >
           <FileUp size={14} /> IMPORTAR
         </button>

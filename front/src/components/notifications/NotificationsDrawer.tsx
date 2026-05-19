@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X, AlertTriangle, CheckCircle, BellOff, Loader2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { notificationService } from "../../services/notificationService";
+import { useAuth } from "../../context/AuthContext";
 import type { NotificationPayload } from "../../types/notification";
 
 type Props = {
@@ -12,19 +13,29 @@ type Props = {
 
 export default function NotificationsDrawer({ isOpen, onClose }: Props) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<NotificationPayload[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchNotifications = async () => {
+    if (!user?.id) return;
+
     try {
       setLoading(true);
       const data: NotificationPayload[] = await notificationService.getNotifications();
-      const sortedData = data.sort((a: NotificationPayload, b: NotificationPayload) => {
+      
+      const userNotifications = data.filter((n) => {
+        const uid = (n.user as any)?.id || n.user;
+        return Number(uid) === Number(user.id);
+      });
+
+      const sortedData = userNotifications.sort((a, b) => {
         const idA = a.id || 0;
         const idB = b.id || 0;
         return idB - idA;
       });
-      setNotifications(sortedData.slice(0, 4)); 
+
+      setNotifications(sortedData.slice(0, 4));
     } catch (error) {
       console.error("Error al cargar notificaciones:", error);
     } finally {
@@ -36,15 +47,13 @@ export default function NotificationsDrawer({ isOpen, onClose }: Props) {
     if (isOpen) {
       fetchNotifications();
     }
-  }, [isOpen]);
+  }, [isOpen, user?.id]);
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     try {
       await notificationService.deleteNotification(id);
-      setNotifications((prev: NotificationPayload[]) => 
-        prev.filter((n: NotificationPayload) => n.id !== id)
-      );
+      await fetchNotifications();
     } catch (error) {
       console.error("Error al eliminar:", error);
     }

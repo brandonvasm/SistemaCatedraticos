@@ -32,6 +32,9 @@ export default function Navbar() {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
+  const [allTeachers, setAllTeachers] = useState<any[]>([]);
+  const [allCourses, setAllCourses] = useState<any[]>([]);
+
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,56 +42,52 @@ export default function Navbar() {
       .getCurrentSemester()
       .then(setSemester)
       .catch((err) => console.error("Error cargando semestre", err));
-  }, []);
+
+    if (user?.faculty_id) {
+      Promise.all([
+        teacherService.getTeachersStats(user.faculty_id, 1), 
+        courseService.getCourses(1, 200) 
+      ])
+        .then(([teacherRes, courseRes]) => {
+          setAllTeachers(teacherRes?.teachers || []);
+          setAllCourses(courseRes?.results || courseRes || []);
+        })
+        .catch((err) => console.error("Error precargando datos de búsqueda", err));
+    }
+  }, [user?.faculty_id]);
 
   useEffect(() => {
-    const fetchSearch = async () => {
-      if (!search.trim()) {
-        setResults([]);
-        return;
-      }
+    if (!search.trim()) {
+      setResults([]);
+      return;
+    }
 
-      try {
-        setLoadingSearch(true);
-        const teacherResponse = await teacherService.getTeachersStats(
-          (user?.faculty_id ?? 0),
-          0
-        );
-        const teachers = teacherResponse.teachers || [];
-        const courseResponse = await courseService.getCourses(1, 100);
-        const courses = courseResponse.results || [];
+    setLoadingSearch(true);
 
-        const teacherMatches = teachers
-          .filter((t: any) =>
-            t.teacher_name?.toLowerCase().includes(search.toLowerCase())
-          )
-          .map((t: any) => ({
-            id: t.teacher_id,
-            name: t.teacher_name,
-            type: "teacher",
-          }));
+    const teacherMatches = allTeachers
+      .filter((t: any) =>
+        (t.teacher_name || t.name || "").toLowerCase().includes(search.toLowerCase())
+      )
+      .map((t: any) => ({
+        id: t.teacher_id || t.id,
+        name: t.teacher_name || t.name,
+        type: "teacher",
+      }));
 
-        const courseMatches = courses
-          .filter((c: any) =>
-            c.name?.toLowerCase().includes(search.toLowerCase())
-          )
-          .map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            type: "course",
-          }));
 
-        setResults([...teacherMatches, ...courseMatches]);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoadingSearch(false);
-      }
-    };
+    const courseMatches = allCourses
+      .filter((c: any) =>
+        (c.name || "").toLowerCase().includes(search.toLowerCase())
+      )
+      .map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        type: "course",
+      }));
 
-    const timeout = setTimeout(fetchSearch, 400);
-    return () => clearTimeout(timeout);
-  }, [search, user]);
+    setResults([...teacherMatches, ...courseMatches]);
+    setLoadingSearch(false);
+  }, [search, allTeachers, allCourses]);
 
   useEffect(() => {
     const handleClickOutside = (event: any) => {
@@ -110,7 +109,7 @@ export default function Navbar() {
         <div ref={searchRef} className="flex-1 flex justify-center max-w-xl relative">
           <div className="relative w-full group">
             <Search
-              className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-yellow-400 transition-colors"
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-yellow-400 transition-colors pointer-events-none"
               size={16}
             />
 
@@ -204,8 +203,8 @@ export default function Navbar() {
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#0b101f]" />
           </div>
 
-          <div className="flex items-center gap-4 pl-6 border-l border-white/10">
-            <div className="text-right">
+          <div className="flex items-center gap-2 sm:gap-4 pl-2 sm:pl-6 border-l border-white/10">
+            <div className="text-right hidden md:block">
               <p className="text-white text-[10px] font-black tracking-tight leading-none uppercase">
                 {user?.username || "Usuario"}
               </p>
@@ -213,7 +212,7 @@ export default function Navbar() {
                 {userRole}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-yellow-300 to-yellow-600 text-black flex items-center justify-center font-black text-xs shadow-xl">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-yellow-300 to-yellow-600 text-black flex items-center justify-center font-black text-xs shadow-xl flex-shrink-0">
               {(user?.username || "U").substring(0, 2).toUpperCase()}
             </div>
           </div>

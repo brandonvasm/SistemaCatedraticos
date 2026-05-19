@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { logoutUser } from "../../services/authService"; 
 import { notificationService } from "../../services/notificationService";
+import { useAuth } from "../../context/AuthContext";
 
 import {
   LayoutDashboard,
@@ -23,11 +24,20 @@ export default function Sidebar() {
   
   const [notificationCount, setNotificationCount] = useState(0);
 
+  const { user } = useAuth();
+
   const fetchNotificationCount = async () => {
     try {
       const data = await notificationService.getNotifications();
-      if (data.length !== notificationCount) {
-        setNotificationCount(data.length);
+      
+      const userNotifications = data.filter((n: any) => {
+        const notificationUserId = (n.user as any)?.id || n.user_id || n.user;
+        
+        return Number(notificationUserId) === Number(user?.id);
+      });
+
+      if (userNotifications.length !== notificationCount) {
+        setNotificationCount(userNotifications.length);
       }
     } catch (error) {
       console.error("Error al sincronizar notificaciones:", error);

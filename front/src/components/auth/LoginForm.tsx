@@ -41,7 +41,7 @@ export default function LoginForm() {
       setUser(loggedInUser);
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err.detail || err.message || "Correo o contraseña incorrectos");
+      setError( "Correo o contraseña incorrectos");
       setPassword(''); 
     } finally {
       setIsLoading(false);

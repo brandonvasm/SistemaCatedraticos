@@ -67,6 +67,12 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedUser && formData.password && formData.password.length < 6) {
+      setError("LA CONTRASEÑA DEBE TENER AL MENOS 6 CARACTERES");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -207,6 +213,7 @@ export default function UserModal({ isOpen, onClose, onSuccess, selectedUser }: 
                 <input 
                   required
                   type="password"
+                  minLength={6}
                   value={formData.password}
                   onChange={e => setFormData({...formData, password: e.target.value})}
                   className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-yellow-400/40 transition-all"
