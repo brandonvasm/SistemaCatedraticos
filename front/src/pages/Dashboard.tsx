@@ -137,11 +137,19 @@ export default function Dashboard() {
         </div>
       </section>
       
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="flex flex-col lg:flex-row gap-6 w-full">
+      <div className="w-full lg:w-1/3">
         <RankingCard title="Mejores Valorados" icon={Award} color="green" teachers={topTeachers} />
-        <ThresholdCard teachers={teachers}/>
+      </div>
+      
+      <div className="w-full lg:w-1/3">
+        <ThresholdCard teachers={teachers} />
+      </div>
+      
+      <div className="w-full lg:w-1/3">
         <RankingCard title="Requieren Atención" icon={AlertCircle} color="red" teachers={alertTeachers} />
-      </section>
+      </div>
+    </section>
 
       <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
     </div>
